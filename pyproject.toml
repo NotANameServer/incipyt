@@ -1,0 +1,77 @@
+[build-system]
+requires = ["flit_core"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "incipyt"
+version = "0.0.1"
+description = "incipyt is a command-line tool that bootstraps a python project."
+readme = "README.md"
+authors = [
+  {name = "Not at Name", email = "julien@drlazor.be"},
+]
+maintainers = [
+  {name = "Not at Name", email = "julien@drlazor.be"},
+]
+requires-python = ">=3.6"
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development",
+]
+dependencies = [
+  "click",
+]
+
+[project.urls]
+homepage = "https://pypi.org/incipyt"
+documentation = "https://github.com/NotANameServer/incipyt/wiki"
+repository = "https://github.com/NotANameServer/incipyt"
+
+[project.optional-dependencies]
+dev = [
+  "build",
+  "pre-commit",
+  "black",
+  "flake8!=3.9.1",
+  "flakehell",
+  "flake8-bandit",
+  "flake8-bugbear",
+  "flake8-builtins",
+  "flake8-comprehensions",
+  "flake8-docstrings",
+  "flake8-simplify",
+  "flake8-use-fstring",
+  "pep8-naming",
+]
+test = [
+  "pytest-coverage",
+  "pytest-html",
+]
+doc = [
+  "m2r",
+  "sphinxcontrib-apidoc",
+  "sphinx_rtd_theme",
+]
+
+[tool.flakehell]
+exclude = [
+  ".env",
+  ".git",
+]
+
+[tool.flakehell.plugins]
+flake8-bandit = ["+*"]
+flake8-bugbear = ["+*"]
+flake8-builtins = ["+*"]
+flake8-comprehensions = ["+*"]
+flake8-docstrings = ["+*"]
+flake8-simplify = ["+*"]
+flake8-use-fstring = ["+*"]
+pep8-naming = ["+*"]
+pycodestyle = ["+*", "-W503", "-E501"]
+pyflakes = ["+*"]
