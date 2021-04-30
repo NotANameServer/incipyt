@@ -8,11 +8,8 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
-    outputs:
-      released: ${{ steps.release.outputs.release_created }}
-      tag: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: Mesteery/release-please-action@v2
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

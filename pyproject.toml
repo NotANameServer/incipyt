@@ -4,6 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "incipyt"
+version = "0.0.1"
 description = "incipyt is a command-line tool that bootstraps a python project."
 readme = "README.md"
 authors = [
@@ -25,7 +26,6 @@ classifiers = [
 dependencies = [
   "click",
 ]
-dynamic = ["version"]
 
 [project.urls]
 homepage = "https://pypi.org/incipyt"
