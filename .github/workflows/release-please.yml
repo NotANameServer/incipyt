@@ -9,7 +9,7 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     steps:
-      - uses: Mesteery/release-please-action@v2
+      - uses: Mesteery/release-please-action@v2.27.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
