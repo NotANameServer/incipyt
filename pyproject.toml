@@ -17,6 +17,8 @@ classifiers = [
 ]
 dependencies = [
   "click",
+  "Jinja2",
+  "toml",
 ]
 description = "incipyt is a command-line tool that bootstraps a python project."
 maintainers = [
@@ -71,19 +73,21 @@ exclude = [
 extended_default_ignore = []
 
 [tool.flakehell.plugins]
-flake8-bandit = ["+*"]
+flake8-bandit = ["+*", "-S101", "-S404", "-S603"]
 flake8-bugbear = ["+*"]
 flake8-builtins = ["+*"]
 flake8-comprehensions = ["+*"]
-flake8-docstrings = ["+*"]
+flake8-docstrings = ["+*", "-D105", "-D107"]
 flake8-simplify = ["+*"]
-flake8-use-fstring = ["+*"]
+flake8-use-fstring = ["+*", "-FS003"]
 pep8-naming = ["+*"]
 pycodestyle = ["+*", "-W503", "-E501"]
 pyflakes = ["+*"]
 
-[tool.flakehell.exceptions."tests/*.py"]
-flake8-bandit = ["-S101"] # Asserts
+[tool.flakehell.exceptions."incipyt/*__init__.py"]
+pyflakes = ["-F401"]
+
+[tool.flakehell.exceptions."incipyt/_*/*.py"]
 flake8-docstrings = ["-*"]
 
 [tool.flakehell.exceptions."incipyt/__*__.py"]
@@ -94,3 +98,6 @@ flake8-docstrings = ["-D100"]
 
 [tool.flakehell.exceptions."incipyt/cli.py"]
 flake8-docstrings = ["-D103"]
+
+[tool.flakehell.exceptions."tests/*.py"]
+flake8-docstrings = ["-*"]

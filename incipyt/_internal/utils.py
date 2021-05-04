@@ -1,33 +1,39 @@
+import collections.abc
 from string import Formatter
 
 import click
 
 
-def sanitizer_package(key, value):
-    return value.replace("-", "_") if key == "NAME" else value
-
-
-def sanitizer_project(key, value):
-    return value.replace("_", "-") if key == "NAME" else value
-
-
 class Requires:
-    def __init__(self, template, sanitizer=None):
+    def __init__(self, template, confirmed=False, sanitizer=None, **kwargs):
+        self._confirmed = confirmed
         self._sanitizer = sanitizer
         self._template = template
+        self._kwargs = kwargs
+
+    def __str__(self):
+        return f"f'{self._template}'"
 
     def __call__(self, environment):
-        return self._template.format(
-            **{
-                key: (
-                    self._sanitizer(key, environment.pull(key))
-                    if self._sanitizer
-                    else environment.pull(key)
-                )
-                for _, key, _, _ in Formatter().parse(self._template)
-                if key is not None
-            }
-        )
+        for _, key, _, _ in Formatter().parse(self._template):
+            if key not in self._kwargs:
+                continue
+
+            environment.push(key, self._kwargs[key], confirmed=self._confirmed)
+
+        args = {
+            key: (
+                self._sanitizer(key, environment.pull(key))
+                if self._sanitizer
+                else environment.pull(key)
+            )
+            for _, key, _, _ in Formatter().parse(self._template)
+            if key is not None
+        }
+        if any(not v for v in args.values()):
+            return None
+
+        return self._template.format(**args)
 
 
 class MultipleValues:
@@ -47,10 +53,41 @@ class MultipleValues:
             ),
         )
 
+    def __repr__(self):
+        return f"{type(self).__name__}({self._values})"
 
-def append(config, key, value):
+    def __eq__(self, other):
+        try:
+            return self._values == other._values
+        except AttributeError:
+            return False
+
+
+def append_unique(config, value):
+    assert isinstance(config, collections.abc.MutableSequence)
+
+    if value not in config:
+        config.append(value)
+
+
+def set_item(config, key, value):
+    assert isinstance(config, collections.abc.MutableMapping)
+
     if key in config:
         if config[key] != value:
             config[key] = MultipleValues(value, config[key])
     else:
         config[key] = value
+
+
+def set_items(config, raw_config, transformer=None):
+    assert isinstance(config, collections.abc.MutableMapping)
+    assert isinstance(raw_config, collections.abc.Mapping)
+
+    for key, value in raw_config.items():
+        if isinstance(value, collections.abc.Mapping):
+            if key not in config:
+                config[key] = {}
+            set_items(config[key], value, transformer=transformer)
+        else:
+            set_item(config, key, transformer(value) if transformer else value)
