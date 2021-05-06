@@ -75,6 +75,3 @@ flake8-use-fstring = ["+*"]
 pep8-naming = ["+*"]
 pycodestyle = ["+*", "-W503", "-E501"]
 pyflakes = ["+*"]
-
-[tool.flakehell.exceptions."*/__init__.py"]
-pyflakes = ["-F401"]
