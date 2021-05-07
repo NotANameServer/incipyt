@@ -1,4 +1,4 @@
-name: CD - Build and release packages
+name: CD - Release package
 
 on:
   push:
