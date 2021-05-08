@@ -52,7 +52,7 @@ jobs:
         python -m pip install --upgrade pip flit
         python -m flit install --deps develop
     - name: Run tests with pytest
-      run: pytest --cov=./ --cov-report=xml
+      run: pytest --cov=incipyt --cov-report=xml
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1
       with:
