@@ -49,7 +49,7 @@ dev = [
   "pep8-naming",
 ]
 test = [
-  "pytest-coverage",
+  "pytest-cov",
   "pytest-html",
 ]
 doc = [
