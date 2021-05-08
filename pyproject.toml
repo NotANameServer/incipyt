@@ -37,7 +37,7 @@ dev = [
   "build",
   "pre-commit",
   "black",
-  "flake8!=3.9.1",
+  "flake8",
   "flakehell",
   "flake8-bandit",
   "flake8-bugbear",
@@ -49,8 +49,7 @@ dev = [
   "pep8-naming",
 ]
 test = [
-  "pytest-coverage",
-  "pytest-html",
+  "pytest-cov",
 ]
 doc = [
   "m2r",
@@ -63,6 +62,8 @@ exclude = [
   ".env",
   ".git",
 ]
+# Fix combatibility with flake8 3.9.[1-2] as of writing
+extended_default_ignore = []
 
 [tool.flakehell.plugins]
 flake8-bandit = ["+*"]
@@ -75,3 +76,7 @@ flake8-use-fstring = ["+*"]
 pep8-naming = ["+*"]
 pycodestyle = ["+*", "-W503", "-E501"]
 pyflakes = ["+*"]
+
+[tool.flakehell.exceptions."tests/*.py"]
+flake8-bandit = ["-S101"] # Asserts
+flake8-docstrings = ["-*"]
