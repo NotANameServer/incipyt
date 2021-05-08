@@ -10,7 +10,7 @@ incipyt \[ˈɪŋkɪpɪt̪\] is a command-line tool that bootstraps a Python proj
 
 incipyt is *not* opinated, by default it setups the tools recommanded in the
 [PyPA/packaging-projects] tutorial: [pyproject.toml] and [setuptools] in
-addition to [Git] and [Sphinx] which are de-facto standard.
+addition to [git] and [sphinx] which are de-facto standard.
 
 	$ python -m incipyt mynewproject
 	Project Name [mynewproject]:
@@ -53,5 +53,5 @@ incipyt is released under the MIT license and is open to contributions
 [PyPA/packaging-projects]: https://packaging.python.org/tutorials/packaging-projects/
 [pyproject.toml]: https://www.python.org/dev/peps/pep-0518/
 [setuptools]: https://pypi.org/project/setuptools/
-[Git]: https://git-scm.com/
-[Sphinx]: https://www.sphinx-doc.org/en/master/
+[git]: https://git-scm.com/
+[sphinx]: https://www.sphinx-doc.org/en/master/
