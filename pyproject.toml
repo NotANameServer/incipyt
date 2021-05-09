@@ -37,7 +37,7 @@ dev = [
   "build",
   "pre-commit",
   "black",
-  "flake8!=3.9.1",
+  "flake8<=3.9.0",
   "flakehell",
   "flake8-bandit",
   "flake8-bugbear",
