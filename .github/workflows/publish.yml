@@ -16,10 +16,19 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
+    - name: Cache python env
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
     - name: Install deps
+      env:
+        PIP_UPGRADE: True
+        UPGRADE_STRATEGY: eager
       run: |
-        python -m pip install --upgrade pip flit
+        python -m pip install pip flit
         python -m flit install --deps develop
+
     - name: Build and publish with Flit
       env:
         FLIT_USERNAME:
