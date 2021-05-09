@@ -24,9 +24,9 @@ jobs:
         python -m pip install --upgrade pip flit
         python -m flit install --deps develop
     - name: Check format with black
-      run: python -m black --check incipyt
+      run: python -m black -v --check .
     - name: Lint with flakehell
-      run: python -m flakehell lint incipyt
+      run: python -m flakehell lint -v
 
   test:
     name: Tests
@@ -52,7 +52,7 @@ jobs:
         python -m pip install --upgrade pip flit
         python -m flit install --deps develop
     - name: Run tests with pytest
-      run: pytest --cov=incipyt --cov-report=xml
+      run: pytest -v --cov=incipyt --cov-report=xml
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1
       with:
