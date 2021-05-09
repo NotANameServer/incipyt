@@ -50,7 +50,6 @@ dev = [
 ]
 test = [
   "pytest-cov",
-  "pytest-html",
 ]
 doc = [
   "m2r",
