@@ -2,7 +2,7 @@
 
 *It begins...*
 
-incipyt \[ˈɪŋkɪpɪt̪\] is a command-line tool that bootstraps a python project.
+incipyt \[ˈɪŋkɪpɪt̪\] is a command-line tool that bootstraps a Python project.
 
 	$ pip install incipyt
 
@@ -48,7 +48,7 @@ linters, formatters, etc.
 
 ## Contribute
 
-incipyt is released under the MIT license ans is open to contributions
+incipyt is released under the MIT license and is open to contributions
 
 [PyPA/packaging-projects]: https://packaging.python.org/tutorials/packaging-projects/
 [pyproject.toml]: https://www.python.org/dev/peps/pep-0518/
