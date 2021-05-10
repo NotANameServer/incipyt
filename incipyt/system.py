@@ -6,6 +6,8 @@ import os
 import pathlib
 import subprocess
 
+import click
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class Environment:
         :type key: str
         :raises NotImplementedError: TO-DO.
         """
-        raise NotImplementedError(f"Request [for {key}] is not implemented.")
+        return click.prompt(key, type=str)
 
     def render(self, template):
         """Render the Jinja `template` to process substitutions.

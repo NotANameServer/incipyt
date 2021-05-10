@@ -1,5 +1,7 @@
 from string import Formatter
 
+import click
+
 
 def sanitizer_package(key, value):
     return value.replace("-", "_") if key == "NAME" else value
@@ -35,11 +37,14 @@ class MultipleValues:
         )
 
     def __call__(self, environment):
-        candidates = [
-            value(environment) if callable(value) else value for value in self._values
-        ]
-        raise NotImplementedError(
-            f"Select candidates in {candidates} is not implemented"
+        return click.prompt(
+            "Conflicting configuration, choose between",
+            type=click.Choice(
+                [
+                    value(environment) if callable(value) else value
+                    for value in self._values
+                ]
+            ),
         )
 
 

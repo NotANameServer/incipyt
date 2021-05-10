@@ -58,6 +58,8 @@ doc = [
   "sphinxcontrib-apidoc",
   "sphinx_rtd_theme",
 ]
+# Fix combatibility with flake8 3.9.[1-2] as of writing
+extended_default_ignore = []
 
 [tool.flakehell]
 exclude = [
