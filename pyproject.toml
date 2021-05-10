@@ -1,19 +1,11 @@
 [build-system]
-requires = ["flit_core"]
 build-backend = "flit_core.buildapi"
+requires = ["flit_core"]
 
 [project]
-name = "incipyt"
-version = "0.0.1"
-description = "incipyt is a command-line tool that bootstraps a python project."
-readme = "README.md"
 authors = [
   {name = "Not at Name", email = "julien@drlazor.be"},
 ]
-maintainers = [
-  {name = "Not at Name", email = "julien@drlazor.be"},
-]
-requires-python = ">=3.6"
 classifiers = [
   "Development Status :: 1 - Planning",
   "Environment :: Console",
@@ -28,17 +20,19 @@ dependencies = [
   "Jinja2",
   "toml",
 ]
-
-[project.urls]
-homepage = "https://pypi.org/incipyt"
-documentation = "https://github.com/NotANameServer/incipyt/wiki"
-repository = "https://github.com/NotANameServer/incipyt"
+description = "incipyt is a command-line tool that bootstraps a python project."
+maintainers = [
+  {name = "Not at Name", email = "julien@drlazor.be"},
+]
+name = "incipyt"
+readme = "README.md"
+requires-python = ">=3.6"
+version = "0.0.1"
 
 [project.optional-dependencies]
 dev = [
-  "build",
-  "pre-commit",
   "black",
+  "build",
   "flake8",
   "flakehell",
   "flake8-bandit",
@@ -49,9 +43,7 @@ dev = [
   "flake8-simplify",
   "flake8-use-fstring",
   "pep8-naming",
-]
-test = [
-  "pytest-cov",
+  "pre-commit",
 ]
 doc = [
   "m2r",
@@ -60,6 +52,17 @@ doc = [
 ]
 # Fix combatibility with flake8 3.9.[1-2] as of writing
 extended_default_ignore = []
+test = [
+  "pytest-cov",
+]
+
+[project.scripts]
+incipyt = "incipyt.cli:main"
+
+[project.urls]
+documentation = "https://github.com/NotANameServer/incipyt/wiki"
+homepage = "https://pypi.org/incipyt"
+repository = "https://github.com/NotANameServer/incipyt"
 
 [tool.flakehell]
 exclude = [
@@ -87,8 +90,11 @@ pyflakes = ["-F401"]
 [tool.flakehell.exceptions."incipyt/_*/*.py"]
 flake8-docstrings = ["-*"]
 
-[tool.flakehell.exceptions."incipyt/__init__.py"]
-flake8-docstrings = ["-D104"]
+[tool.flakehell.exceptions."incipyt/__*__.py"]
+flake8-docstrings = ["-D100", "-D104"]
 
 [tool.flakehell.exceptions."incipyt/actions/*.py"]
 flake8-docstrings = ["-D100"]
+
+[tool.flakehell.exceptions."incipyt/cli.py"]
+flake8-docstrings = ["-D103"]

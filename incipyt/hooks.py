@@ -1,4 +1,4 @@
-"""TO-DO."""
+"""Agnostic hook classes."""
 
 
 class BuildDependancy:
