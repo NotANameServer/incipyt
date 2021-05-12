@@ -31,6 +31,6 @@ jobs:
 
     - name: Build and publish with Flit
       env:
-        FLIT_USERNAME:
-        FLIT_PASSWORD: ${{ secrets.FLIT_PASSWORD }}
+        FLIT_USERNAME: __token__
+        FLIT_PASSWORD: ${{ secrets.FLIT_TOKEN }}
       run: python -m flit publish
