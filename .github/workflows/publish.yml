@@ -2,7 +2,7 @@ name: CD - Publish package
 
 on:
   release:
-    types: [created]
+    types: [released]
 
 jobs:
   publish:
