@@ -24,15 +24,19 @@ class Environment:
     elements involving pattern with environment variables.
     """
 
-    def __init__(self):
+    def __init__(self, auto_confirm):
+        self._auto_confirm = auto_confirm
+        self._confirmed = []
         self._variables = os.environ.copy()
+
         if "PYTHON_CMD" not in self._variables:
             self._variables["PYTHON_CMD"] = "python"
+        self._confirmed.append("PYTHON_CMD")
 
     def pull(self, key):
         """Try to pull the actual value for `key`.
 
-        If `key` already exists, just return the associated value, if not,
+        If `key` is already confirmed, just return the associated value, if not,
         first asks for it -- see :func:`incipyt.system.Environment.requests`
         -- then returns it.
 
@@ -41,13 +45,17 @@ class Environment:
         :return: The actual value for `key`.
         :rtype: str
         """
-        if key not in self._variables:
-            logger.info(f"Missing environement variable {key}, request it.")
+        if not self._auto_confirm and key not in self._confirmed:
+            logger.debug(f"Environement variable {key} not confirmed, request it.")
+            self._variables[key] = self.requests(key)
+            self._confirmed.append(key)
+        elif self._auto_confirm and key not in self._variables:
+            logger.debug(f"Missing environement variable {key}, request it.")
             self._variables[key] = self.requests(key)
 
         return self._variables[key]
 
-    def push(self, key, value, update=False):
+    def push(self, key, value, update=False, confirmed=False):
         """Try to push a `key` = `value` associaton.
 
         :param key: Key of the association to push.
@@ -56,6 +64,8 @@ class Environment:
         :type value: str
         :param update: Allow existing keys.
         :type update: bool
+        :param confirmed: Has the value to be considered as confirmed ?
+        :type update: bool
         :raises RuntimeError: Raise if `key` already exists in the actual environment.
         """
         if key in self._variables and not update:
@@ -63,8 +73,10 @@ class Environment:
                 f"Environment variable {key} already exists, use update."
             )
 
-        logger.info(f"Push environement variable {key}={value}.")
+        logger.debug(f"Push environement variable {key}={value}.")
         self._variables[key] = value
+        if confirmed and key not in self._confirmed:
+            self._confirmed.append(key)
 
     def requests(self, key):
         """Request to the user the value to associate to `key`.
@@ -73,7 +85,11 @@ class Environment:
         :type key: str
         :raises NotImplementedError: TO-DO.
         """
-        return click.prompt(key, type=str)
+        return click.prompt(
+            key.replace("_", " ").lower().capitalize(),
+            default=self._variables[key] if key in self._variables else "",
+            type=str,
+        )
 
     def render(self, template):
         """Render the Jinja `template` to process substitutions.
@@ -102,18 +118,27 @@ class Environment:
                 template[key] = value(self)
             elif isinstance(value, collections.abc.MutableMapping):
                 self.visit(value)
+                if not value:
+                    template[key] = None
             elif isinstance(value, collections.abc.MutableSequence):
                 for index, element in enumerate(value):
                     if callable(element):
                         value[index] = element(self)
                     if isinstance(element, collections.abc.MutableMapping):
                         self.visit(element)
+                if all(element is None for element in value):
+                    template[key] = None
+
+        for key in [key for key, value in template.items() if value is None]:
+            del template[key]
 
     def run(self, command):
         """Run a command after substitution using the environment.
 
         :param command: List of the command elements.
         :type command: List
+        :return: stdout docoded.
+        :rtype: str
         """
         completed_process = subprocess.run(
             [c(self) if callable(c) else c for c in command],
@@ -124,6 +149,7 @@ class Environment:
             f"""{' '.join(completed_process.args)}
 {completed_process.stdout.decode()}"""
         )
+        return completed_process.stdout.decode()
 
 
 class Hierarchy:
@@ -175,11 +201,9 @@ class Hierarchy:
         logger.debug(f"Register template {template_root} in hierarchy {id(self)}.")
         self._templates[template_root] = template
 
-    def commit(self, workon, environment):
+    def commit(self, environment):
         """Commit current hierarchy on disk.
 
-        :param workon: Work-on path.
-        :type workon: :class:`pathlib.Path`
         :param environment: Environment to use for substitution in pattern.
         :type environment: :class:`incipyt.system.Environment`.
         :raises RuntimeError: If one of the configuration file already exists.
@@ -253,8 +277,8 @@ def process_actions(workon, environment, actions):
         logger.info(f"Running pre-action for {action}.")
         action.pre(workon_path, environment)
 
-    logger.info(f"Commit hierarchy on {workon_path}.")
-    hierarchy.commit(workon_path, environment)
+    logger.info("Commit hierarchy.")
+    hierarchy.commit(environment)
 
     for action in actions:
         logger.info(f"Running post-action for {action}.")

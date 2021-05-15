@@ -73,7 +73,7 @@ exclude = [
 extended_default_ignore = []
 
 [tool.flakehell.plugins]
-flake8-bandit = ["+*", "-S404", "-S603"]
+flake8-bandit = ["+*", "-S101", "-S404", "-S603"]
 flake8-bugbear = ["+*"]
 flake8-builtins = ["+*"]
 flake8-comprehensions = ["+*"]
@@ -98,3 +98,6 @@ flake8-docstrings = ["-D100"]
 
 [tool.flakehell.exceptions."incipyt/cli.py"]
 flake8-docstrings = ["-D103"]
+
+[tool.flakehell.exceptions."tests/*.py"]
+flake8-docstrings = ["-*"]

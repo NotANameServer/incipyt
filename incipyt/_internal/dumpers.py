@@ -46,10 +46,14 @@ class CfgIni(BaseDumper):
     def dump_in(self, config):
         for section in config.values():
             for key, value in section.items():
-                if not isinstance(value, str) and isinstance(
-                    value, collections.abc.Iterable
-                ):
+                if isinstance(value, str):
+                    continue
+                elif isinstance(value, collections.abc.Sequence):
                     section[key] = "\n".join([""] + value)
+                elif isinstance(value, collections.abc.Mapping):
+                    section[key] = "\n".join(
+                        [""] + [f"{k} = {v}" for k, v in value.items()]
+                    )
         config_cfg = configparser.ConfigParser()
         config_cfg.read_dict(config)
         with self.substitute_path().open("w+") as file:
