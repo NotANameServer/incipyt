@@ -71,7 +71,7 @@ exclude = [
 ]
 
 [tool.flakehell.plugins]
-flake8-bandit = ["+*", "-S404", "-S603"]
+flake8-bandit = ["+*", "-S101", "-S404", "-S603"]
 flake8-bugbear = ["+*"]
 flake8-builtins = ["+*"]
 flake8-comprehensions = ["+*"]

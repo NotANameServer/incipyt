@@ -1,4 +1,5 @@
 from incipyt import hooks
+
 from incipyt._internal import utils
 from incipyt._internal.dumpers import Requirement
 
@@ -10,11 +11,20 @@ class Git:
         hooks.VCSIgnore.register(self._hook)
 
     def add_to(self, hierarchy):
-        """Add git configuration to `hierarchy`, do nothing.
+        """Add git configuration to `hierarchy`.
+
+        Register git related project URLs:
+        - Repository: {Repository}
+        - Issue: {Repository}/issues
+        - Documentation: {Repository}/wiki
 
         :param hierarchy: The actual hierarchy to update with git configuration.
         :type hierarchy: :class:`incipyt.system.Hierarchy`
         """
+        hook_url = hooks.ProjectURL(hierarchy)
+        hook_url("Repository", utils.Requires("{Repository}"))
+        hook_url("Issue", utils.Requires("{Repository}/issues"))
+        hook_url("Documentation", utils.Requires("{Repository}/wiki"))
 
     def _hook(self, hierarchy, value):
         gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
@@ -29,6 +39,8 @@ class Git:
     def pre(self, workon, environment):
         """Run `git init`.
 
+        Also push {AUTHOR_NAME} and {AUTHOR_EMAIL} using `git config user.*`.
+
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do pre-action
@@ -42,8 +54,35 @@ class Git:
             ]
         )
 
+        environment.push(
+            "AUTHOR_NAME",
+            environment.run(
+                [
+                    "git",
+                    "-C",
+                    str(workon),
+                    "config",
+                    "user.name",
+                ]
+            ).strip(),
+            update=True,
+        )
+        environment.push(
+            "AUTHOR_EMAIL",
+            environment.run(
+                [
+                    "git",
+                    "-C",
+                    str(workon),
+                    "config",
+                    "user.email",
+                ]
+            ).strip(),
+            update=True,
+        )
+
     def post(self, workon, environment):
-        """Post-action for git, do nothing.
+        """Run `git add --all`.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
@@ -57,18 +96,5 @@ class Git:
                 str(workon),
                 "add",
                 "--all",
-            ]
-        )
-        environment.run(
-            [
-                "git",
-                "-C",
-                str(workon),
-                "commit",
-                "--message",
-                utils.Requires(
-                    "'feat: project {NAME} bootstrap by incipyt'",
-                    sanitizer=utils.sanitizer_project,
-                ),
             ]
         )
