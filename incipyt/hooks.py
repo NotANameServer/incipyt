@@ -1,119 +1,73 @@
-"""Agnostic hook classes."""
+"""Tool-agnostic hook classes."""
 import logging
 
 
 logger = logging.getLogger(__name__)
 
 
-class BuildDependancy:
-    """Hook to add a dev dependancy to a build system."""
+class _Hook:
+    """Generic hook baseclass. Concrete hooks should subclass it."""
 
-    _hooks = []
-
-    @classmethod
-    def register(cls, hook):
-        """Regsiter a callback for :class:`BuildDependancy` hook.
-
-        :param hook: Callaback to register.
-        :type hook: :class:`collections.abc.Callable`
-        """
-        cls._hooks.append(hook)
+    def __init_subclass__(cls):
+        # Each subclass must have its own _hooks attribute
+        cls._hooks = []
 
     def __init__(self, hierarchy):
         self._hierarchy = hierarchy
 
     def __str__(self):
-        return "build-dependancy"
+        return self.__class__.__name__
 
-    def __call__(self, value):  # noqa: D102
-        if self._hooks:
-            logger.info(f"{len(self._hooks)} {self} hooks called with '{value}'")
-
-        for hook in self._hooks:
-            hook(self._hierarchy, value)
-
-
-class Classifier:
-    """Hook to add a classifier to a build system."""
-
-    _hooks = []
-
-    @classmethod
-    def register(cls, hook):
-        """Regsiter a callback for :class:`Classifier` hook.
-
-        :param hook: Callaback to register.
-        :type hook: :class:`collections.abc.Callable`
-        """
-        cls._hooks.append(hook)
-
-    def __init__(self, hierarchy):
-        self._hierarchy = hierarchy
-
-    def __str__(self):
-        return "classifier"
-
-    def __call__(self, value):  # noqa: D102
-        if self._hooks:
-            logger.info(f"{len(self._hooks)} {self} hooks called with '{value}'")
-
-        for hook in self._hooks:
-            hook(self._hierarchy, value)
-
-
-class ProjectURL:
-    """Hook to add a project url to a build system."""
-
-    _hooks = []
-
-    @classmethod
-    def register(cls, hook):
-        """Regsiter a callback for :class:`ProjectURL` hook.
-
-        :param hook: Callaback to register.
-        :type hook: :class:`collections.abc.Callable`
-        """
-        cls._hooks.append(hook)
-
-    def __init__(self, hierarchy):
-        self._hierarchy = hierarchy
-
-    def __str__(self):
-        return "project-url"
-
-    def __call__(self, url_kind, url_value):  # noqa: D102
+    def __call__(self, *args):
+        """Call registered hooks."""
         if self._hooks:
             logger.info(
-                f"{len(self._hooks)} {self} hooks called with '{url_kind}: {url_value}'"
+                f"{len(self._hooks)} {self} hook(s) called with {self._format_args(args)}"
             )
 
         for hook in self._hooks:
-            hook(self._hierarchy, url_kind, url_value)
+            hook(self._hierarchy, *args)
 
-
-class VCSIgnore:
-    """Hook to add a pattern to be ignored by the VCS system."""
-
-    _hooks = []
+    def _format_args(self, args):
+        return f"arguments: {args}"
 
     @classmethod
     def register(cls, hook):
-        """Regsiter a callback for :class:`VCSIgnore` hook.
+        """Regsiter a callback for a :class:`Hook`.
 
         :param hook: Callaback to register.
         :type hook: :class:`collections.abc.Callable`
         """
         cls._hooks.append(hook)
 
-    def __init__(self, hierarchy):
-        self._hierarchy = hierarchy
 
-    def __str__(self):
-        return "vcs-ignore"
+class _SingleParameterHook(_Hook):
+    """Generic Hook subclass whose registered hooks take only one parameter."""
 
     def __call__(self, value):  # noqa: D102
-        if self._hooks:
-            logger.info(f"{len(self._hooks)} {self} hooks called with '{value}'")
+        super().__call__(value)
 
-        for hook in self._hooks:
-            hook(self._hierarchy, value)
+    def _format_args(self, args):
+        return f"argument: {args[0]}"
+
+
+class ProjectURL(_Hook):
+    """Hook to add a project url to a build system."""
+
+    def __call__(self, url_kind, url_value):  # noqa: D102
+        super().__call__(url_kind, url_value)
+
+    def _format_args(self, args):
+        return f"argument: {args[0]}: {args[1]}"
+
+
+class BuildDependancy(_SingleParameterHook):
+    """Hook to add a dev dependancy to a build system."""
+
+
+class Classifier(_SingleParameterHook):
+    """Hook to add a classifier to a build system."""
+
+
+class VCSIgnore(_SingleParameterHook):
+    """Hook to add a pattern to be ignored by the VCS system."""

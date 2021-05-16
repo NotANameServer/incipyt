@@ -2,10 +2,23 @@
 build-backend = "flit_core.buildapi"
 requires = ["flit_core"]
 
+[project.urls]
+documentation = "https://github.com/NotANameServer/incipyt/wiki"
+homepage = "https://pypi.org/incipyt"
+repository = "https://github.com/NotANameServer/incipyt"
+
 [project]
 authors = [
   {name = "Not at Name", email = "julien@drlazor.be"},
 ]
+description = "incipyt is a command-line tool that bootstraps a python project."
+maintainers = [
+  {name = "Not at Name", email = "julien@drlazor.be"},
+]
+name = "incipyt"
+readme = "README.md"
+requires-python = ">=3.6"
+version = "0.0.0"
 classifiers = [
   "Development Status :: 1 - Planning",
   "Environment :: Console",
@@ -20,14 +33,6 @@ dependencies = [
   "Jinja2",
   "toml",
 ]
-description = "incipyt is a command-line tool that bootstraps a python project."
-maintainers = [
-  {name = "Not at Name", email = "julien@drlazor.be"},
-]
-name = "incipyt"
-readme = "README.md"
-requires-python = ">=3.6"
-version = "0.0.1"
 
 [project.optional-dependencies]
 dev = [
@@ -58,19 +63,6 @@ test = [
 
 [project.scripts]
 incipyt = "incipyt.cli:main"
-
-[project.urls]
-documentation = "https://github.com/NotANameServer/incipyt/wiki"
-homepage = "https://pypi.org/incipyt"
-repository = "https://github.com/NotANameServer/incipyt"
-
-[tool.flakehell]
-exclude = [
-  ".env",
-  ".git",
-]
-# Fix combatibility with flake8 3.9.[1-2] as of writing
-extended_default_ignore = []
 
 [tool.flakehell.plugins]
 flake8-bandit = ["+*", "-S101", "-S404", "-S603"]

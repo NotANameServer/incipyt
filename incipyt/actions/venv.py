@@ -12,7 +12,7 @@ class Venv:
         :type hierarchy: :class:`incipyt.system.Hierarchy
         """
         hook = hooks.VCSIgnore(hierarchy)
-        hook(".env")
+        hook(utils.Transform(".env"))
 
     def __str__(self):
         return "venv"
