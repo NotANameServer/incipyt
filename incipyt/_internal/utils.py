@@ -53,6 +53,15 @@ class MultipleValues:
             ),
         )
 
+    def __repr__(self):
+        return f"{type(self).__name__}({self._values})"
+
+    def __eq__(self, other):
+        try:
+            return self._values == other._values
+        except AttributeError:
+            return False
+
 
 def append_unique(config, value):
     assert isinstance(config, collections.abc.MutableSequence)
