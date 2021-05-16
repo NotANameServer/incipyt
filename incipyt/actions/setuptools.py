@@ -63,8 +63,7 @@ class Setuptools:
             "build-backend": "setuptools.build_meta",
         }
 
-        utils.set_items(
-            setup,
+        setup.set_items(
             {
                 "metadata": {
                     "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
@@ -74,8 +73,7 @@ class Setuptools:
             },
             utils.Requires,
         )
-        utils.set_items(
-            setup,
+        setup.set_items(
             {
                 "metadata": {
                     "version": "{PACKAGE_VERSION}",
@@ -92,28 +90,16 @@ class Setuptools:
             ),
         )
 
-        if "metadata" not in setup:
-            setup["metadata"] = {}
-        utils.set_item(
-            setup["metadata"],
-            "name",
-            utils.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
+        setup["metadata", "name"] = utils.Requires(
+            "{PROJECT_NAME}", sanitizer=sanitizers.project
         )
 
-        if "options" not in setup:
-            setup["options"] = {}
-        utils.set_item(
-            setup["options"],
-            "packages",
-            utils.Requires("{PROJECT_NAME}", sanitizer=sanitizers.package),
+        setup["options", "packages"] = utils.Requires(
+            "{PROJECT_NAME}", sanitizer=sanitizers.package
         )
 
-        if "options.package_data" not in setup:
-            setup["options.package_data"] = {}
-        utils.set_item(
-            setup["options.package_data"],
-            "*",
-            utils.Requires("{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"),
+        setup["options.package_data", "*"] = utils.Requires(
+            "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
         hierarchy.register_template(
@@ -155,30 +141,19 @@ setuptools.setup()
 
     def _hook_classifier(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
-        if "metadata" not in setup:
-            setup["metadata"] = {}
-        if "classifiers" not in setup["metadata"]:
-            setup["metadata"]["classifiers"] = []
+        setup["metadata", "classifiers"] = []
 
         utils.append_unique(setup["metadata"]["classifiers"], value)
 
     def _hook_dependancy(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
-        if "options.extras_require" not in setup:
-            setup["options.extras_require"] = {}
-        if "dev" not in setup["options.extras_require"]:
-            setup["options.extras_require"]["dev"] = []
+        setup["options.extras_require", "dev"] = []
 
         utils.append_unique(setup["options.extras_require"]["dev"], value)
 
     def _hook_url(self, hierarchy, url_kind, url_value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
-        if "metadata" not in setup:
-            setup["metadata"] = {}
-        if "project_urls" not in setup["metadata"]:
-            setup["metadata"]["project_urls"] = {}
-
-        utils.set_item(setup["metadata"]["project_urls"], url_kind, url_value)
+        setup["metadata", "project_urls", url_kind] = url_value
 
     def __str__(self):
         return "setuptools"
