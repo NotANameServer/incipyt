@@ -53,6 +53,15 @@ class MultipleValues:
             ),
         )
 
+    def __repr__(self):
+        return f"{type(self).__name__}({self._values})"
+
+    def __eq__(self, other):
+        try:
+            return self._values == other._values
+        except AttributeError:
+            return False
+
 
 def append_unique(config, value):
     assert isinstance(config, collections.abc.MutableSequence)
@@ -61,24 +70,74 @@ def append_unique(config, value):
         config.append(value)
 
 
-def set_item(config, key, value):
-    assert isinstance(config, collections.abc.MutableMapping)
-
-    if key in config:
-        if config[key] != value:
-            config[key] = MultipleValues(value, config[key])
-    else:
-        config[key] = value
+def is_not_string_sequence(obj):
+    return (
+        isinstance(obj, collections.abc.Sequence)
+        and not isinstance(obj, collections.abc.ByteString)
+        and not isinstance(obj, str)
+    )
 
 
-def set_items(config, raw_config, transformer=None):
-    assert isinstance(config, collections.abc.MutableMapping)
-    assert isinstance(raw_config, collections.abc.Mapping)
+class TemplateDict(collections.UserDict):
+    def __init__(self, mapping=None):
+        # If an existing mapping is provided, this class will act like a proxy
+        # around it
+        self.data = {} if mapping is None else mapping
 
-    for key, value in raw_config.items():
-        if isinstance(value, collections.abc.Mapping):
-            if key not in config:
-                config[key] = {}
-            set_items(config[key], value, transformer=transformer)
+    def __setitem__(self, keys, value):
+        if not is_not_string_sequence(keys):
+            keys = [keys]
+
+        self._set_item_from_chained_keys(self, keys, value)
+
+    def set_items(self, mapping, transformer=None):
+        self._set_items(self, mapping, transformer=transformer)
+
+    @staticmethod
+    def _set_item(mapping, key, value):
+        assert isinstance(mapping, collections.abc.Mapping)
+
+        if key in mapping:
+            existing_value = mapping[key]
+            if value == existing_value:
+                return
+            value = MultipleValues(value, existing_value)
+
+        # Check if processed mapping is a proxy object or not to avoid endless
+        # recursion on overriden __setitem__
+        if hasattr(mapping, "data"):
+            mapping.data[key] = value
         else:
-            set_item(config, key, transformer(value) if transformer else value)
+            mapping[key] = value
+
+    @staticmethod
+    def _set_item_from_chained_keys(mapping, keys, value):
+        assert isinstance(mapping, collections.abc.MutableMapping)
+        assert is_not_string_sequence(keys)
+
+        keys = list(keys)
+        key = keys.pop(0)
+
+        if not keys:
+            TemplateDict._set_item(mapping, key, value)
+            return
+
+        if key not in mapping:
+            mapping[key] = {}
+        TemplateDict._set_item_from_chained_keys(mapping[key], keys, value)
+
+    @staticmethod
+    def _set_items(mapping, added_mapping, transformer=None):
+        assert isinstance(mapping, collections.abc.MutableMapping)
+        assert isinstance(added_mapping, collections.abc.Mapping)
+
+        for key, value in added_mapping.items():
+            if isinstance(value, collections.abc.Mapping):
+                if key not in mapping:
+                    mapping[key] = {}
+                TemplateDict._set_items(mapping[key], value, transformer=transformer)
+
+            else:
+                TemplateDict._set_item(
+                    mapping, key, transformer(value) if transformer else value
+                )
