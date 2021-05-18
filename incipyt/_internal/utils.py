@@ -201,5 +201,4 @@ class TemplateDict(collections.UserDict):
             return value.transform(value.value)
         if callable(value):
             return value
-        else:
-            return transform(value)
+        return transform(value)
