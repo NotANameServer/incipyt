@@ -13,7 +13,12 @@ def is_nonstring_sequence(obj):
 
 
 def make_repr(obj, *args, **kwargs):
-    """Utility function to ease `__repr__` definition."""
+    """Make a representation string with ease.
+
+    :param obj: Any object to get a representation.
+    :return: String representation of `obj`.
+    :rtype: str
+    """
     from_attributes = [f"{a}={getattr(obj, a)}" for a in args]
     from_kwargs = [f"{k}={v}" for k, v in kwargs.items()]
     params = ", ".join(from_attributes + from_kwargs)
@@ -22,7 +27,11 @@ def make_repr(obj, *args, **kwargs):
 
 
 def attrs_eq(a, b, *args):
-    """Return `True` if all provided attributes of objects `a` and `b` are equals."""
+    """Compare two objects with their attributs.
+
+    :return: `True` if all provided attributes of objects `a` and `b` are equals.
+    :rtype: bool
+    """
     try:
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
     except AttributeError:
@@ -137,10 +146,10 @@ class TemplateDict(collections.UserDict):
 
             for v in value:
                 if v not in config[key]:
-                    config[key].append(v if callable(v) else transform(v))
+                    config[key].append(self._get_value(v, transform))
 
         else:
-            value = value if callable(value) else transform(value)
+            value = self._get_value(value, transform)
             if key in config:
                 if config[key] != value:
                     config[key] = MultipleValues(value, config[key])
@@ -165,12 +174,32 @@ class TemplateDict(collections.UserDict):
 
     @staticmethod
     def _get_transform(value):
-        """Return a `(value, transform)` pair from a potential two-tuple. If a
-        `Transform` is provided, it will be returned as-is. If a bare value is
-        provided, a `Transform` will be created and `transform` will fallback
-        to `Requires`.
+        """Wrap value in :class:`incipyt._internal.utils.Transform` if needed.
+
+        :param value: A raw or wrapped string.
+        :type value: str or :class:`incipyt._internal.utils.Transform`
+        :return: `value` itself or wrapped.
+        :rtype: :class:`incipyt._internal.utils.Transform`
         """
         if isinstance(value, Transform):
             assert callable(value[1]), "Second Transform element has to be callable."
             return value
         return Transform(value, Requires)
+
+    @staticmethod
+    def _get_value(value, transform):
+        """Transform a value according to wrapped transformation or fallback.
+
+        :param value: Value to transform
+        :type value: str or callable or :class:`incipyt._internal.utils.Transform`
+        :param transform: Fallback function for transformation
+        :type transform: callable
+        :return: `value` after transformation
+        :rtype: str or callable
+        """
+        if isinstance(value, Transform):
+            return value.transform(value.value)
+        if callable(value):
+            return value
+        else:
+            return transform(value)

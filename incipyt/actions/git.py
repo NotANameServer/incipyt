@@ -28,10 +28,7 @@ class Git:
 
     def _hook(self, hierarchy, value):
         gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
-        if None not in gitignore:
-            gitignore[None] = []
-
-        gitignore[None].append(value)
+        gitignore[None] = [value]
 
     def __str__(self):
         return "git"

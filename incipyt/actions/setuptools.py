@@ -34,8 +34,10 @@ class Setuptools:
             author_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             description = {SUMMARY_DESCRIPTION}
             maintainer_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
-            version = {PACKAGE_VERSION}
             name = {PROJECT_NAME}
+            version = {PACKAGE_VERSION}
+            classifiers =
+                Programming Language :: Python :: 3 :: Only
 
             [options]
             python_requires = >={PYTHON_VERSION}
@@ -43,6 +45,10 @@ class Setuptools:
 
             [options.package_data]
             * = {PACKAGE_DATA}/*
+
+            [options.extras_require]
+            dev =
+                build
 
         Here key-value association is appended, if a key already exists the
         value is appended to the current one(s), the user will be asked to
@@ -113,6 +119,22 @@ class Setuptools:
             ),
         )
         hierarchy.register_template(
+            Jinja.make("README.md"),
+            Template(
+                """# {{PROJECT_NAME}}
+
+{{SUMMARY_DESCRIPTION}}
+
+## Usage
+
+## Contribute
+
+Copyright (c) {{AUTHOR_NAME}}
+
+"""
+            ),
+        )
+        hierarchy.register_template(
             Jinja.make("setup.py"),
             Template(
                 """import setuptools
@@ -124,15 +146,15 @@ setuptools.setup()
         )
 
         hook_build = hooks.BuildDependancy(hierarchy)
-        hook_build("build")
+        hook_build(utils.Transform("build"))
 
         hook_classifier = hooks.Classifier(hierarchy)
-        hook_classifier("Programming Language :: Python :: 3 :: Only")
+        hook_classifier(utils.Transform("Programming Language :: Python :: 3 :: Only"))
 
         hook_vcs = hooks.VCSIgnore(hierarchy)
-        hook_vcs("build")
-        hook_vcs("dist")
-        hook_vcs("*.egg-info")
+        hook_vcs(utils.Transform("build"))
+        hook_vcs(utils.Transform("dist"))
+        hook_vcs(utils.Transform("*.egg-info"))
 
     def _hook_classifier(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
