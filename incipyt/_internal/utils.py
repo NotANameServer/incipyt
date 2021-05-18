@@ -135,12 +135,9 @@ class TemplateDict(collections.UserDict):
                 config[key], collections.abc.Mapping
             ), f"{config[key]} is already a mapping, cannot set to a sequence."
 
-            for v in (
-                v_ if callable(v_) else transform(v_)
-                for v_ in value
-                if v_ not in config[key]
-            ):
-                config[key].append(v)
+            for v in value:
+                if v not in config[key]:
+                    config[key].append(v if callable(v) else transform(v))
 
         else:
             value = value if callable(value) else transform(value)
