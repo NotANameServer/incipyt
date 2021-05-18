@@ -12,6 +12,10 @@ class TestTemplateDict:
     def simple_td(self):
         return TemplateDict({"1": {"2": {"3": None}}})
 
+    @pytest.fixture
+    def sequence_td(self):
+        return TemplateDict({"1": [None]})
+
     @pytest.mark.parametrize(
         "td, res",
         (
@@ -48,6 +52,19 @@ class TestTemplateDict:
     def test_chained_setitem(self, td, res, request):
         td = request.getfixturevalue(td)
         td["1", "2", "3"] = True
+
+        assert td == res
+
+    @pytest.mark.parametrize(
+        "td, res",
+        (
+            ("empty_td", {"1": [Requires(None), Requires(True)]}),
+            ("sequence_td", {"1": [None, Requires(True)]}),
+        ),
+    )
+    def test_sequence_setitem(self, td, res, request):
+        td = request.getfixturevalue(td)
+        td["1"] = [None, True]
 
         assert td == res
 
