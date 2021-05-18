@@ -4,6 +4,23 @@ from string import Formatter
 import click
 
 
+def make_repr(obj, *args, **kwargs):
+    """Utility function to ease `__repr__` definition."""
+    from_attributes = [f"{a}={getattr(obj, a)}" for a in args]
+    from_kwargs = [f"{k}={v}" for k, v in kwargs.items()]
+    params = ", ".join(from_attributes + from_kwargs)
+
+    return f"""{type(obj).__name__}({params})"""
+
+
+def attrs_eq(a, b, *args):
+    """Return `True` if all provided attributes of objects `a` and `b` are equals."""
+    try:
+        return all(getattr(a, attr) == getattr(b, attr) for attr in args)
+    except AttributeError:
+        return False
+
+
 class Requires:
     def __init__(self, template, confirmed=False, sanitizer=None, **kwargs):
         self._confirmed = confirmed
@@ -13,6 +30,18 @@ class Requires:
 
     def __str__(self):
         return f"f'{self._template}'"
+
+    def __repr__(self):
+        return make_repr(
+            self,
+            template=self._template,
+            confirmed=self._confirmed,
+            santizer=self._sanitizer,
+            kwargs=self._kwargs,
+        )
+
+    def __eq__(self, other):
+        return attrs_eq(self, other, "_template", "_confirmed", "_sanitizer", "_kwargs")
 
     def __call__(self, environment):
         for _, key, _, _ in Formatter().parse(self._template):
@@ -57,10 +86,7 @@ class MultipleValues:
         return f"{type(self).__name__}({self._values})"
 
     def __eq__(self, other):
-        try:
-            return self._values == other._values
-        except AttributeError:
-            return False
+        return attrs_eq(self, other, "_values")
 
 
 def append_unique(config, value):
