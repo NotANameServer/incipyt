@@ -7,15 +7,23 @@ import pathlib
 from incipyt import actions, Environment, process_actions
 
 
-@click.command()
+@click.command(help="incipyt is a command-line tool that bootstraps a Python project.")
 @click.argument(
     "folder",
     required=True,
     default=pathlib.Path(),
     type=click.Path(file_okay=False, path_type=pathlib.Path),
 )
-@click.option("--yes", is_flag=True)
-@click.option("--check-build", is_flag=True)
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Do not ask confirmation for variables with a default value.",
+)
+@click.option(
+    "--check-build",
+    is_flag=True,
+    help="Build the package after initialization of all files and folders.",
+)
 def main(folder, yes, check_build):
     logging.basicConfig(level="INFO")
 
