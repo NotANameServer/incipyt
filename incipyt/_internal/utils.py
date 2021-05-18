@@ -1,7 +1,15 @@
-import collections.abc
+import collections
 from string import Formatter
 
 import click
+
+
+def is_nonstring_sequence(obj):
+    return (
+        isinstance(obj, collections.abc.Sequence)
+        and not isinstance(obj, collections.abc.ByteString)
+        and not isinstance(obj, str)
+    )
 
 
 def make_repr(obj, *args, **kwargs):
@@ -19,6 +27,11 @@ def attrs_eq(a, b, *args):
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
     except AttributeError:
         return False
+
+
+Transform = collections.namedtuple(
+    "Transform", ("value", "transform"), defaults=(lambda x: x,)
+)
 
 
 class Requires:
@@ -89,81 +102,78 @@ class MultipleValues:
         return attrs_eq(self, other, "_values")
 
 
-def append_unique(config, value):
-    assert isinstance(config, collections.abc.MutableSequence)
-
-    if value not in config:
-        config.append(value)
-
-
-def is_not_string_sequence(obj):
-    return (
-        isinstance(obj, collections.abc.Sequence)
-        and not isinstance(obj, collections.abc.ByteString)
-        and not isinstance(obj, str)
-    )
-
-
 class TemplateDict(collections.UserDict):
-    def __init__(self, mapping=None):
-        # If an existing mapping is provided, this class will act like a proxy
-        # around it
-        self.data = {} if mapping is None else mapping
+    """This class will act like a proxy around a provided mapping."""
+
+    def __init__(self, mapping):
+        self.data = mapping
 
     def __setitem__(self, keys, value):
-        if not is_not_string_sequence(keys):
-            keys = [keys]
+        value, transform = self._get_transform(value)
+        if not is_nonstring_sequence(keys):
+            keys = (keys,)
 
-        self._set_item_from_chained_keys(self, keys, value)
-
-    def set_items(self, mapping, transformer=None):
-        self._set_items(self, mapping, transformer=transformer)
-
-    @staticmethod
-    def _set_item(mapping, key, value):
-        assert isinstance(mapping, collections.abc.Mapping)
-
-        if key in mapping:
-            existing_value = mapping[key]
-            if value == existing_value:
-                return
-            value = MultipleValues(value, existing_value)
-
-        # Check if processed mapping is a proxy object or not to avoid endless
-        # recursion on overriden __setitem__
-        if hasattr(mapping, "data"):
-            mapping.data[key] = value
-        else:
-            mapping[key] = value
-
-    @staticmethod
-    def _set_item_from_chained_keys(mapping, keys, value):
-        assert isinstance(mapping, collections.abc.MutableMapping)
-        assert is_not_string_sequence(keys)
-
-        keys = list(keys)
-        key = keys.pop(0)
-
-        if not keys:
-            TemplateDict._set_item(mapping, key, value)
+        if isinstance(value, collections.abc.Mapping):
+            for k, v in value.items():
+                self[keys + (k,)] = Transform(v, transform)
             return
 
-        if key not in mapping:
-            mapping[key] = {}
-        TemplateDict._set_item_from_chained_keys(mapping[key], keys, value)
+        config = self.data
+
+        for key in keys[:-1]:
+            if key not in config:
+                config[key] = {}
+            config = config[key]
+
+        key = keys[-1]
+
+        if is_nonstring_sequence(value):
+            if key not in config:
+                config[key] = []
+
+            assert not isinstance(
+                config[key], collections.abc.Mapping
+            ), f"{config[key]} is already a mapping, cannot set to a sequence."
+
+            for v in (
+                v_ if callable(v_) else transform(v_)
+                for v_ in value
+                if v_ not in config[key]
+            ):
+                config[key].append(v)
+
+        else:
+            value = value if callable(value) else transform(value)
+            if key in config:
+                if config[key] != value:
+                    config[key] = MultipleValues(value, config[key])
+            else:
+                config[key] = value
+
+    def __ior__(self, other):
+        other, transform = self._get_transform(other)
+
+        assert isinstance(
+            other, collections.abc.Mapping
+        ), f"RHS of |= for {type(self)} should be a mapping."
+
+        for key, value in other.items():
+            self[key] = Transform(value, transform)
+        return self
+
+    def __or__(self, other):
+        raise NotImplementedError(
+            f"{type(self)} do not support |, use self.data | or |=."
+        )
 
     @staticmethod
-    def _set_items(mapping, added_mapping, transformer=None):
-        assert isinstance(mapping, collections.abc.MutableMapping)
-        assert isinstance(added_mapping, collections.abc.Mapping)
-
-        for key, value in added_mapping.items():
-            if isinstance(value, collections.abc.Mapping):
-                if key not in mapping:
-                    mapping[key] = {}
-                TemplateDict._set_items(mapping[key], value, transformer=transformer)
-
-            else:
-                TemplateDict._set_item(
-                    mapping, key, transformer(value) if transformer else value
-                )
+    def _get_transform(value):
+        """Return a `(value, transform)` pair from a potential two-tuple. If a
+        `Transform` is provided, it will be returned as-is. If a bare value is
+        provided, a `Transform` will be created and `transform` will fallback
+        to `Requires`.
+        """
+        if isinstance(value, Transform):
+            assert callable(value[1]), "Second Transform element has to be callable."
+            return value
+        return Transform(value, Requires)

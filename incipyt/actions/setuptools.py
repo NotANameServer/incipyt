@@ -58,22 +58,21 @@ class Setuptools:
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
 
-        pyproject["build-system"] = {
-            "requires": ["setuptools", "wheel"],
-            "build-backend": "setuptools.build_meta",
+        pyproject["build-system"] = utils.Transform(
+            {
+                "requires": ["setuptools", "wheel"],
+                "build-backend": "setuptools.build_meta",
+            }
+        )
+
+        setup["metadata"] = {
+            "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
+            "description": "{SUMMARY_DESCRIPTION}",
+            "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
+            "name": utils.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
         }
 
-        setup.set_items(
-            {
-                "metadata": {
-                    "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
-                    "description": "{SUMMARY_DESCRIPTION}",
-                    "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
-                },
-            },
-            utils.Requires,
-        )
-        setup.set_items(
+        setup |= utils.Transform(
             {
                 "metadata": {
                     "version": "{PACKAGE_VERSION}",
@@ -88,10 +87,6 @@ class Setuptools:
                 PACKAGE_VERSION="0.0.0",
                 PYTHON_VERSION="3.6",
             ),
-        )
-
-        setup["metadata", "name"] = utils.Requires(
-            "{PROJECT_NAME}", sanitizer=sanitizers.project
         )
 
         setup["options", "packages"] = utils.Requires(
@@ -141,15 +136,11 @@ setuptools.setup()
 
     def _hook_classifier(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
-        setup["metadata", "classifiers"] = []
-
-        utils.append_unique(setup["metadata"]["classifiers"], value)
+        setup["metadata", "classifiers"] = [value]
 
     def _hook_dependancy(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
-        setup["options.extras_require", "dev"] = []
-
-        utils.append_unique(setup["options.extras_require"]["dev"], value)
+        setup["options.extras_require", "dev"] = [value]
 
     def _hook_url(self, hierarchy, url_kind, url_value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
