@@ -1,4 +1,4 @@
-"""Command Line Interace fucntions."""
+"""Command Line Interace functions."""
 
 import click
 import logging

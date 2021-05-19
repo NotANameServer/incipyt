@@ -1,5 +1,5 @@
 from incipyt import hooks
-from incipyt._internal import utils
+from incipyt._internal import templates
 
 
 class Venv:
@@ -9,10 +9,10 @@ class Venv:
         """Add venv configuration to `hierarchy`, do nothing.
 
         :param hierarchy: The actual hierarchy to update with venv configuration.
-        :type hierarchy: :class:`incipyt.system.Hierarchy
+        :type hierarchy: :class:`incipyt.system.Hierarchy`
         """
         hook = hooks.VCSIgnore(hierarchy)
-        hook(utils.Transform(".env"))
+        hook(templates.Transform(".env"))
 
     def __str__(self):
         return "venv"
@@ -27,7 +27,7 @@ class Venv:
         """
         environment.run(
             [
-                utils.Requires("{PYTHON_CMD}"),
+                templates.Requires("{PYTHON_CMD}"),
                 "-m",
                 "venv",
                 str(workon.joinpath(".env")),

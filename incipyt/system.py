@@ -8,7 +8,7 @@ import subprocess
 
 import click
 
-from incipyt._internal import utils
+from incipyt._internal import templates
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Environment:
     """Manage environment variables using for substitutions in patterns.
 
-    Functions :meth:`pull`and :meth:`push` can be used to add or request a
+    Functions :meth:`pull` and :meth:`push` can be used to add or request a
     specific envirnoment variable.
 
     Function :meth:`requests` ask the user if a value is missing.
@@ -43,9 +43,9 @@ class Environment:
         -- then returns it.
 
         :param key: Environment key asked.
-        :type key: str
+        :type key: :class:`str`
         :return: The actual value for `key`.
-        :rtype: str
+        :rtype: :class:`str`
         """
         if not self._auto_confirm and key not in self._confirmed:
             logger.debug(f"Environement variable {key} not confirmed, request it.")
@@ -61,13 +61,13 @@ class Environment:
         """Try to push a `key` = `value` associaton.
 
         :param key: Key of the association to push.
-        :type key: str
+        :type key: :class:`str`
         :param value: Value of the association to push.
-        :type value: str
+        :type value: :class:`str`
         :param update: Allow existing keys.
-        :type update: bool
+        :type update: :class:`bool`
         :param confirmed: Has the value to be considered as confirmed ?
-        :type update: bool
+        :type update: :class:`bool`
         :raises RuntimeError: Raise if `key` already exists in the actual environment.
         """
         if key in self._variables and not update:
@@ -84,7 +84,7 @@ class Environment:
         """Request to the user the value to associate to `key`.
 
         :param key: Key to request to the user.
-        :type key: str
+        :type key: :class:`str`
         :raises NotImplementedError: TO-DO.
         """
         return click.prompt(
@@ -99,7 +99,7 @@ class Environment:
         :param template: The Jinja template to process.
         :type template: :class:`jinja2.Template`
         :return: The template aftersubstitution.
-        :rtype: str
+        :rtype: :class:`str`
         """
         return template.render(**self._variables)
 
@@ -112,7 +112,7 @@ class Environment:
         recursively apply :func:`incipyt.system.Environment.visit`.
 
         :param template: The template dictionary to visit.
-        :type template: dict
+        :type template: :class:`dict`
         """
         for key, value in template.items():
             logger.debug(f"Visit {key} to process environment variables.")
@@ -138,9 +138,9 @@ class Environment:
         """Run a command after substitution using the environment.
 
         :param command: List of the command elements.
-        :type command: List
+        :type command: :class:`list`
         :return: stdout docoded.
-        :rtype: str
+        :rtype: :class:`str`
         """
         completed_process = subprocess.run(
             [c(self) if callable(c) else c for c in command],
@@ -178,7 +178,7 @@ class Hierarchy:
         :param config_root: Relative path of the configuration file.
         :type config_root: :class:`pathlib.PurePath`
         :return: A reference to the configuration dictionary
-        :rtype: dict
+        :rtype: :class:`dict`
         """
         if config_root not in self._configurations:
             logger.debug(
@@ -186,7 +186,7 @@ class Hierarchy:
             )
             self._configurations[config_root] = {}
 
-        return utils.TemplateDict(self._configurations[config_root])
+        return templates.TemplateDict(self._configurations[config_root])
 
     def register_template(self, template_root, template):
         """Register a Jinja template associated to the relative path `config_root`.
@@ -195,7 +195,7 @@ class Hierarchy:
         :type template_root: :class:`pathlib.PurePath`
         :param template: A Jinja template to register.
         :type template: :class:`jinja2.Template`
-        :raises RuntimeError: If `template_root`already registered.
+        :raises RuntimeError: If `template_root` already registered.
         """
         if template_root in self._templates:
             raise RuntimeError(f"Template {template_root} already exists.")
@@ -207,7 +207,7 @@ class Hierarchy:
         """Commit current hierarchy on disk.
 
         :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.system.Environment`.
+        :type environment: :class:`incipyt.system.Environment`
         :raises RuntimeError: If one of the configuration file already exists.
         """
         for config_root, config in self._configurations.items():
@@ -228,7 +228,7 @@ class Hierarchy:
         :param workon: Work-on path.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.system.Environment
+        :type environment: :class:`incipyt.system.Environment`
         """
         for config_root in self._configurations:
             logger.debug(f"Commit {config_root} path.")
@@ -252,18 +252,18 @@ def process_actions(workon, environment, actions):
 
     Performs five steps:
     - Succesylly preform `add_to`function of actions to a new
-      :class:`incipyt.system.Hierarchy`.
+    :class:`incipyt.system.Hierarchy`.
     - Make all directories.
     - Run all `pre` functions of actions.
     - Commit the hierarchy on the disk: all configuration files are created.
     - Run all `post` functions of actions.
 
     :param workon: Work-on path.
-    :type workon: Union[str, :class:`pathlib.Path`]
+    :type workon: :class:`str` or :class:`pathlib.Path`
     :param environment: Environment to use for substitution in pattern.
     :type environment: :class:`incipyt.system.Environment`
     :param actions: List of actions to configure all tools.
-    :type actions: List
+    :type actions: :class:`list`
     """
     workon_path = pathlib.Path(workon)
 
