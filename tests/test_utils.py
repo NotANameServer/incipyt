@@ -1,6 +1,11 @@
 import pytest
 
-from incipyt._internal.utils import TemplateDict, MultipleValues, Requires, Transform
+from incipyt._internal.templates import (
+    TemplateDict,
+    MultipleValues,
+    Requires,
+    Transform,
+)
 
 
 class TestTemplateDict:

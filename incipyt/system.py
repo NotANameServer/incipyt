@@ -8,7 +8,7 @@ import subprocess
 
 import click
 
-from incipyt._internal import utils
+from incipyt._internal import templates
 
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class Hierarchy:
             )
             self._configurations[config_root] = {}
 
-        return utils.TemplateDict(self._configurations[config_root])
+        return templates.TemplateDict(self._configurations[config_root])
 
     def register_template(self, template_root, template):
         """Register a Jinja template associated to the relative path `config_root`.

@@ -2,7 +2,7 @@ from jinja2 import Template
 
 from incipyt import hooks
 from incipyt._internal import sanitizers
-from incipyt._internal import utils
+from incipyt._internal import templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
@@ -64,7 +64,7 @@ class Setuptools:
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
 
-        pyproject["build-system"] = utils.Transform(
+        pyproject["build-system"] = templates.Transform(
             {
                 "requires": ["setuptools", "wheel"],
                 "build-backend": "setuptools.build_meta",
@@ -75,10 +75,10 @@ class Setuptools:
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
-            "name": utils.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
+            "name": templates.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
         }
 
-        setup |= utils.Transform(
+        setup |= templates.Transform(
             {
                 "metadata": {
                     "version": "{PACKAGE_VERSION}",
@@ -87,7 +87,7 @@ class Setuptools:
                     "python_requires": ">={PYTHON_VERSION}",
                 },
             },
-            lambda template: utils.Requires(
+            lambda template: templates.Requires(
                 template,
                 sanitizer=sanitizers.version,
                 PACKAGE_VERSION="0.0.0",
@@ -95,11 +95,11 @@ class Setuptools:
             ),
         )
 
-        setup["options", "packages"] = utils.Requires(
+        setup["options", "packages"] = templates.Requires(
             "{PROJECT_NAME}", sanitizer=sanitizers.package
         )
 
-        setup["options.package_data", "*"] = utils.Requires(
+        setup["options.package_data", "*"] = templates.Requires(
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
@@ -146,15 +146,17 @@ setuptools.setup()
         )
 
         hook_build = hooks.BuildDependancy(hierarchy)
-        hook_build(utils.Transform("build"))
+        hook_build(templates.Transform("build"))
 
         hook_classifier = hooks.Classifier(hierarchy)
-        hook_classifier(utils.Transform("Programming Language :: Python :: 3 :: Only"))
+        hook_classifier(
+            templates.Transform("Programming Language :: Python :: 3 :: Only")
+        )
 
         hook_vcs = hooks.VCSIgnore(hierarchy)
-        hook_vcs(utils.Transform("build"))
-        hook_vcs(utils.Transform("dist"))
-        hook_vcs(utils.Transform("*.egg-info"))
+        hook_vcs(templates.Transform("build"))
+        hook_vcs(templates.Transform("dist"))
+        hook_vcs(templates.Transform("*.egg-info"))
 
     def _hook_classifier(self, hierarchy, value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
@@ -191,7 +193,7 @@ setuptools.setup()
         """
         environment.run(
             [
-                utils.Requires("{PYTHON_CMD}"),
+                templates.Requires("{PYTHON_CMD}"),
                 "-m",
                 "pip",
                 "install",
@@ -202,7 +204,7 @@ setuptools.setup()
         if self.check_build:
             environment.run(
                 [
-                    utils.Requires("{PYTHON_CMD}"),
+                    templates.Requires("{PYTHON_CMD}"),
                     "-m",
                     "build",
                     f"{workon}",

@@ -1,6 +1,6 @@
 from incipyt import hooks
 
-from incipyt._internal import utils
+from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
 
@@ -22,9 +22,9 @@ class Git:
         :type hierarchy: :class:`incipyt.system.Hierarchy`
         """
         hook_url = hooks.ProjectURL(hierarchy)
-        hook_url("Repository", utils.Requires("{Repository}"))
-        hook_url("Issue", utils.Requires("{Repository}/issues"))
-        hook_url("Documentation", utils.Requires("{Repository}/wiki"))
+        hook_url("Repository", templates.Requires("{Repository}"))
+        hook_url("Issue", templates.Requires("{Repository}/issues"))
+        hook_url("Documentation", templates.Requires("{Repository}/wiki"))
 
     def _hook(self, hierarchy, value):
         gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
