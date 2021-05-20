@@ -82,7 +82,44 @@ class MultipleValues:
 
 
 class TemplateDict(collections.UserDict):
-    """This class will act like a proxy around a provided mapping."""
+    """This class will act like a proxy around a provided mapping.
+
+    .. code-block::
+
+        # configuration == {}
+        configuration["keyA"] = "{VARIABLE_NAME}"
+        # configuration == {"keyA": Requires("{VARIABLE_NAME}")}
+
+        # configuration == {}
+        configuration["keyA"] = a_callable
+        # configuration == {"keyA": a_callable}
+
+        # configuration == {}
+        configuration["keyA"] = Transform("{VARIABLE_NAME}", a_function)
+        # configuration == {"keyA": a_function("{VARIABLE_NAME}")}
+
+        # configuration == {}
+        configuration["keyA", "keyB"] = "{VARIABLE_NAME}"
+        # configuration == {"keyA": {"keyB": Requires("{VARIABLE_NAME}")} }
+
+        # configuration == {}
+        configuration["keyA"] = ["{VARIABLE_NAME}"]
+        # configuration == {"keyA": [Requires("{VARIABLE_NAME}")]}
+
+        # configuration == {}
+        configuration["keyA"] = {"keyB": "{VARIABLE_NAME}"}
+        # configuration == {"keyA": {"keyB": Requires("{VARIABLE_NAME}")} }
+
+        # configuration == {"keyA": previous_value}
+        configuration["keyA"] = "{VARIABLE_NAME}"
+        # if previous_value is a callable (assertion)
+        # configuration == {"keyA": MulitpleValues(Requires("{VARIABLE_NAME}"), previous_value)}
+
+        # configuration == {"keyA": previous_list}
+        configuration["keyA"] = ["{VARIABLE_NAME}"]
+        # if previous_list is a list (assertion) and not already in previous_list
+        # configuration == {"keyA": previous_list + [Requires("{VARIABLE_NAME}")]}
+    """
 
     def __init__(self, mapping):
         self.data = mapping
@@ -144,12 +181,12 @@ class TemplateDict(collections.UserDict):
 
     @staticmethod
     def _get_transform(value):
-        """Wrap value in :class:`incipyt._internal.utils.Transform` if needed.
+        """Wrap value in :class:`incipyt._internal.templates.Transform` if needed.
 
         :param value: A raw or wrapped string.
-        :type value: str or :class:`incipyt._internal.utils.Transform`
+        :type value: :class:`str` or :class:`incipyt._internal.templates.Transform`
         :return: `value` itself or wrapped.
-        :rtype: :class:`incipyt._internal.utils.Transform`
+        :rtype: :class:`incipyt._internal.templates.Transform`
         """
         if isinstance(value, Transform):
             assert callable(value[1]), "Second Transform element has to be callable."
@@ -161,11 +198,11 @@ class TemplateDict(collections.UserDict):
         """Transform a value according to wrapped transformation or fallback.
 
         :param value: Value to transform
-        :type value: str or callable or :class:`incipyt._internal.utils.Transform`
+        :type value: :class:`str` or :class:`callable` or :class:`incipyt._internal.templates.Transform`
         :param transform: Fallback function for transformation
-        :type transform: callable
+        :type transform: :class:`callable`
         :return: `value` after transformation
-        :rtype: str or callable
+        :rtype: :class:`str` or :class:`callable`
         """
         if isinstance(value, Transform):
             return value.transform(value.value)

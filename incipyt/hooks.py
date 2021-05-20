@@ -36,7 +36,7 @@ class _Hook:
         """Regsiter a callback for a :class:`Hook`.
 
         :param hook: Callaback to register.
-        :type hook: :class:`collections.abc.Callable`
+        :type hook: :class:`callable`
         """
         cls._hooks.append(hook)
 

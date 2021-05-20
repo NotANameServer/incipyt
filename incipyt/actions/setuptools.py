@@ -18,7 +18,8 @@ class Setuptools:
     def add_to(self, hierarchy):
         """Add setuptools configuration to `hierarchy`.
 
-        pyptoject.toml
+        :file:`pyptoject.toml`
+
         .. code-block::
 
             [build-system]
@@ -27,7 +28,8 @@ class Setuptools:
 
         If this configuration cannot be populate like that, an error is raised.
 
-        setup.cfg
+        :file:`setup.cfg`
+
         .. code-block::
 
             [metadata]

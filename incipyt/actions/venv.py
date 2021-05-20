@@ -9,7 +9,7 @@ class Venv:
         """Add venv configuration to `hierarchy`, do nothing.
 
         :param hierarchy: The actual hierarchy to update with venv configuration.
-        :type hierarchy: :class:`incipyt.system.Hierarchy
+        :type hierarchy: :class:`incipyt.system.Hierarchy`
         """
         hook = hooks.VCSIgnore(hierarchy)
         hook(templates.Transform(".env"))

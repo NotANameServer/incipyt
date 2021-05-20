@@ -14,7 +14,7 @@ def make_repr(obj, *args, **kwargs):
 
     :param obj: Any object to get a representation.
     :return: String representation of `obj`.
-    :rtype: str
+    :rtype: :class:`str`
     """
     from_attributes = [f"{a}={getattr(obj, a)}" for a in args]
     from_kwargs = [f"{k}={v}" for k, v in kwargs.items()]
@@ -27,7 +27,7 @@ def attrs_eq(a, b, *args):
     """Compare two objects with their attributs.
 
     :return: `True` if all provided attributes of objects `a` and `b` are equals.
-    :rtype: bool
+    :rtype: :class:`bool`
     """
     try:
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
