@@ -3,9 +3,12 @@ name: CI - Test package
 on:
   push:
     branches: [main]
+    paths: [pyproject.toml, incipyt/**, tests/**, .github/workflows/test.yml]
+
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize, ready_for_review]
+    paths: [pyproject.toml, incipyt/**, tests/**, .github/workflows/test.yml]
 
 
 jobs:
