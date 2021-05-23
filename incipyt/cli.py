@@ -12,8 +12,10 @@ from incipyt import actions, Environment, process_actions
     "folder",
     required=True,
     default=pathlib.Path(),
-    type=click.Path(file_okay=False, path_type=pathlib.Path),
+    type=click.Path(file_okay=False),
+    callback=lambda _ctx, _param, _path: pathlib.Path(_path),
 )
+@click.version_option()
 @click.option(
     "--yes",
     is_flag=True,
