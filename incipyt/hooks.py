@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class _Hook:
-    """Generic hook baseclass. Concrete hooks should subclass it."""
+    """Base Class for any `Hook`. Concrete `Hook` should subclass it."""
 
     def __init_subclass__(cls):
         # Each subclass must have its own _hooks attribute

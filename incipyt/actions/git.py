@@ -1,10 +1,11 @@
+from incipyt import actions
 from incipyt import hooks
 
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
 
-class Git:
+class Git(actions._Action):
     """Action to add Git to :class:`incipyt.system.Hierarchy`."""
 
     def __init__(self):
@@ -29,9 +30,6 @@ class Git:
     def _hook(self, hierarchy, value):
         gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
         gitignore[None] = [value]
-
-    def __repr__(self):
-        return "git"
 
     def pre(self, workon, environment):
         """Run `git init`.

@@ -2,13 +2,15 @@ import textwrap
 
 from jinja2 import Template
 
+from incipyt import actions
 from incipyt import hooks
+
 from incipyt._internal import sanitizers
 from incipyt._internal import templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
-class Setuptools:
+class Setuptools(actions._Action):
     """Action to add Setuptools to :class:`incipyt.system.Hierarchy`."""
 
     def __init__(self, check=False):
@@ -172,19 +174,6 @@ class Setuptools:
     def _hook_url(self, hierarchy, url_kind, url_value):
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
-
-    def __repr__(self):
-        return "setuptools"
-
-    def pre(self, workon, environment):
-        """Pre-action for setuptools, do nothing.
-
-        :param workon: Work-on folder.
-        :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.system.Environment`
-        """
-        pass
 
     def post(self, workon, environment):
         """Editable install and build for test.
