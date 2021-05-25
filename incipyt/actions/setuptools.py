@@ -112,10 +112,7 @@ class Setuptools:
         )
         hierarchy.register_template(
             Jinja.make("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
-            Template(
-                """
-"""
-            ),
+            Template("\n")),
         )
         hierarchy.register_template(
             Jinja.make("README.md"),
