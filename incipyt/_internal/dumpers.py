@@ -27,19 +27,10 @@ class BaseDumper(type(pathlib.Path())):
 
     def substitute_path(self):
         template_path = str(self._root.joinpath(self))
-        return pathlib.Path(
-            template_path.format(
-                **{
-                    key: (
-                        self._sanitizer(key, self._environment.pull(key))
-                        if self._sanitizer
-                        else self._environment.pull(key)
-                    )
-                    for _, key, _, _ in Formatter().parse(template_path)
-                    if key is not None
-                }
-            )
-        )
+        template_keys = [item[1] for item in Formatter().parse(template_path)]
+
+        keys = self._environment.pull_keys(template_keys, self._sanitizer)
+        return pathlib.Path(template_path.format(**keys))
 
 
 class CfgIni(BaseDumper):

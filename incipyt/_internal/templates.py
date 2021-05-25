@@ -34,22 +34,13 @@ class Requires:
         )
 
     def __call__(self, environment):
-        keys = [key for _, key, _, _ in Formatter().parse(self._template)]
+        keys = [item[1] for item in Formatter().parse(self._template)]
+
         for key in keys:
-            if key not in self._kwargs:
-                continue
+            if key in self._kwargs:
+                environment.push(key, self._kwargs[key], confirmed=self._confirmed)
 
-            environment.push(key, self._kwargs[key], confirmed=self._confirmed)
-
-        args = {
-            key: (
-                self._sanitizer(key, environment.pull(key))
-                if self._sanitizer
-                else environment.pull(key)
-            )
-            for key in keys
-            if key is not None
-        }
+        args = environment.pull_keys(keys, self._sanitizer)
         if all(args.values()):
             return self._template.format(**args)
 
@@ -76,6 +67,12 @@ class MultipleValues:
 
     def __eq__(self, other):
         return utils.attrs_eq(self, other, "_values")
+
+    @classmethod
+    def from_items(cls, *args):
+        instance = cls.__new__(cls)
+        instance._values = list(args)
+        return instance
 
 
 class TemplateDict(collections.UserDict):
