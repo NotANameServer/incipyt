@@ -39,6 +39,8 @@ class Setuptools(actions._Action):
             [metadata]
             author_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             description = {SUMMARY_DESCRIPTION}
+            long_description = file: README.md
+            long_description_content_type = text/markdown
             maintainer_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             name = {PROJECT_NAME}
             version = {PACKAGE_VERSION}
