@@ -77,6 +77,12 @@ class MultipleValues:
     def __eq__(self, other):
         return utils.attrs_eq(self, other, "_values")
 
+    @classmethod
+    def from_items(cls, *args):
+        instance = cls.__new__(cls)
+        instance._values = list(args)
+        return instance
+
 
 class TemplateDict(collections.UserDict):
     """This class will act like a proxy around a provided mapping.
