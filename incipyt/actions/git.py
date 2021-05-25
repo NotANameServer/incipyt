@@ -43,38 +43,16 @@ class Git:
         :param environment: Environment used to do pre-action
         :type environment: :class:`incipyt.system.Environment`
         """
-        environment.run(
-            [
-                "git",
-                "init",
-                str(workon),
-            ]
-        )
+        environment.run(["git", "init", str(workon)])
 
         environment.push(
             "AUTHOR_NAME",
-            environment.run(
-                [
-                    "git",
-                    "-C",
-                    str(workon),
-                    "config",
-                    "user.name",
-                ]
-            ).strip(),
+            environment.run(["git", "-C", str(workon), "config", "user.name"]).strip(),
             update=True,
         )
         environment.push(
             "AUTHOR_EMAIL",
-            environment.run(
-                [
-                    "git",
-                    "-C",
-                    str(workon),
-                    "config",
-                    "user.email",
-                ]
-            ).strip(),
+            environment.run(["git", "-C", str(workon), "config", "user.email"]).strip(),
             update=True,
         )
 
@@ -86,12 +64,4 @@ class Git:
         :param environment: Environment used to do post-action
         :type environment: :class:`incipyt.system.Environment`
         """
-        environment.run(
-            [
-                "git",
-                "-C",
-                str(workon),
-                "add",
-                "--all",
-            ]
-        )
+        environment.run(["git", "-C", str(workon), "add", "--all"])

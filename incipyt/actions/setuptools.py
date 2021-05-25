@@ -1,3 +1,5 @@
+import textwrap
+
 from jinja2 import Template
 
 from incipyt import hooks
@@ -108,16 +110,16 @@ class Setuptools:
         hierarchy.register_template(
             Jinja.make("LICENSE"),
             Template("Copyright (c) {{AUTHOR_NAME}}\n"),
-            ),
         )
         hierarchy.register_template(
             Jinja.make("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
-            Template("\n")),
+            Template("\n"),
         )
         hierarchy.register_template(
             Jinja.make("README.md"),
             Template(
-                textwrap.dedent("""\
+                textwrap.dedent(
+                    """\
                     # {{PROJECT_NAME}}
 
                     {{SUMMARY_DESCRIPTION}}
@@ -127,17 +129,20 @@ class Setuptools:
                     ## Contribute
 
                     Copyright (c) {{AUTHOR_NAME}}
-                """
+                    """
+                )
             ),
         )
         hierarchy.register_template(
             Jinja.make("setup.py"),
             Template(
-                """import setuptools
+                textwrap.dedent(
+                    """\
+                    import setuptools
 
-setuptools.setup()
-
-"""
+                    setuptools.setup()
+                    """
+                )
             ),
         )
 
@@ -199,10 +204,5 @@ setuptools.setup()
         )
         if self.check_build:
             environment.run(
-                [
-                    templates.Requires("{PYTHON_CMD}"),
-                    "-m",
-                    "build",
-                    f"{workon}",
-                ]
+                [templates.Requires("{PYTHON_CMD}"), "-m", "build", f"{workon}"]
             )

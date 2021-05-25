@@ -1,14 +1,13 @@
 import collections
 from string import Formatter
+from typing import Any, Callable, NamedTuple
 
 import click
 
 from incipyt._internal import utils
 
 
-from typing import Any, Callable, NameTuple
-
-class Transform(NameTuple):
+class Transform(NamedTuple):
     value: Any
     transform: Callable = lambda x: x
 
