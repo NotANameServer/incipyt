@@ -6,9 +6,11 @@ import click
 from incipyt._internal import utils
 
 
-Transform = collections.namedtuple(
-    "Transform", ("value", "transform"), defaults=(lambda x: x,)
-)
+from typing import Any, Callable, NameTuple
+
+class Transform(NameTuple):
+    value: Any
+    transform: Callable = lambda x: x
 
 
 class Requires:
