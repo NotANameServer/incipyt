@@ -37,7 +37,8 @@ class Requires:
         )
 
     def __call__(self, environment):
-        for _, key, _, _ in Formatter().parse(self._template):
+        keys = [key for _, key, _, _ in Formatter().parse(self._template)]
+        for key in keys:
             if key not in self._kwargs:
                 continue
 
@@ -49,13 +50,11 @@ class Requires:
                 if self._sanitizer
                 else environment.pull(key)
             )
-            for _, key, _, _ in Formatter().parse(self._template)
+            for key in keys
             if key is not None
         }
-        if any(not v for v in args.values()):
-            return None
-
-        return self._template.format(**args)
+        if all(args.values()):
+            return self._template.format(**args)
 
 
 class MultipleValues:
