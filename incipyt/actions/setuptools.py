@@ -107,10 +107,7 @@ class Setuptools:
 
         hierarchy.register_template(
             Jinja.make("LICENSE"),
-            Template(
-                """Copyright (c) {{AUTHOR_NAME}}
-
-"""
+            Template("Copyright (c) {{AUTHOR_NAME}}\n"),
             ),
         )
         hierarchy.register_template(
