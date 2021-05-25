@@ -17,7 +17,4 @@ def url(key, value):
 
 
 def version(key, value):
-    if any(not num.isdigit() for num in value.split(".")):
-        raise ValueError(f"{value} is not a valid version number")
-
     return value

@@ -1,8 +1,10 @@
+from incipyt import actions
 from incipyt import hooks
+
 from incipyt._internal import templates
 
 
-class Venv:
+class Venv(actions._Action):
     """Action to add virtualenv to :class:`incipyt.system.Hierarchy`."""
 
     def add_to(self, hierarchy):
@@ -13,9 +15,6 @@ class Venv:
         """
         hook = hooks.VCSIgnore(hierarchy)
         hook(templates.Transform(".env"))
-
-    def __str__(self):
-        return "venv"
 
     def pre(self, workon, environment):
         """Run `python -m venv .env`.
@@ -36,13 +35,3 @@ class Venv:
         environment.push(
             "PYTHON_CMD", str(workon.joinpath(".env/bin/python")), update=True
         )
-
-    def post(self, workon, environment):
-        """Post-action for venv, do nothing.
-
-        :param workon: Work-on folder.
-        :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.system.Environment`
-        """
-        pass

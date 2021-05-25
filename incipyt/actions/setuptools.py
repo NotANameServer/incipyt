@@ -1,12 +1,16 @@
+import textwrap
+
 from jinja2 import Template
 
+from incipyt import actions
 from incipyt import hooks
+
 from incipyt._internal import sanitizers
 from incipyt._internal import templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
-class Setuptools:
+class Setuptools(actions._Action):
     """Action to add Setuptools to :class:`incipyt.system.Hierarchy`."""
 
     def __init__(self, check=False):
@@ -35,6 +39,8 @@ class Setuptools:
             [metadata]
             author_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             description = {SUMMARY_DESCRIPTION}
+            long_description = file: README.md
+            long_description_content_type = text/markdown
             maintainer_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             name = {PROJECT_NAME}
             version = {PACKAGE_VERSION}
@@ -76,6 +82,8 @@ class Setuptools:
         setup["metadata"] = {
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
+            "long_description": templates.Transform("file: README.md"),
+            "long_description_content_type": templates.Transform("text/markdown"),
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
         }
@@ -108,16 +116,16 @@ class Setuptools:
         hierarchy.register_template(
             Jinja.make("LICENSE"),
             Template("Copyright (c) {{AUTHOR_NAME}}\n"),
-            ),
         )
         hierarchy.register_template(
             Jinja.make("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
-            Template("\n")),
+            Template("\n"),
         )
         hierarchy.register_template(
             Jinja.make("README.md"),
             Template(
-                textwrap.dedent("""\
+                textwrap.dedent(
+                    """\
                     # {{PROJECT_NAME}}
 
                     {{SUMMARY_DESCRIPTION}}
@@ -126,18 +134,21 @@ class Setuptools:
 
                     ## Contribute
 
-                    Copyright (c) {{AUTHOR_NAME}}
-                """
+                    Copyright (c) {{AUTHOR_NAME}}\n\n
+                    """
+                )
             ),
         )
         hierarchy.register_template(
             Jinja.make("setup.py"),
             Template(
-                """import setuptools
+                textwrap.dedent(
+                    """\
+                    import setuptools
 
-setuptools.setup()
-
-"""
+                    setuptools.setup()\n\n
+                    """
+                )
             ),
         )
 
@@ -166,19 +177,6 @@ setuptools.setup()
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
-    def __str__(self):
-        return "setuptools"
-
-    def pre(self, workon, environment):
-        """Pre-action for setuptools, do nothing.
-
-        :param workon: Work-on folder.
-        :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.system.Environment`
-        """
-        pass
-
     def post(self, workon, environment):
         """Editable install and build for test.
 
@@ -199,10 +197,5 @@ setuptools.setup()
         )
         if self.check_build:
             environment.run(
-                [
-                    templates.Requires("{PYTHON_CMD}"),
-                    "-m",
-                    "build",
-                    f"{workon}",
-                ]
+                [templates.Requires("{PYTHON_CMD}"), "-m", "build", f"{workon}"]
             )
