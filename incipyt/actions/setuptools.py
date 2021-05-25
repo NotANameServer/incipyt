@@ -107,33 +107,27 @@ class Setuptools:
 
         hierarchy.register_template(
             Jinja.make("LICENSE"),
-            Template(
-                """Copyright (c) {{AUTHOR_NAME}}
-
-"""
+            Template("Copyright (c) {{AUTHOR_NAME}}\n"),
             ),
         )
         hierarchy.register_template(
             Jinja.make("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
-            Template(
-                """
-"""
-            ),
+            Template("\n")),
         )
         hierarchy.register_template(
             Jinja.make("README.md"),
             Template(
-                """# {{PROJECT_NAME}}
+                textwrap.dedent("""\
+                    # {{PROJECT_NAME}}
 
-{{SUMMARY_DESCRIPTION}}
+                    {{SUMMARY_DESCRIPTION}}
 
-## Usage
+                    ## Usage
 
-## Contribute
+                    ## Contribute
 
-Copyright (c) {{AUTHOR_NAME}}
-
-"""
+                    Copyright (c) {{AUTHOR_NAME}}
+                """
             ),
         )
         hierarchy.register_template(
