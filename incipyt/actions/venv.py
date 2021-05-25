@@ -1,3 +1,5 @@
+import os
+
 from incipyt import actions
 from incipyt import hooks
 
@@ -24,14 +26,14 @@ class Venv(actions._Action):
         :param environment: Environment used to do pre-action
         :type environment: :class:`incipyt.system.Environment`
         """
+        env_path = workon / ".env"
+        py_path = env_path / ("Scripts" if os.name == "nt" else "bin") / "python"
         environment.run(
             [
                 templates.Requires("{PYTHON_CMD}"),
                 "-m",
                 "venv",
-                str(workon.joinpath(".env")),
+                str(env_path),
             ]
         )
-        environment.push(
-            "PYTHON_CMD", str(workon.joinpath(".env/bin/python")), update=True
-        )
+        environment.push("PYTHON_CMD", str(py_path), update=True)
