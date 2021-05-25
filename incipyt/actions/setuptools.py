@@ -128,7 +128,7 @@ class Setuptools:
 
                     ## Contribute
 
-                    Copyright (c) {{AUTHOR_NAME}}
+                    Copyright (c) {{AUTHOR_NAME}}\n\n
                     """
                 )
             ),
@@ -140,7 +140,7 @@ class Setuptools:
                     """\
                     import setuptools
 
-                    setuptools.setup()
+                    setuptools.setup()\n\n
                     """
                 )
             ),
