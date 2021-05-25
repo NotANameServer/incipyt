@@ -1,4 +1,7 @@
 import collections.abc
+import os
+import subprocess
+from contextlib import suppress
 
 
 def is_nonstring_sequence(obj):
@@ -33,3 +36,16 @@ def attrs_eq(a, b, *args):
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
     except AttributeError:
         return False
+
+
+def get_sys_python():
+    """Get the name of the current system-wide python executable.
+
+    :return: `"py"` if it exists on Windows systems, else `"python"`.
+    :rtype: :class:`str`
+    """
+    if os.name == "nt":
+        with suppress(FileNotFoundError):
+            if subprocess.run(["py", "--version"]).returncode == 0:
+                return "py"
+    return "python"

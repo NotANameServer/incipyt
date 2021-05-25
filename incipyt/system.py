@@ -9,6 +9,7 @@ import subprocess
 import click
 
 from incipyt._internal import templates
+from incipyt._internal import utils
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ class Environment:
         self._variables = os.environ.copy()
 
         if "PYTHON_CMD" not in self._variables:
-            self._variables["PYTHON_CMD"] = "python"
+            self._variables["PYTHON_CMD"] = utils.get_sys_python()
         self._confirmed.append("PYTHON_CMD")
 
     def pull(self, key):
