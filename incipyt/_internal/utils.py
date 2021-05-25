@@ -5,6 +5,12 @@ from contextlib import suppress
 
 
 def is_nonstring_sequence(obj):
+    """Check if a given object is a non-string sequence.
+
+    :param obj: Any object to check.
+    :return: `True` if `obj` is a non-string :class:`Sequence` instance.
+    :rtype: :class:`bool`
+    """
     return (
         isinstance(obj, collections.abc.Sequence)
         and not isinstance(obj, collections.abc.ByteString)
@@ -15,7 +21,10 @@ def is_nonstring_sequence(obj):
 def make_repr(obj, *args, **kwargs):
     """Make a representation string with ease.
 
-    :param obj: Any object to get a representation.
+    :param obj: Any object to make a representation for.
+    :param *args: Attributes names to include.
+    :type *args: :class:`str`
+    :param **kwargs: Other `attribute_name=any_value` to include.
     :return: String representation of `obj`.
     :rtype: :class:`str`
     """
@@ -27,8 +36,12 @@ def make_repr(obj, *args, **kwargs):
 
 
 def attrs_eq(a, b, *args):
-    """Compare two objects with their attributs.
+    """Compare two objects according to their attributes.
 
+    :param a: First object to compare.
+    :param b: Second object to compare.
+    :param *args: Attributes names to check for.
+    :type *args: :class:`str`
     :return: `True` if all provided attributes of objects `a` and `b` are equals.
     :rtype: :class:`bool`
     """
