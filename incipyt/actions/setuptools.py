@@ -78,6 +78,8 @@ class Setuptools:
         setup["metadata"] = {
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
+            "long_description": templates.Transform("file: README.md"),
+            "long_description_content_type": templates.Transform("text/markdown"),
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
         }
@@ -171,7 +173,7 @@ class Setuptools:
         setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
-    def __str__(self):
+    def __repr__(self):
         return "setuptools"
 
     def pre(self, workon, environment):

@@ -15,13 +15,13 @@ class _Hook:
     def __init__(self, hierarchy):
         self._hierarchy = hierarchy
 
-    def __str__(self):
+    def __repr__(self):
         return self.__class__.__name__
 
     def __call__(self, *args):
         """Call registered hooks."""
         if self._hooks:
-            logger.info(
+            logger.debug(
                 f"{len(self._hooks)} {self} hook(s) called with {self._format_args(args)}"
             )
 

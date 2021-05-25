@@ -19,15 +19,12 @@ class Requires:
         self._template = template
         self._kwargs = kwargs
 
-    def __str__(self):
-        return f"f'{self._template}'"
-
     def __repr__(self):
         return utils.make_repr(
             self,
             template=self._template,
             confirmed=self._confirmed,
-            santizer=self._sanitizer,
+            sanitizer=self._sanitizer,
             kwargs=self._kwargs,
         )
 
@@ -131,7 +128,7 @@ class TemplateDict(collections.UserDict):
 
         if isinstance(value, collections.abc.Mapping):
             for k, v in value.items():
-                self[keys + (k,)] = Transform(v, transform)
+                self[keys + (k,)] = self._get_transform(v, transform)
             return
 
         config = self.data
@@ -171,7 +168,7 @@ class TemplateDict(collections.UserDict):
         ), f"RHS of |= for {type(self)} should be a mapping."
 
         for key, value in other.items():
-            self[key] = Transform(value, transform)
+            self[key] = self._get_transform(value, transform)
         return self
 
     def __or__(self, other):
@@ -180,7 +177,7 @@ class TemplateDict(collections.UserDict):
         )
 
     @staticmethod
-    def _get_transform(value):
+    def _get_transform(value, transform=None):
         """Wrap value in :class:`incipyt._internal.templates.Transform` if needed.
 
         :param value: A raw or wrapped string.
@@ -191,7 +188,7 @@ class TemplateDict(collections.UserDict):
         if isinstance(value, Transform):
             assert callable(value[1]), "Second Transform element has to be callable."
             return value
-        return Transform(value, Requires)
+        return Transform(value, transform if transform else Requires)
 
     @staticmethod
     def _get_value(value, transform):

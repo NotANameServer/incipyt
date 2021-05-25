@@ -14,7 +14,7 @@ class Venv:
         hook = hooks.VCSIgnore(hierarchy)
         hook(templates.Transform(".env"))
 
-    def __str__(self):
+    def __repr__(self):
         return "venv"
 
     def pre(self, workon, environment):

@@ -14,23 +14,23 @@ class Git:
         """Add git configuration to `hierarchy`.
 
         Register git related project URLs:
-        - Repository: {Repository}
-        - Issue: {Repository}/issues
-        - Documentation: {Repository}/wiki
+        - Repository: {REPOSITORY}
+        - Issue: {REPOSITORY}/issues
+        - Documentation: {REPOSITORY}/wiki
 
         :param hierarchy: The actual hierarchy to update with git configuration.
         :type hierarchy: :class:`incipyt.system.Hierarchy`
         """
         hook_url = hooks.ProjectURL(hierarchy)
-        hook_url("Repository", templates.Requires("{Repository}"))
-        hook_url("Issue", templates.Requires("{Repository}/issues"))
-        hook_url("Documentation", templates.Requires("{Repository}/wiki"))
+        hook_url("Repository", templates.Requires("{REPOSITORY}"))
+        hook_url("Issue", templates.Requires("{REPOSITORY}/issues"))
+        hook_url("Documentation", templates.Requires("{REPOSITORY}/wiki"))
 
     def _hook(self, hierarchy, value):
         gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
         gitignore[None] = [value]
 
-    def __str__(self):
+    def __repr__(self):
         return "git"
 
     def pre(self, workon, environment):
