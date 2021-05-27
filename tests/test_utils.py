@@ -72,6 +72,18 @@ class TestTemplateDict:
     @pytest.mark.parametrize(
         "td, res",
         (
+            ("empty_td", {"1": Requires("x")}),
+            ("simple_td", {"1": MultipleValues(Requires("x"), "a")}),
+        ),
+    )
+    def test_setitem_callable(self, td, res, request):
+        td = request.getfixturevalue(td)
+        td["1"] = Requires("x")
+        assert td == res
+
+    @pytest.mark.parametrize(
+        "td, res",
+        (
             ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
             ("nested_td", {"1": {"2": {"3": MultipleValues(Requires("x"), "a")}}}),
         ),
@@ -96,14 +108,30 @@ class TestTemplateDict:
     @pytest.mark.parametrize(
         "td, res",
         (
+            ("empty_td", {"1": ["x"]}),
+            ("sequence_td", {"1": ["a", "b", "x"]}),
+        ),
+    )
+    def test_sequence_setitem_transform(self, td, res, request):
+        td = request.getfixturevalue(td)
+        td["1"] = [Transform("", lambda _: "x")]
+        assert td == res
+
+    @pytest.mark.parametrize(
+        "td, res",
+        (
             ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
             ("nested_td", {"1": {"2": {"3": MultipleValues(Requires("x"), "a")}}}),
         ),
     )
     def test_ior(self, td, res, request):
         td = request.getfixturevalue(td)
-        td |= {"1": {"2": {"3": Requires("x")}}}
+        td |= {"1": {"2": {"3": "x"}}}
         assert td == res
+
+    def test_or(self, simple_td):
+        with pytest.raises(NotImplementedError):
+            simple_td | {}
 
     @pytest.mark.xfail
     @pytest.mark.parametrize("td", ("simple_td", "multiple_td"))
