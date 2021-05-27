@@ -5,11 +5,11 @@ import logging
 import os
 import pathlib
 import subprocess
+import sys
 
 import click
 
 from incipyt._internal import templates
-from incipyt._internal import utils
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Environment:
         self._variables = os.environ.copy()
 
         if "PYTHON_CMD" not in self._variables:
-            self._variables["PYTHON_CMD"] = utils.get_sys_python()
+            self._variables["PYTHON_CMD"] = sys.executable
         self._confirmed.append("PYTHON_CMD")
 
     def pull(self, key):
@@ -143,16 +143,12 @@ class Environment:
         :return: stdout docoded.
         :rtype: :class:`str`
         """
-        completed_process = subprocess.run(
-            [c(self) if callable(c) else c for c in command],
-            capture_output=True,
-            check=True,
-        )
-        logger.info(
-            f"""{' '.join(completed_process.args)}
-{completed_process.stdout.decode()}"""
-        )
-        return completed_process.stdout.decode()
+        cmd = [c(self) if callable(c) else c for c in command]
+        logger.info(f"{' '.join(cmd)}")
+        completed_process = subprocess.run(cmd, capture_output=True, check=True)
+        result = completed_process.stdout.decode()
+        logger.info(f"{result}")
+        return result
 
 
 class Hierarchy:

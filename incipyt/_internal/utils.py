@@ -1,7 +1,4 @@
 import collections.abc
-import os
-import subprocess
-from contextlib import suppress
 
 
 def is_nonstring_sequence(obj):
@@ -19,12 +16,12 @@ def is_nonstring_sequence(obj):
 
 
 def make_repr(obj, *args, **kwargs):
-    """Make a representation string with ease.
+    r"""Make a representation string with ease.
 
     :param obj: Any object to make a representation for.
-    :param *args: Attributes names to include.
-    :type *args: :class:`str`
-    :param **kwargs: Other `attribute_name=any_value` to include.
+    :param \*args: Attributes names to include.
+    :type \*args: :class:`str`
+    :param \**kwargs: Other `attribute_name=any_value` to include.
     :return: String representation of `obj`.
     :rtype: :class:`str`
     """
@@ -36,12 +33,12 @@ def make_repr(obj, *args, **kwargs):
 
 
 def attrs_eq(a, b, *args):
-    """Compare two objects according to their attributes.
+    r"""Compare two objects according to their attributes.
 
     :param a: First object to compare.
     :param b: Second object to compare.
-    :param *args: Attributes names to check for.
-    :type *args: :class:`str`
+    :param \*args: Attributes names to check for.
+    :type \*args: :class:`str`
     :return: `True` if all provided attributes of objects `a` and `b` are equals.
     :rtype: :class:`bool`
     """
@@ -49,16 +46,3 @@ def attrs_eq(a, b, *args):
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
     except AttributeError:
         return False
-
-
-def get_sys_python():
-    """Get the name of the current system-wide python executable.
-
-    :return: `"py"` if it exists on Windows systems, else `"python"`.
-    :rtype: :class:`str`
-    """
-    if os.name == "nt":
-        with suppress(FileNotFoundError):
-            if subprocess.run(["py", "--version"]).returncode == 0:
-                return "py"
-    return "python"
