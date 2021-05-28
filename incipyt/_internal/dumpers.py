@@ -7,12 +7,13 @@ import toml
 
 
 class BaseDumper(type(pathlib.Path())):
-    @classmethod
-    def make(cls, path, sanitizer=None):
-        self = cls(path)
+    def __new__(cls, path, sanitizer=None):
+        # As pathlib runs some magic in __new__ to instanciate a Path subclass
+        # that matches the current platform, special precautions must be taken
+        # when subclassing it
+        self = super().__new__(cls, path)
         self._sanitizer = sanitizer
         self._root = None
-
         return self
 
     def commit(self, root, environment):
