@@ -1,4 +1,4 @@
-import pytest
+from pytest import fixture, mark, raises
 
 from incipyt._internal.templates import (
     TemplateDict,
@@ -9,27 +9,27 @@ from incipyt._internal.templates import (
 
 
 class TestTemplateDict:
-    @pytest.fixture
+    @fixture
     def empty_td(self):
         return TemplateDict({})
 
-    @pytest.fixture
+    @fixture
     def simple_td(self):
         return TemplateDict({"1": "a"})
 
-    @pytest.fixture
+    @fixture
     def nested_td(self):
         return TemplateDict({"1": {"2": {"3": "a"}}})
 
-    @pytest.fixture
+    @fixture
     def multiple_td(self):
         return TemplateDict({"1": MultipleValues("a", "b")})
 
-    @pytest.fixture
+    @fixture
     def sequence_td(self):
         return TemplateDict({"1": ["a", "b"]})
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": Requires("x")}),
@@ -45,7 +45,7 @@ class TestTemplateDict:
         td["1"] = "x"
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": "x"}),
@@ -57,7 +57,7 @@ class TestTemplateDict:
         td["1"] = Transform("", lambda _: "x")
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": "x"}),
@@ -69,7 +69,7 @@ class TestTemplateDict:
         td["1"] = Transform("x")
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": Requires("x")}),
@@ -81,7 +81,7 @@ class TestTemplateDict:
         td["1"] = Requires("x")
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
@@ -93,7 +93,7 @@ class TestTemplateDict:
         td["1", "2", "3"] = "x"
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": [Requires("a"), Requires("x")]}),
@@ -105,7 +105,7 @@ class TestTemplateDict:
         td["1"] = ["a", "x"]
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": ["x"]}),
@@ -117,7 +117,7 @@ class TestTemplateDict:
         td["1"] = [Transform("", lambda _: "x")]
         assert td == res
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "td, res",
         (
             ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
@@ -130,20 +130,20 @@ class TestTemplateDict:
         assert td == res
 
     def test_or(self, simple_td):
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             simple_td | {}
 
-    @pytest.mark.xfail
-    @pytest.mark.parametrize("td", ("simple_td", "multiple_td"))
-    @pytest.mark.parametrize("val", (["x"], {"2": "x"}))
+    @mark.xfail
+    @mark.parametrize("td", ("simple_td", "multiple_td"))
+    @mark.parametrize("val", (["x"], {"2": "x"}))
     def test_bare_override(self, td, val, request):
         td = request.getfixturevalue(td)
-        with pytest.raises(AssertionError):
+        with raises(AssertionError):
             td["1"] = val
 
-    @pytest.mark.xfail
-    @pytest.mark.parametrize("td", ("nested_td", "sequence_td"))
+    @mark.xfail
+    @mark.parametrize("td", ("nested_td", "sequence_td"))
     def test_override(self, td, request):
         td = request.getfixturevalue(td)
-        with pytest.raises(AssertionError):
+        with raises(AssertionError):
             td["1"] = "x"
