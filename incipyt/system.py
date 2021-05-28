@@ -58,6 +58,26 @@ class Environment:
 
         return self._variables[key]
 
+    def pull_keys(self, keys, sanitizer=None):
+        """Pull multiple `keys` at once and sanitize them.
+
+        See also :func:`incipyt.system.Environment.pull`, which will be used to
+        pull each key from the environment.
+
+        :param keys: Requiered environment keys. If a key is `None`, it will
+        not be pulled.
+        :type keys: :class:`collections.abc.Sequence`
+        :param sanitizer: Will be called on key-value pairs to sanitize values.
+        :type sanitizer: :class:`function`
+        :return: Sanitized environment key-value pairs.
+        :rtype: :class:`dict`
+        """
+        return {
+            key: sanitizer(key, self.pull(key)) if sanitizer else self.pull(key)
+            for key in keys
+            if key is not None
+        }
+
     def push(self, key, value, update=False, confirmed=False):
         """Try to push a `key` = `value` associaton.
 
