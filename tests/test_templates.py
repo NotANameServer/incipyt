@@ -11,6 +11,57 @@ from incipyt._internal.templates import (
 from incipyt.system import Environment
 
 
+class TestRequires:
+    @fixture
+    def env(self):
+        return Environment(auto_confirm=True)
+
+    @fixture
+    def simple_rq(self):
+        return Requires("{one}")
+
+    @fixture
+    def kwarg_rq(self):
+        return Requires("{one}", one=1)
+
+    @fixture
+    def sanitizer_rq(self):
+        return Requires("{one}", sanitizer=lambda k, v: 1)
+
+    @fixture
+    def multiple_rq(self):
+        return Requires("{one}-{two}-{three}")
+
+    def test_env_key_push(self, kwarg_rq, env):
+        kwarg_rq(env)
+        assert "one" in env._variables
+
+    def test_env_key_push_prompt(self, simple_rq, env, monkeypatch):
+        mock_stdin(monkeypatch, "1")
+        simple_rq(env)
+        assert "one" in env._variables
+
+    @mark.parametrize(
+        "rq, variables, res",
+        (
+            ("simple_rq", {"one": 1}, "1"),
+            ("kwarg_rq", {}, "1"),
+            ("sanitizer_rq", {"one": ""}, "1"),
+            ("multiple_rq", {"one": 1, "two": 2, "three": 3}, "1-2-3"),
+        ),
+    )
+    def test_format(self, rq, variables, res, env, request):
+        rq = request.getfixturevalue(rq)
+        env._variables |= variables
+        assert rq(env) == res
+
+    @mark.parametrize("rq", ("simple_rq", "multiple_rq"))
+    def test_format_null(self, rq, env, request):
+        rq = request.getfixturevalue(rq)
+        env._variables |= {"one": "", "two": 2, "three": 3}
+        assert rq(env) is None
+
+
 class TestMultipleValue:
     @fixture
     def simple_mv(self):
