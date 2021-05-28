@@ -28,7 +28,7 @@ class Git(actions._Action):
         hook_url("Documentation", templates.Requires("{REPOSITORY}/wiki"))
 
     def _hook(self, hierarchy, value):
-        gitignore = hierarchy.get_configuration(Requirement.make(".gitignore"))
+        gitignore = hierarchy.get_configuration(Requirement(".gitignore"))
         gitignore[None] = [value]
 
     def pre(self, workon, environment):

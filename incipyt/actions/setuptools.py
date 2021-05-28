@@ -66,8 +66,8 @@ class Setuptools(actions._Action):
         :type hierarchy: :class:`incipyt.system.Hierarchy`
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
-        pyproject = hierarchy.get_configuration(Toml.make("pyproject.toml"))
-        setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
+        pyproject = hierarchy.get_configuration(Toml("pyproject.toml"))
+        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
 
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
@@ -114,15 +114,15 @@ class Setuptools(actions._Action):
         )
 
         hierarchy.register_template(
-            Jinja.make("LICENSE"),
+            Jinja("LICENSE"),
             Template("Copyright (c) {{AUTHOR_NAME}}\n"),
         )
         hierarchy.register_template(
-            Jinja.make("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
+            Jinja("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
             Template("\n"),
         )
         hierarchy.register_template(
-            Jinja.make("README.md"),
+            Jinja("README.md"),
             Template(
                 textwrap.dedent(
                     """\
@@ -140,7 +140,7 @@ class Setuptools(actions._Action):
             ),
         )
         hierarchy.register_template(
-            Jinja.make("setup.py"),
+            Jinja("setup.py"),
             Template(
                 textwrap.dedent(
                     """\
@@ -166,15 +166,15 @@ class Setuptools(actions._Action):
         hook_vcs(templates.Transform("*.egg-info"))
 
     def _hook_classifier(self, hierarchy, value):
-        setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
+        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "classifiers"] = [value]
 
     def _hook_dependancy(self, hierarchy, value):
-        setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
+        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
         setup["options.extras_require", "dev"] = [value]
 
     def _hook_url(self, hierarchy, url_kind, url_value):
-        setup = hierarchy.get_configuration(CfgIni.make("setup.cfg"))
+        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
     def post(self, workon, environment):
