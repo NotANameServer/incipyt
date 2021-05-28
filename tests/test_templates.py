@@ -1,11 +1,45 @@
 from pytest import fixture, mark, raises
+import click
 
+from tests.utils import mock_stdin
 from incipyt._internal.templates import (
     TemplateDict,
     MultipleValues,
     Requires,
     Transform,
 )
+from incipyt.system import Environment
+
+
+class TestMultipleValue:
+    @fixture
+    def simple_mv(self):
+        return MultipleValues("a", "b")
+
+    @fixture
+    def callable_mv(self):
+        return MultipleValues(lambda env: "a", lambda env: "b")
+
+    @fixture
+    def env(self):
+        return Environment(auto_confirm=True)
+
+    def test_mv_tail(self, simple_mv):
+        mv = MultipleValues("x", simple_mv)
+        assert mv._values == ["x", "a", "b"]
+
+    @mark.parametrize("mv", ("simple_mv", "callable_mv"))
+    def test_call(self, mv, env, monkeypatch, request):
+        mock_stdin(monkeypatch, "a")
+        mv = request.getfixturevalue(mv)
+        assert mv(env) == "a"
+
+    @mark.parametrize("mv", ("simple_mv", "callable_mv"))
+    def test_call_invalid(self, mv, env, monkeypatch, request):
+        mock_stdin(monkeypatch, "x")
+        mv = request.getfixturevalue(mv)
+        with raises(click.exceptions.Abort):
+            mv(env)
 
 
 class TestTemplateDict:
