@@ -5,6 +5,8 @@ import configparser
 import pathlib
 import toml
 
+from incipyt._internal import utils
+
 
 class BaseDumper(type(pathlib.Path())):
     def __new__(cls, path, sanitizer=None):
@@ -20,8 +22,9 @@ class BaseDumper(type(pathlib.Path())):
         self._environment = environment
         self._root = root
 
-        if self.substitute_path().exists():
-            raise RuntimeError(f"File {self} already exists.")
+        path = self.substitute_path()
+        if path.exists():
+            raise RuntimeError(f"File {path} already exists.")
 
     def mkdir_in(self):
         self.substitute_path().parent.mkdir(parents=True, exist_ok=True)
@@ -38,9 +41,7 @@ class CfgIni(BaseDumper):
     def dump_in(self, config):
         for section in config.values():
             for key, value in section.items():
-                if isinstance(value, str):
-                    continue
-                elif isinstance(value, collections.abc.Sequence):
+                if utils.is_nonstring_sequence(value):
                     section[key] = "\n".join([""] + value)
                 elif isinstance(value, collections.abc.Mapping):
                     section[key] = "\n".join(
