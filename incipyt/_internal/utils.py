@@ -1,4 +1,11 @@
 import collections.abc
+from typing import Any, NamedTuple
+
+
+class EnvValue(NamedTuple):
+    value: Any
+    update: bool = False
+    confirmed: bool = False
 
 
 def is_nonstring_sequence(obj):

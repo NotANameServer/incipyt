@@ -1,10 +1,22 @@
 import collections
+import logging
 from string import Formatter
 from typing import Any, Callable, NamedTuple
 
 import click
 
 from incipyt._internal import utils
+from incipyt._internal.utils import EnvValue
+
+logger = logging.getLogger(__name__)
+
+
+class PythonEnv(NamedTuple):
+    variable: str = "PYTHON_CMD"
+
+    @property
+    def requires(self):
+        return Requires(f"{{{self.variable}}}")
 
 
 class Transform(NamedTuple):
@@ -38,7 +50,9 @@ class Requires:
 
         for key in keys:
             if key in self._kwargs:
-                environment.push(key, self._kwargs[key], confirmed=self._confirmed)
+                environment[key] = EnvValue(
+                    self._kwargs[key], confirmed=self._confirmed
+                )
 
         args = environment.pull_keys(keys, self._sanitizer)
         if all(args.values()):
@@ -203,3 +217,42 @@ class TemplateDict(collections.UserDict):
         if callable(value):
             return value
         return transform(value)
+
+
+class TemplateVisitor:
+    """Visit the nested-dictionary structure `template` to process substitutions.
+
+    For all callable values of the template dictionary, replace it by
+    applying the substitution callback.
+    For all nested dictionary values of the template dictionary,
+    recursively apply this visitor.
+
+    :param environment: The environment variables used to visit.
+    :type environment: :class:`incipyt.system.Environment`
+    :param template: The template dictionary to visit.
+    :type template: :class:`dict`
+    """
+
+    def __init__(self, environment):
+        self.environment = environment
+
+    def __call__(self, template):
+        for key, value in template.items():
+            logger.debug(f"Visit {key} to process environment variables.")
+            if callable(value):
+                template[key] = value(self.environment)
+            elif isinstance(value, collections.abc.MutableMapping):
+                self(value)
+                if not value:
+                    template[key] = None
+            elif isinstance(value, collections.abc.MutableSequence):
+                for index, element in enumerate(value):
+                    if callable(element):
+                        value[index] = element(self.environment)
+                    if isinstance(element, collections.abc.MutableMapping):
+                        self(element)
+                if all(element is None for element in value):
+                    template[key] = None
+
+        for key in [key for key, value in template.items() if value is None]:
+            del template[key]

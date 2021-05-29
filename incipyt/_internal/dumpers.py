@@ -1,8 +1,8 @@
-from string import Formatter
-
 import collections.abc
 import configparser
 import pathlib
+from string import Formatter
+
 import toml
 
 from incipyt._internal import utils
@@ -56,7 +56,13 @@ class CfgIni(BaseDumper):
 class Jinja(BaseDumper):
     def dump_in(self, template):
         with self.substitute_path().open("w+") as file:
-            file.write(self._environment.render(template))
+            file.write(
+                "".join(
+                    template.root_render_func(
+                        template.new_context(self._environment, shared=True)
+                    )
+                )
+            )
 
 
 class Requirement(BaseDumper):

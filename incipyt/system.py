@@ -1,5 +1,6 @@
 """TO-DO."""
 
+import collections
 import collections.abc
 import logging
 import os
@@ -10,33 +11,59 @@ import sys
 import click
 
 from incipyt._internal import templates
-
+from incipyt._internal.templates import PythonEnv
+from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
 
-class Environment:
+class Environment(collections.UserDict):
     """Manage environment variables using for substitutions in patterns.
 
-    Functions :meth:`pull` and :meth:`push` can be used to add or request a
-    specific envirnoment variable.
+    Functions :meth:`__getitem__` and :meth:`__setitem__` can be used to add or request a
+    specific environment variable.
 
     Function :meth:`requests` ask the user if a value is missing.
 
-    An instance is also a visitor for :class:`incipyt.system.Hierarchy`
-    elements involving pattern with environment variables.
+    :var auto_confirm: Do not ask confirmation for variables with a default value.
+    :type auto_confirm: :class:`bool`
+    :var runner: Callable to run subprocess.
+    :type runner: :class:`callable`
     """
 
-    def __init__(self, auto_confirm):
-        self._auto_confirm = auto_confirm
+    python = PythonEnv()
+
+    @staticmethod
+    def default_runner(command):
+        """Run `command` using :func:`subprocess.run`.
+
+        :param command: List of the command elements.
+        :type command: :class:`list`
+        :return: stdout docoded.
+        :rtype: :class:`str`
+        """
+        completed_process = subprocess.run(command, capture_output=True, check=True)
+        return completed_process.stdout.decode()
+
+    def __init__(self, auto_confirm=False, runner=None):
+        """Environment initializer.
+
+        :param auto_confirm: Do not ask confirmation for variables with a default value.
+        :type auto_confirm: :class:`bool`
+        :param runner: Callable to run subprocess. Default if :func:`incipyt.system.Environment.default_runner`
+        :type runner: :class:`callable`
+        """
+        self.auto_confirm = auto_confirm
+        self.runner = runner if runner else self.default_runner
+
         self._confirmed = []
-        self._variables = os.environ.copy()
+        self.data = os.environ.copy()
 
-        if "PYTHON_CMD" not in self._variables:
-            self._variables["PYTHON_CMD"] = sys.executable
-        self._confirmed.append("PYTHON_CMD")
+        if self.python.variable not in self.data:
+            self.data[self.python.variable] = sys.executable
+        self._confirmed.append(self.python.variable)
 
-    def pull(self, key):
+    def __getitem__(self, key):
         """Try to pull the actual value for `key`.
 
         If `key` is already confirmed, just return the associated value, if not,
@@ -48,15 +75,53 @@ class Environment:
         :return: The actual value for `key`.
         :rtype: :class:`str`
         """
-        if not self._auto_confirm and key not in self._confirmed:
-            logger.debug(f"Environement variable {key} not confirmed, request it.")
-            self._variables[key] = self.requests(key)
+        if not self.auto_confirm and key not in self._confirmed:
+            logger.debug(f"Environment variable {key} not confirmed, request it.")
+            self.data[key] = self.requests(key)
             self._confirmed.append(key)
-        elif self._auto_confirm and key not in self._variables:
-            logger.debug(f"Missing environement variable {key}, request it.")
-            self._variables[key] = self.requests(key)
+        elif self.auto_confirm and key not in self.data:
+            logger.debug(f"Missing environment variable {key}, request it.")
+            self.data[key] = self.requests(key)
 
-        return self._variables[key]
+        return self.data[key]
+
+    def __setitem__(self, key, env_value):
+        """Try to push a `key` = `value` associaton.
+
+        :param key: Key of the association to push.
+        :type key: :class:`str`
+        :param env_value: Value of the association to push.
+        :type env_value: :class:`str`
+        :param update: Allow existing keys.
+        :type update: :class:`bool`
+        :param confirmed: Has the value to be considered as confirmed ?
+        :type update: :class:`bool`
+        :raises RuntimeError: Raise if `key` already exists in the actual environment.
+        """
+        if not isinstance(env_value, EnvValue):
+            env_value = EnvValue(env_value)
+
+        if key in self.data and not env_value.update:
+            raise RuntimeError(
+                f"Environment variable {key} already exists, use update."
+            )
+
+        logger.debug(f"Push environment variable {key}={env_value.value}.")
+        self.data[key] = env_value.value
+        if env_value.confirmed and key not in self._confirmed:
+            self._confirmed.append(key)
+
+    def __contains__(self, key):
+        logger.debug(
+            f"Avoid using in operator with {type(self)} as much as possible, is always True."
+        )
+        if key not in self.data:
+            self.__getitem__(key)
+
+        return True
+
+    def __iter__(self):
+        return iter(self._confirmed)
 
     def pull_keys(self, keys, sanitizer=None):
         """Pull multiple `keys` at once and sanitize them.
@@ -73,33 +138,10 @@ class Environment:
         :rtype: :class:`dict`
         """
         return {
-            key: sanitizer(key, self.pull(key)) if sanitizer else self.pull(key)
+            key: sanitizer(key, self[key]) if sanitizer else self[key]
             for key in keys
             if key is not None
         }
-
-    def push(self, key, value, update=False, confirmed=False):
-        """Try to push a `key` = `value` associaton.
-
-        :param key: Key of the association to push.
-        :type key: :class:`str`
-        :param value: Value of the association to push.
-        :type value: :class:`str`
-        :param update: Allow existing keys.
-        :type update: :class:`bool`
-        :param confirmed: Has the value to be considered as confirmed ?
-        :type update: :class:`bool`
-        :raises RuntimeError: Raise if `key` already exists in the actual environment.
-        """
-        if key in self._variables and not update:
-            raise RuntimeError(
-                f"Environment variable {key} already exists, use update."
-            )
-
-        logger.debug(f"Push environement variable {key}={value}.")
-        self._variables[key] = value
-        if confirmed and key not in self._confirmed:
-            self._confirmed.append(key)
 
     def requests(self, key):
         """Request to the user the value to associate to `key`.
@@ -110,50 +152,9 @@ class Environment:
         """
         return click.prompt(
             key.replace("_", " ").lower().capitalize(),
-            default=self._variables[key] if key in self._variables else "",
+            default=self.data[key] if key in self.data else "",
             type=str,
         )
-
-    def render(self, template):
-        """Render the Jinja `template` to process substitutions.
-
-        :param template: The Jinja template to process.
-        :type template: :class:`jinja2.Template`
-        :return: The template aftersubstitution.
-        :rtype: :class:`str`
-        """
-        return template.render(**self._variables)
-
-    def visit(self, template):
-        """Visit the nested-dictionary structure `template` to process substitutions.
-
-        For all callable values of the template dictionary, replace it by
-        applying the substitution callback.
-        For all nested dictionary values of the template dictionary,
-        recursively apply :func:`incipyt.system.Environment.visit`.
-
-        :param template: The template dictionary to visit.
-        :type template: :class:`dict`
-        """
-        for key, value in template.items():
-            logger.debug(f"Visit {key} to process environment variables.")
-            if callable(value):
-                template[key] = value(self)
-            elif isinstance(value, collections.abc.MutableMapping):
-                self.visit(value)
-                if not value:
-                    template[key] = None
-            elif isinstance(value, collections.abc.MutableSequence):
-                for index, element in enumerate(value):
-                    if callable(element):
-                        value[index] = element(self)
-                    if isinstance(element, collections.abc.MutableMapping):
-                        self.visit(element)
-                if all(element is None for element in value):
-                    template[key] = None
-
-        for key in [key for key, value in template.items() if value is None]:
-            del template[key]
 
     def run(self, command):
         """Run a command after substitution using the environment.
@@ -164,10 +165,9 @@ class Environment:
         :rtype: :class:`str`
         """
         cmd = [c(self) if callable(c) else c for c in command]
-        logger.info(f"{' '.join(cmd)}")
-        completed_process = subprocess.run(cmd, capture_output=True, check=True)
-        result = completed_process.stdout.decode()
-        logger.info(f"{result}")
+        logger.info(" ".join(cmd))
+        result = self.runner(cmd)
+        logger.info(result)
         return result
 
 
@@ -227,9 +227,10 @@ class Hierarchy:
         :type environment: :class:`incipyt.system.Environment`
         :raises RuntimeError: If one of the configuration file already exists.
         """
+        visitor = templates.TemplateVisitor(environment)
         for config_root, config in self._configurations.items():
             logger.info(f"Process environment variables for {config_root}.")
-            environment.visit(config)
+            visitor(config)
 
         for config_root, config in self._configurations.items():
             logger.info(f"Write configuration file {config_root}.")

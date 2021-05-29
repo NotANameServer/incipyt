@@ -1,7 +1,6 @@
 """Tool-agnostic hook classes."""
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 

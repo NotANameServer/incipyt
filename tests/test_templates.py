@@ -1,14 +1,14 @@
-from pytest import fixture, mark, raises
 import click
+from pytest import fixture, mark, raises
 
-from tests.utils import mock_stdin
 from incipyt._internal.templates import (
-    TemplateDict,
     MultipleValues,
     Requires,
+    TemplateDict,
     Transform,
 )
 from incipyt.system import Environment
+from tests.utils import mock_stdin
 
 
 class TestRequires:
@@ -18,47 +18,47 @@ class TestRequires:
 
     @fixture
     def simple_rq(self):
-        return Requires("{one}")
+        return Requires("{ONE}")
 
     @fixture
     def kwarg_rq(self):
-        return Requires("{one}", one=1)
+        return Requires("{ONE}", ONE="1")
 
     @fixture
     def sanitizer_rq(self):
-        return Requires("{one}", sanitizer=lambda k, v: 1)
+        return Requires("{ONE}", sanitizer=lambda k, v: "1")
 
     @fixture
     def multiple_rq(self):
-        return Requires("{one}-{two}-{three}")
+        return Requires("{ONE}-{TWO}-{THREE}")
 
     def test_env_key_push(self, kwarg_rq, env):
         kwarg_rq(env)
-        assert "one" in env._variables
+        assert env["ONE"] == "1"
 
     def test_env_key_push_prompt(self, simple_rq, env, monkeypatch):
         mock_stdin(monkeypatch, "1")
         simple_rq(env)
-        assert "one" in env._variables
+        assert env["ONE"] == "1"
 
     @mark.parametrize(
         "rq, variables, res",
         (
-            ("simple_rq", {"one": 1}, "1"),
+            ("simple_rq", {"ONE": "1"}, "1"),
             ("kwarg_rq", {}, "1"),
-            ("sanitizer_rq", {"one": ""}, "1"),
-            ("multiple_rq", {"one": 1, "two": 2, "three": 3}, "1-2-3"),
+            ("sanitizer_rq", {"ONE": ""}, "1"),
+            ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
         ),
     )
     def test_format(self, rq, variables, res, env, request):
         rq = request.getfixturevalue(rq)
-        env._variables |= variables
+        env |= variables
         assert rq(env) == res
 
     @mark.parametrize("rq", ("simple_rq", "multiple_rq"))
     def test_format_null(self, rq, env, request):
         rq = request.getfixturevalue(rq)
-        env._variables |= {"one": "", "two": 2, "three": 3}
+        env |= {"ONE": "", "TWO": "2", "THREE": "3"}
         assert rq(env) is None
 
 

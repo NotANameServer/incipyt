@@ -1,8 +1,8 @@
 from jinja2 import Template
 from pytest import fixture, mark, raises
 
-from incipyt.system import Environment
 from incipyt._internal.dumpers import BaseDumper, CfgIni, Jinja, Requirement, Toml
+from incipyt.system import Environment
 
 
 @fixture
@@ -12,8 +12,8 @@ def env():
 
 def test_format_path(env, tmp_path):
     dmp = BaseDumper("{first}/{second}.ext")
-    env.push("first", "folder")
-    env.push("second", "file")
+    env["first"] = "folder"
+    env["second"] = "file"
     dmp.commit(tmp_path, env)
     assert dmp.substitute_path() == tmp_path / "folder" / "file.ext"
 

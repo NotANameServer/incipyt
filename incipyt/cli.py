@@ -1,10 +1,11 @@
 """Command Line Interace functions."""
 
-import click
 import logging
 import pathlib
 
-from incipyt import actions, Environment, process_actions
+import click
+
+from incipyt import Environment, actions, process_actions
 
 
 @click.command(help="incipyt is a command-line tool that bootstraps a Python project.")
@@ -33,13 +34,13 @@ def main(folder, yes, check_build):
     if folder == pathlib.Path():
         if any(folder.resolve().iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder.resolve()} is not empty.")
-        env.push("PROJECT_NAME", folder.resolve().name)
+        env["PROJECT_NAME"] = folder.resolve().name
     else:
         if folder.is_absolute() and folder.is_dir() and any(folder.iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         elif ("." / folder).is_dir() and any(("." / folder).resolve().iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
-        env.push("PROJECT_NAME", folder.name)
+        env["PROJECT_NAME"] = folder.name
 
     process_actions(
         folder, env, [actions.Git(), actions.Venv(), actions.Setuptools(check_build)]
