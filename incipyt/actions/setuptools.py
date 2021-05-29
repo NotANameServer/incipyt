@@ -2,11 +2,8 @@ import textwrap
 
 from jinja2 import Template
 
-from incipyt import actions
-from incipyt import hooks
-
-from incipyt._internal import sanitizers
-from incipyt._internal import templates
+from incipyt import actions, hooks
+from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
@@ -187,7 +184,7 @@ class Setuptools(actions._Action):
         """
         environment.run(
             [
-                templates.Requires("{PYTHON_CMD}"),
+                environment.python.requires,
                 "-m",
                 "pip",
                 "install",
@@ -196,6 +193,4 @@ class Setuptools(actions._Action):
             ]
         )
         if self.check_build:
-            environment.run(
-                [templates.Requires("{PYTHON_CMD}"), "-m", "build", f"{workon}"]
-            )
+            environment.run([environment.python.requires, "-m", "build", f"{workon}"])

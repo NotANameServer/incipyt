@@ -1,11 +1,11 @@
-from string import Formatter
-
+import collections
 import collections.abc
 import configparser
 import pathlib
+
 import toml
 
-from incipyt._internal import utils
+from incipyt._internal import templates, utils
 
 
 class BaseDumper(type(pathlib.Path())):
@@ -30,11 +30,11 @@ class BaseDumper(type(pathlib.Path())):
         self.substitute_path().parent.mkdir(parents=True, exist_ok=True)
 
     def substitute_path(self):
-        template_path = str(self._root.joinpath(self))
-        template_keys = [item[1] for item in Formatter().parse(template_path)]
-
-        keys = self._environment.pull_keys(template_keys, self._sanitizer)
-        return pathlib.Path(template_path.format(**keys))
+        return pathlib.Path(
+            templates.RenderContext(
+                self._environment, sanitizer=self._sanitizer
+            ).render_string(str(self._root / self))
+        )
 
 
 class CfgIni(BaseDumper):
@@ -56,7 +56,9 @@ class CfgIni(BaseDumper):
 class Jinja(BaseDumper):
     def dump_in(self, template):
         with self.substitute_path().open("w+") as file:
-            file.write(self._environment.render(template))
+            file.write(
+                templates.RenderContext(self._environment).render_template(template)
+            )
 
 
 class Requirement(BaseDumper):

@@ -1,9 +1,8 @@
 import os
 
-from incipyt import actions
-from incipyt import hooks
-
+from incipyt import actions, hooks
 from incipyt._internal import templates
+from incipyt.system import EnvValue
 
 
 class Venv(actions._Action):
@@ -28,12 +27,5 @@ class Venv(actions._Action):
         """
         env_path = workon / ".env"
         py_path = env_path / ("Scripts" if os.name == "nt" else "bin") / "python"
-        environment.run(
-            [
-                templates.Requires("{PYTHON_CMD}"),
-                "-m",
-                "venv",
-                str(env_path),
-            ]
-        )
-        environment.push("PYTHON_CMD", str(py_path), update=True)
+        environment.run([environment.python.requires, "-m", "venv", str(env_path)])
+        environment[environment.python.variable] = EnvValue(str(py_path), update=True)

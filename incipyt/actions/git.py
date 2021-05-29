@@ -1,8 +1,7 @@
-from incipyt import actions
-from incipyt import hooks
-
+from incipyt import actions, hooks
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
+from incipyt.system import EnvValue
 
 
 class Git(actions._Action):
@@ -43,13 +42,11 @@ class Git(actions._Action):
         """
         environment.run(["git", "init", str(workon)])
 
-        environment.push(
-            "AUTHOR_NAME",
+        environment["AUTHOR_NAME"] = EnvValue(
             environment.run(["git", "-C", str(workon), "config", "user.name"]).strip(),
             update=True,
         )
-        environment.push(
-            "AUTHOR_EMAIL",
+        environment["AUTHOR_EMAIL"] = EnvValue(
             environment.run(["git", "-C", str(workon), "config", "user.email"]).strip(),
             update=True,
         )
