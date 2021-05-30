@@ -33,7 +33,7 @@ class BaseDumper(type(pathlib.Path())):
         template_path = str(self._root.joinpath(self))
         template_keys = [item[1] for item in Formatter().parse(template_path)]
 
-        keys = self._environment.pull_keys(template_keys, self._sanitizer)
+        keys = self._environment.getitems_sanitized(template_keys, self._sanitizer)
         return pathlib.Path(template_path.format(**keys))
 
 

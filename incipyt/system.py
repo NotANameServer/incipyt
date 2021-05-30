@@ -23,8 +23,6 @@ class Environment(collections.UserDict):
     Functions :meth:`__getitem__` and :meth:`__setitem__` can be used to add or request a
     specific environment variable.
 
-    Function :meth:`requests` ask the user if a value is missing.
-
     :var auto_confirm: Do not ask confirmation for variables with a default value.
     :type auto_confirm: :class:`bool`
     :var runner: Callable to run subprocess.
@@ -64,10 +62,10 @@ class Environment(collections.UserDict):
         self._confirmed.append(self.python.variable)
 
     def __getitem__(self, key):
-        """Try to pull the actual value for `key`.
+        """Try to get the actual value for `key`.
 
         If `key` is already confirmed, just return the associated value, if not,
-        first asks for it -- see :func:`incipyt.system.Environment.requests`
+        first asks for it -- see :func:`incipyt.system.Environment._requests`
         -- then returns it.
 
         :param key: Environment key asked.
@@ -77,20 +75,20 @@ class Environment(collections.UserDict):
         """
         if not self.auto_confirm and key not in self._confirmed:
             logger.debug(f"Environment variable {key} not confirmed, request it.")
-            self.data[key] = self.requests(key)
+            self.data[key] = self._requests(key)
             self._confirmed.append(key)
         elif self.auto_confirm and key not in self.data:
             logger.debug(f"Missing environment variable {key}, request it.")
-            self.data[key] = self.requests(key)
+            self.data[key] = self._requests(key)
 
         return self.data[key]
 
     def __setitem__(self, key, env_value):
-        """Try to push a `key` = `value` associaton.
+        """Try to set a `key` = `value` associaton.
 
-        :param key: Key of the association to push.
+        :param key: Key of the association to set.
         :type key: :class:`str`
-        :param env_value: Value of the association to push.
+        :param env_value: Value of the association to set.
         :type env_value: :class:`str`
         :param update: Allow existing keys.
         :type update: :class:`bool`
@@ -123,14 +121,14 @@ class Environment(collections.UserDict):
     def __iter__(self):
         return iter(self._confirmed)
 
-    def pull_keys(self, keys, sanitizer=None):
-        """Pull multiple `keys` at once and sanitize them.
+    def getitems_sanitized(self, keys, sanitizer=None):
+        """Get multiple items at once and sanitize them.
 
-        See also :func:`incipyt.system.Environment.pull`, which will be used to
-        pull each key from the environment.
+        See also :func:`incipyt.system.Environment.__getitem__`, which will be
+        used to pull each key from the environment.
 
-        :param keys: Requiered environment keys. If a key is `None`, it will
-        not be pulled.
+        :param keys: Required environment keys. If a key is `None`, it will be
+        ignored.
         :type keys: :class:`collections.abc.Sequence`
         :param sanitizer: Will be called on key-value pairs to sanitize values.
         :type sanitizer: :class:`function`
@@ -143,13 +141,7 @@ class Environment(collections.UserDict):
             if key is not None
         }
 
-    def requests(self, key):
-        """Request to the user the value to associate to `key`.
-
-        :param key: Key to request to the user.
-        :type key: :class:`str`
-        :raises NotImplementedError: TO-DO.
-        """
+    def _requests(self, key):
         return click.prompt(
             key.replace("_", " ").lower().capitalize(),
             default=self.data[key] if key in self.data else "",

@@ -54,7 +54,7 @@ class Requires:
                     self._kwargs[key], confirmed=self._confirmed
                 )
 
-        args = environment.pull_keys(keys, self._sanitizer)
+        args = environment.getitems_sanitized(keys, self._sanitizer)
         if all(args.values()):
             return self._template.format(**args)
 
