@@ -1,3 +1,4 @@
+import collections
 import collections.abc
 import configparser
 import pathlib
@@ -53,13 +54,24 @@ class CfgIni(BaseDumper):
             config_cfg.write(file)
 
 
+class _JinjaDict(collections.UserDict):
+    def __init__(self, data):
+        self.data = data
+
+    def __contains__(self, key):
+        if key not in self.data:
+            self.__getitem__(key)
+
+        return True
+
+
 class Jinja(BaseDumper):
     def dump_in(self, template):
         with self.substitute_path().open("w+") as file:
             file.write(
                 "".join(
                     template.root_render_func(
-                        template.new_context(self._environment, shared=True)
+                        template.new_context(_JinjaDict(self._environment), shared=True)
                     )
                 )
             )

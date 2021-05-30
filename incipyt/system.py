@@ -109,15 +109,6 @@ class Environment(collections.UserDict):
         if env_value.confirmed and key not in self._confirmed:
             self._confirmed.append(key)
 
-    def __contains__(self, key):
-        logger.debug(
-            f"Avoid using in operator with {type(self)} as much as possible, is always True."
-        )
-        if key not in self.data:
-            self.__getitem__(key)
-
-        return True
-
     def __iter__(self):
         return iter(self._confirmed)
 
