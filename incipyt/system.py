@@ -80,18 +80,18 @@ class Environment(collections.UserDict):
         self.auto_confirm = auto_confirm
         self.runner = runner if runner else self.default_runner
 
-        self._confirmed = []
+        self._confirmed = set()
         self.data = os.environ.copy()
 
         if self.python.variable not in self.data:
             self.data[self.python.variable] = sys.executable
-        self._confirmed.append(self.python.variable)
+        self._confirmed.add(self.python.variable)
 
     def __getitem__(self, key):
         if not self.auto_confirm and key not in self._confirmed:
             logger.debug(f"Environment variable {key} not confirmed, request it.")
             self.data[key] = self._requests(key)
-            self._confirmed.append(key)
+            self._confirmed.add(key)
         elif self.auto_confirm and key not in self.data:
             logger.debug(f"Missing environment variable {key}, request it.")
             self.data[key] = self._requests(key)
@@ -107,10 +107,10 @@ class Environment(collections.UserDict):
                 f"Environment variable {key} already exists, use update."
             )
 
-        logger.debug(f"Push environment variable {key}={env_value.value}.")
+        logger.debug(f"Set environment variable {key}={env_value.value}.")
         self.data[key] = env_value.value
         if env_value.confirmed and key not in self._confirmed:
-            self._confirmed.append(key)
+            self._confirmed.add(key)
 
     def __iter__(self):
         return iter(self._confirmed)
