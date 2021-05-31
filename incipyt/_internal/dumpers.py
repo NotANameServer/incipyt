@@ -2,10 +2,10 @@ import collections
 import collections.abc
 import configparser
 import pathlib
-from string import Formatter
 
 import toml
 
+from incipyt._internal import templates
 from incipyt._internal import utils
 
 
@@ -31,11 +31,10 @@ class BaseDumper(type(pathlib.Path())):
         self.substitute_path().parent.mkdir(parents=True, exist_ok=True)
 
     def substitute_path(self):
-        template_path = str(self._root.joinpath(self))
-        template_keys = [item[1] for item in Formatter().parse(template_path)]
+        context = templates.RenderContext(self._environment)
+        path = templates.TemplateString(str(self._root / self))
 
-        keys = self._environment.getitems_sanitized(template_keys, self._sanitizer)
-        return pathlib.Path(template_path.format(**keys))
+        return pathlib.Path(context.render_string(path))
 
 
 class CfgIni(BaseDumper):
@@ -54,27 +53,11 @@ class CfgIni(BaseDumper):
             config_cfg.write(file)
 
 
-class _JinjaDict(collections.UserDict):
-    def __init__(self, data):
-        self.data = data
-
-    def __contains__(self, key):
-        if key not in self.data:
-            self.__getitem__(key)
-
-        return True
-
-
 class Jinja(BaseDumper):
     def dump_in(self, template):
+        context = templates.RenderContext(self._environment)
         with self.substitute_path().open("w+") as file:
-            file.write(
-                "".join(
-                    template.root_render_func(
-                        template.new_context(_JinjaDict(self._environment), shared=True)
-                    )
-                )
-            )
+            file.write(context.render_template(template))
 
 
 class Requirement(BaseDumper):

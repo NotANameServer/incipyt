@@ -46,17 +46,16 @@ class Requires:
         )
 
     def __call__(self, environment):
-        keys = [item[1] for item in Formatter().parse(self._template)]
+        context = RenderContext(environment)
+        template = TemplateString(self._template)
 
-        for key in keys:
+        for key in template.keys:
             if key in self._kwargs:
                 environment[key] = EnvValue(
                     self._kwargs[key], confirmed=self._confirmed
                 )
 
-        args = environment.getitems_sanitized(keys, self._sanitizer)
-        if all(args.values()):
-            return self._template.format(**args)
+        return context.render_string(template, self._sanitizer)
 
 
 class MultipleValues:
@@ -256,3 +255,64 @@ class TemplateVisitor:
 
         for key in [key for key, value in template.items() if value is None]:
             del template[key]
+
+
+class TemplateString(collections.UserString):
+    @property
+    def keys(self):
+        """Set of all variables the template string contains."""
+        return {item[1] for item in Formatter().parse(self.data)}
+
+    def render(self, context, sanitizer=None):
+        """Interpolate the template string with variables from a given
+        RenderContext.
+        """
+        variables = context.getitems_sanitized(self.keys, sanitizer)
+
+        if all(variables.values()):
+            return self.format(**variables)
+
+
+class RenderContext(collections.UserDict):
+    def __init__(self, env):
+        self.data = env
+
+    def __contains__(self, key):
+        if key not in self.data:
+            self[key]
+
+        return True
+
+    def __getitem__(self, key):
+        # Explicit call to inner dict __getitem__ to create env keys
+        return self.data[key]
+
+    def getitems_sanitized(self, keys, sanitizer=None):
+        """Get multiple items at once and sanitize them.
+
+        See also :func:`incipyt.system.Environment.__getitem__`, which will be
+        used to pull each key from the environment.
+
+        :param keys: Required environment keys. If a key is `None`, it will be
+        ignored.
+        :type keys: :class:`collections.abc.Sequence`
+        :param sanitizer: Will be called on key-value pairs to sanitize values.
+        :type sanitizer: :class:`function`
+        :return: Sanitized environment key-value pairs.
+        :rtype: :class:`dict`
+        """
+        return {
+            key: sanitizer(key, self[key]) if sanitizer else self[key]
+            for key in keys
+            if key is not None
+        }
+
+    def render_template(self, template):
+        """Render a Jinja template."""
+        return "".join(
+            template.root_render_func(template.new_context(self, shared=True))
+        )
+
+    def render_string(self, template_string, sanitizer=None):
+        """Render a TemplateString."""
+        return template_string.render(self, sanitizer)

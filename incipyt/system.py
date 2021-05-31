@@ -112,26 +112,6 @@ class Environment(collections.UserDict):
     def __iter__(self):
         return iter(self._confirmed)
 
-    def getitems_sanitized(self, keys, sanitizer=None):
-        """Get multiple items at once and sanitize them.
-
-        See also :func:`incipyt.system.Environment.__getitem__`, which will be
-        used to pull each key from the environment.
-
-        :param keys: Required environment keys. If a key is `None`, it will be
-        ignored.
-        :type keys: :class:`collections.abc.Sequence`
-        :param sanitizer: Will be called on key-value pairs to sanitize values.
-        :type sanitizer: :class:`function`
-        :return: Sanitized environment key-value pairs.
-        :rtype: :class:`dict`
-        """
-        return {
-            key: sanitizer(key, self[key]) if sanitizer else self[key]
-            for key in keys
-            if key is not None
-        }
-
     def _requests(self, key):
         return click.prompt(
             key.replace("_", " ").lower().capitalize(),
