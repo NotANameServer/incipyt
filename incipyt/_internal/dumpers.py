@@ -32,8 +32,7 @@ class BaseDumper(type(pathlib.Path())):
 
     def substitute_path(self):
         context = templates.RenderContext(self._environment)
-        path = templates.TemplateString(str(self._root / self))
-
+        path = str(self._root / self)
         return pathlib.Path(context.render_string(path))
 
 

@@ -1,12 +1,13 @@
 import collections
+import contextlib
 import logging
 from string import Formatter
 from typing import Any, Callable, NamedTuple
-
 import click
 
 from incipyt._internal import utils
-from incipyt._internal.utils import EnvValue
+
+# from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +47,14 @@ class Requires:
         )
 
     def __call__(self, environment):
-        context = RenderContext(environment)
-        template = TemplateString(self._template)
+        context = RenderContext(environment, self._sanitizer)
+        return context.render_string(self._template)
 
-        for key in template.keys:
-            if key in self._kwargs:
-                environment[key] = EnvValue(
-                    self._kwargs[key], confirmed=self._confirmed
-                )
-
-        return context.render_string(template, self._sanitizer)
+        # for key in template.keys:
+        #     if key in self._kwargs:
+        #         environment[key] = EnvValue(
+        #             self._kwargs[key], confirmed=self._confirmed
+        #         )
 
 
 class MultipleValues:
@@ -257,38 +256,39 @@ class TemplateVisitor:
             del template[key]
 
 
-class TemplateString(collections.UserString):
-    @property
-    def keys(self):
-        """Set of all variables the template string contains."""
-        return {item[1] for item in Formatter().parse(self.data)}
-
-    def render(self, context, sanitizer=None):
-        """Interpolate the template string with variables from a given
-        RenderContext.
-        """
-        variables = context.getitems_sanitized(self.keys, sanitizer)
-
-        if all(variables.values()):
-            return self.format(**variables)
-
-
 class RenderContext(collections.UserDict):
-    def __init__(self, env):
+    def __init__(self, env, sanitizer=None):
         self.data = env
+        self._sanitizer = sanitizer
+        self._keys = set()
 
     def __contains__(self, key):
         if key not in self.data:
             self[key]
-
         return True
 
     def __getitem__(self, key):
-        # Explicit call to inner dict __getitem__ to create env keys
-        return self.data[key]
+        # Call to inner dict __getitem__ will create missing keys
+        value = self.data[key]
+        if value is None:
+            raise ValueError
+        return self._sanitizer(key, value) if self._sanitizer else value
 
-    def getitems_sanitized(self, keys, sanitizer=None):
-        """Get multiple items at once and sanitize them.
+    def __iter__(self):
+        return filter(lambda k: k is not None, self._keys)
+
+    def render_template(self, template):
+        """Render a Jinja template."""
+        return "".join(
+            template.root_render_func(template.new_context(self, shared=True))
+        )
+
+    def render_string(self, template_string):
+        """Render a template string.
+
+        // OLD DOCSTRING FROM Env.getitems_sanitized FOR REFERENCE //
+
+        Get multiple items at once and sanitize them.
 
         See also :func:`incipyt.system.Environment.__getitem__`, which will be
         used to pull each key from the environment.
@@ -301,18 +301,6 @@ class RenderContext(collections.UserDict):
         :return: Sanitized environment key-value pairs.
         :rtype: :class:`dict`
         """
-        return {
-            key: sanitizer(key, self[key]) if sanitizer else self[key]
-            for key in keys
-            if key is not None
-        }
-
-    def render_template(self, template):
-        """Render a Jinja template."""
-        return "".join(
-            template.root_render_func(template.new_context(self, shared=True))
-        )
-
-    def render_string(self, template_string, sanitizer=None):
-        """Render a TemplateString."""
-        return template_string.render(self, sanitizer)
+        self._keys = {item[1] for item in Formatter().parse(template_string)}
+        with contextlib.suppress(ValueError):
+            return template_string.format(**self)
