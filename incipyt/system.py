@@ -20,13 +20,39 @@ logger = logging.getLogger(__name__)
 class Environment(collections.UserDict):
     """Manage environment variables using for substitutions in patterns.
 
-    Functions :meth:`__getitem__` and :meth:`__setitem__` can be used to add or request a
-    specific environment variable.
+    A :class:`Environment` object `env` is a dictionnary initialized with
+    system environment variables `os.env`, a variable can be add like that:
 
-    :var auto_confirm: Do not ask confirmation for variables with a default value.
-    :type auto_confirm: :class:`bool`
-    :var runner: Callable to run subprocess.
-    :type runner: :class:`callable`
+    .. code-block::
+
+        env["VARIABLE_NAME"] = "something"
+
+    However such a variable will not be considered in `env` before being
+    `confirmed`. Such confirmation will happen the first it is asked for:
+
+    .. code-block::
+
+        var_first = env["VARIABLE_NAME"]
+        # Prompt a message for confirmation of the value for `VARIABLE_NAME`
+        var_second = env["VARIABLE_NAME"]
+        # As `VARIABLE_NAME` as been confirmed, don't ask anything
+
+    Moreover, even if a specific variable hasn't been set, it can be asked for
+    it anyway and it will be confirmed immediately. A variable can also be set
+    and confirmed at the same time:
+
+    .. code-block::
+
+        env["VARIABLE_NAME"] = EnvValue("something", confirmed=True)
+
+    Note that if a variable has been set, it cannot be set again, except if
+    explicitly specified:
+
+    .. code-block::
+
+        env["VARIABLE_NAME"] = EnvValue("new_value", update=True)
+
+    All iterative methods and in operator consider only `confirmed` variables.
     """
 
     python = PythonEnv()
@@ -62,17 +88,6 @@ class Environment(collections.UserDict):
         self._confirmed.append(self.python.variable)
 
     def __getitem__(self, key):
-        """Try to get the actual value for `key`.
-
-        If `key` is already confirmed, just return the associated value, if not,
-        first asks for it -- see :func:`incipyt.system.Environment._requests`
-        -- then returns it.
-
-        :param key: Environment key asked.
-        :type key: :class:`str`
-        :return: The actual value for `key`.
-        :rtype: :class:`str`
-        """
         if not self.auto_confirm and key not in self._confirmed:
             logger.debug(f"Environment variable {key} not confirmed, request it.")
             self.data[key] = self._requests(key)
@@ -84,18 +99,6 @@ class Environment(collections.UserDict):
         return self.data[key]
 
     def __setitem__(self, key, env_value):
-        """Try to set a `key` = `value` associaton.
-
-        :param key: Key of the association to set.
-        :type key: :class:`str`
-        :param env_value: Value of the association to set.
-        :type env_value: :class:`str`
-        :param update: Allow existing keys.
-        :type update: :class:`bool`
-        :param confirmed: Has the value to be considered as confirmed ?
-        :type update: :class:`bool`
-        :raises RuntimeError: Raise if `key` already exists in the actual environment.
-        """
         if not isinstance(env_value, EnvValue):
             env_value = EnvValue(env_value)
 
@@ -112,14 +115,25 @@ class Environment(collections.UserDict):
     def __iter__(self):
         return iter(self._confirmed)
 
+    def __contains__(self, key):
+        return key in self._confirmed
+
+    def keys(self):  # noqa: D102
+        return self._confirmed
+
+    def values(self):  # noqa: D102
+        return [self.data[key] for key in self._confirmed]
+
+    def items(self):  # noqa: D102
+        return [(key, self.data[key]) for key in self._confirmed]
+
     def getitems_sanitized(self, keys, sanitizer=None):
         """Get multiple items at once and sanitize them.
 
         See also :func:`incipyt.system.Environment.__getitem__`, which will be
         used to pull each key from the environment.
 
-        :param keys: Required environment keys. If a key is `None`, it will be
-        ignored.
+        :param keys: Required environment keys. If a key is `None`, it will be ignored.
         :type keys: :class:`collections.abc.Sequence`
         :param sanitizer: Will be called on key-value pairs to sanitize values.
         :type sanitizer: :class:`function`
