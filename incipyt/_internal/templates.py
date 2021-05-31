@@ -47,9 +47,17 @@ class Requires:
         )
 
     def __call__(self, environment):
-        return RenderContext(
-            environment, confirmed=self._confirmed, sanitizer=self._sanitizer
-        ).render_string(self._template, **self._kwargs)
+        return RenderContext(environment, sanitizer=self._sanitizer).render_string(
+            self._template,
+            **{
+                key: (
+                    value
+                    if isinstance(value, EnvValue)
+                    else EnvValue(value, confirmed=self._confirmed)
+                )
+                for key, value in self._kwargs.items()
+            },
+        )
 
 
 class MultipleValues:
@@ -252,9 +260,8 @@ class TemplateVisitor:
 
 
 class RenderContext(collections.abc.Mapping):
-    def __init__(self, environment, confirmed=False, sanitizer=None):
+    def __init__(self, environment, sanitizer=None):
         self.data = environment
-        self._confirmed = confirmed
         self._sanitizer = sanitizer
         self._keys = set()
 
@@ -315,7 +322,7 @@ class RenderContext(collections.abc.Mapping):
         self._keys = {item[1] for item in Formatter().parse(template) if item[1]}
         for key in self:
             if key in kwargs:
-                self.data[key] = EnvValue(kwargs[key], confirmed=self._confirmed)
+                self.data[key] = kwargs[key]
 
         with contextlib.suppress(ValueError):
             return template.format(**self)
