@@ -5,6 +5,7 @@ from incipyt._internal.templates import (
     MultipleValues,
     Requires,
     TemplateDict,
+    TemplateVisitor,
     Transform,
 )
 from incipyt.system import Environment
@@ -232,3 +233,56 @@ class TestTemplateDict:
         td = request.getfixturevalue(td)
         with raises(AssertionError):
             td["1"] = "x"
+
+
+class TestTemplateVisitor:
+    @fixture
+    def visitor(self):
+        return TemplateVisitor(Environment(auto_confirm=True))
+
+    @fixture
+    def empty_td(self):
+        return TemplateDict({})
+
+    @fixture
+    def simple_td(self):
+        return TemplateDict({"1": Requires("{ONE}")})
+
+    @fixture
+    def nested_td(self):
+        return TemplateDict({"1": {"2": {"3": Requires("{ONE}")}}})
+
+    @fixture
+    def multiple_td(self):
+        return TemplateDict({"1": MultipleValues(Requires("{ONE}"), "b")})
+
+    @fixture
+    def sequence_td(self):
+        return TemplateDict({"1": [Requires("{ONE}"), {2: "b"}]})
+
+    @fixture
+    def single_td(self):
+        return TemplateDict({"1": [Requires("{ONE}")]})
+
+    @mark.parametrize(
+        "td, res, input_values",
+        (
+            ("empty_td", {}, []),
+            ("simple_td", {"1": "a"}, ["a"]),
+            ("simple_td", {}, [""]),
+            ("nested_td", {"1": {"2": {"3": "a"}}}, ["a"]),
+            ("nested_td", {}, [""]),
+            ("sequence_td", {"1": ["a", {2: "b"}]}, ["a"]),
+            ("sequence_td", {"1": [{2: "b"}]}, [""]),
+            ("single_td", {"1": ["a"]}, ["a"]),
+            ("single_td", {}, [""]),
+            ("multiple_td", {"1": "a"}, ["a", "a"]),
+        ),
+    )
+    def test_call(self, td, res, visitor, input_values, monkeypatch, request):
+        mock_stdin(monkeypatch, input_values)
+        td = request.getfixturevalue(td)
+        print(td)
+        visitor(td)
+        print(td)
+        assert td == res

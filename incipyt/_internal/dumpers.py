@@ -57,7 +57,9 @@ class Jinja(BaseDumper):
     def dump_in(self, template):
         with self.substitute_path().open("w+") as file:
             file.write(
-                templates.RenderContext(self._environment).render_template(template)
+                templates.RenderContext(
+                    self._environment, value_error=False
+                ).render_template(template)
             )
 
 

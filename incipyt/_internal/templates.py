@@ -374,6 +374,9 @@ class TemplateVisitor:
         :param template: The template dictionary to visit.
         :type template: :class:`collections.abc.Mapping`
         """
+        if isinstance(template, TemplateDict):
+            return self(template.data)
+
         for key, value in template.items():
             logger.debug(f"Visit {key} to process environment variables.")
 
@@ -391,7 +394,8 @@ class TemplateVisitor:
                         value[index] = element(self.environment)
                     if isinstance(element, collections.abc.MutableMapping):
                         self(element)
-                if all(element is None for element in value):
+                template[key] = [element for element in value if element]
+                if not template[key]:
                     template[key] = None
 
         for key in [key for key, value in template.items() if value is None]:
@@ -404,17 +408,20 @@ class RenderContext(collections.abc.Mapping):
     It can be used to render template strings and Jinja templates.
     """
 
-    def __init__(self, environment, sanitizer=None):
+    def __init__(self, environment, sanitizer=None, value_error=True):
         """Class wrapping an environment and providing an interface to render templates.
 
         :param environment: Environment to get variables from.
         :type environment: :class:`incipyt.system.Environment`
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
+        :param environment: Consider empty string value as an error.
+        :type environment: :class:`bool`, optional
         """
         self.data = environment
         self._sanitizer = sanitizer
         self._keys = set()
+        self._value_error = value_error
 
     def __contains__(self, key):
         if key not in self.data:
@@ -425,7 +432,7 @@ class RenderContext(collections.abc.Mapping):
     def __getitem__(self, key):
         # Call to inner dict __getitem__ will create missing keys
         value = self.data[key]
-        if not value:
+        if self._value_error and not value:
             raise ValueError
 
         return self._sanitizer(key, value) if self._sanitizer else value
@@ -466,8 +473,8 @@ class RenderContext(collections.abc.Mapping):
         r"""Render a template string.
 
         Variables will be request from the underlying environment, and
-        undefined variables will be created. An empty variable will cause the
-        whole render result to be `None`.
+        undefined variables will be created. If `self._value_error` is `True`
+        and an empty variable will cause the whole render result to be `None`.
 
         Additional variables can be specified using keyword arguments. They
         will be added to the environment, hence they will override environment
