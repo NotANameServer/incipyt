@@ -312,7 +312,7 @@ class RenderContext(collections.abc.Mapping):
         :rtype: :class:`dict`
         """
 
-        self._keys = {item[1] for item in Formatter().parse(template)}
+        self._keys = {item[1] for item in Formatter().parse(template) if item[1]}
         for key in self:
             if key in kwargs:
                 self.data[key] = EnvValue(kwargs[key], confirmed=self._confirmed)
