@@ -22,11 +22,11 @@ class TestRequires:
 
     @fixture
     def kwarg_rq(self):
-        return Requires("{ONE}", ONE="1")
+        return Requires("{ONE}", ONE="1-kwarg")
 
     @fixture
     def sanitizer_rq(self):
-        return Requires("{ONE}", sanitizer=lambda k, v: "1")
+        return Requires("{ONE}", sanitizer=lambda k, v: f"{v}-sanitizer")
 
     @fixture
     def multiple_rq(self):
@@ -34,7 +34,7 @@ class TestRequires:
 
     def test_env_key_push(self, kwarg_rq, env):
         kwarg_rq(env)
-        assert env["ONE"] == "1"
+        assert env["ONE"] == "1-kwarg"
 
     def test_env_key_push_prompt(self, simple_rq, env, monkeypatch):
         mock_stdin(monkeypatch, "1")
@@ -45,8 +45,8 @@ class TestRequires:
         "rq, variables, res",
         (
             ("simple_rq", {"ONE": "1"}, "1"),
-            ("kwarg_rq", {}, "1"),
-            ("sanitizer_rq", {"ONE": ""}, "1"),
+            ("kwarg_rq", {}, "1-kwarg"),
+            ("sanitizer_rq", {"ONE": "1"}, "1-sanitizer"),
             ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
         ),
     )

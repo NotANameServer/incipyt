@@ -5,8 +5,7 @@ import pathlib
 
 import toml
 
-from incipyt._internal import templates
-from incipyt._internal import utils
+from incipyt._internal import templates, utils
 
 
 class BaseDumper(type(pathlib.Path())):
@@ -31,9 +30,11 @@ class BaseDumper(type(pathlib.Path())):
         self.substitute_path().parent.mkdir(parents=True, exist_ok=True)
 
     def substitute_path(self):
-        context = templates.RenderContext(self._environment)
-        path = str(self._root / self)
-        return pathlib.Path(context.render_string(path))
+        return pathlib.Path(
+            templates.RenderContext(
+                self._environment, sanitizer=self._sanitizer
+            ).render_string(str(self._root / self))
+        )
 
 
 class CfgIni(BaseDumper):
@@ -54,9 +55,10 @@ class CfgIni(BaseDumper):
 
 class Jinja(BaseDumper):
     def dump_in(self, template):
-        context = templates.RenderContext(self._environment)
         with self.substitute_path().open("w+") as file:
-            file.write(context.render_template(template))
+            file.write(
+                templates.RenderContext(self._environment).render_template(template)
+            )
 
 
 class Requirement(BaseDumper):

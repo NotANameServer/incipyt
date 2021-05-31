@@ -3,11 +3,11 @@ import contextlib
 import logging
 from string import Formatter
 from typing import Any, Callable, NamedTuple
+
 import click
 
 from incipyt._internal import utils
-
-# from incipyt._internal.utils import EnvValue
+from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +47,9 @@ class Requires:
         )
 
     def __call__(self, environment):
-        context = RenderContext(environment, self._sanitizer)
-        return context.render_string(self._template)
-
-        # for key in template.keys:
-        #     if key in self._kwargs:
-        #         environment[key] = EnvValue(
-        #             self._kwargs[key], confirmed=self._confirmed
-        #         )
+        return RenderContext(
+            environment, confirmed=self._confirmed, sanitizer=self._sanitizer
+        ).render_string(self._template, **self._kwargs)
 
 
 class MultipleValues:
@@ -256,26 +251,41 @@ class TemplateVisitor:
             del template[key]
 
 
-class RenderContext(collections.UserDict):
-    def __init__(self, env, sanitizer=None):
-        self.data = env
+class RenderContext(collections.abc.Mapping):
+    def __init__(self, environment, confirmed=False, sanitizer=None):
+        self.data = environment
+        self._confirmed = confirmed
         self._sanitizer = sanitizer
         self._keys = set()
 
     def __contains__(self, key):
         if key not in self.data:
-            self[key]
+            self.data.__getitem__(key)
+
         return True
 
     def __getitem__(self, key):
         # Call to inner dict __getitem__ will create missing keys
         value = self.data[key]
-        if value is None:
+        if not value:
             raise ValueError
+
         return self._sanitizer(key, value) if self._sanitizer else value
 
     def __iter__(self):
-        return filter(lambda k: k is not None, self._keys)
+        return iter(self._keys)
+
+    def __len__(self):
+        return len(self._keys)
+
+    def keys(self):
+        return self._keys
+
+    def values(self):
+        return [self[key] for key in self._keys]
+
+    def items(self):
+        return [(key, self[key]) for key in self._keys]
 
     def render_template(self, template):
         """Render a Jinja template."""
@@ -283,7 +293,7 @@ class RenderContext(collections.UserDict):
             template.root_render_func(template.new_context(self, shared=True))
         )
 
-    def render_string(self, template_string):
+    def render_string(self, template, **kwargs):
         """Render a template string.
 
         // OLD DOCSTRING FROM Env.getitems_sanitized FOR REFERENCE //
@@ -301,6 +311,11 @@ class RenderContext(collections.UserDict):
         :return: Sanitized environment key-value pairs.
         :rtype: :class:`dict`
         """
-        self._keys = {item[1] for item in Formatter().parse(template_string)}
+
+        self._keys = {item[1] for item in Formatter().parse(template)}
+        for key in self:
+            if key in kwargs:
+                self.data[key] = EnvValue(kwargs[key], confirmed=self._confirmed)
+
         with contextlib.suppress(ValueError):
-            return template_string.format(**self)
+            return template.format(**self)
