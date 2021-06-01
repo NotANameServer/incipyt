@@ -437,13 +437,13 @@ class RenderContext(collections.abc.Mapping):
         return len(self._keys)
 
     def keys(self):
-        return self._keys
+        return iter(self)
 
     def values(self):
-        return [self[key] for key in self._keys]
+        return (self[key] for key in self)
 
     def items(self):
-        return [(key, self[key]) for key in self._keys]
+        return zip(self.keys(), self.values())
 
     def render_template(self, template):
         """Render a Jinja template.
