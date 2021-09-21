@@ -57,6 +57,7 @@ doc = [
 ]
 test = [
   "pytest-cov",
+  "pytest-subprocess",
 ]
 
 [project.scripts]
