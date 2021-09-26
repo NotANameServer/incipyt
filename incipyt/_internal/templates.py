@@ -374,6 +374,9 @@ class TemplateVisitor:
         :param template: The template dictionary to visit.
         :type template: :class:`collections.abc.Mapping`
         """
+        if isinstance(template, TemplateDict):
+            return self(template.data)
+
         for key, value in template.items():
             logger.debug(f"Visit {key} to process environment variables.")
 
@@ -391,7 +394,8 @@ class TemplateVisitor:
                         value[index] = element(self.environment)
                     if isinstance(element, collections.abc.MutableMapping):
                         self(element)
-                if all(element is None for element in value):
+                template[key] = [element for element in value if element]
+                if not template[key]:
                     template[key] = None
 
         for key in [key for key, value in template.items() if value is None]:
