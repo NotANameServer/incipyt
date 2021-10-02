@@ -378,7 +378,7 @@ class TemplateVisitor:
             return self(template.data)
 
         for key, value in template.items():
-            logger.debug(f"Visit {key} to process environment variables.")
+            logger.debug("Visit %s to process environment variables.", key)
 
             if callable(value):
                 template[key] = value(self.environment)

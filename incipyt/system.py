@@ -89,11 +89,11 @@ class Environment(collections.UserDict):
 
     def __getitem__(self, key):
         if not self.auto_confirm and key not in self._confirmed:
-            logger.debug(f"Environment variable {key} not confirmed, request it.")
+            logger.debug("Environment variable %s not confirmed, request it.", key)
             self.data[key] = self._requests(key)
             self._confirmed.add(key)
         elif self.auto_confirm and key not in self.data:
-            logger.debug(f"Missing environment variable {key}, request it.")
+            logger.debug("Missing environment variable %s, request it.", key)
             self.data[key] = self._requests(key)
 
         return self.data[key]
@@ -107,7 +107,7 @@ class Environment(collections.UserDict):
                 f"Environment variable {key} already exists, use update."
             )
 
-        logger.debug(f"Set environment variable {key}={env_value.value}.")
+        logger.debug("Set environment variable %s=%s.", key, env_value.value)
         self.data[key] = env_value.value
         if env_value.confirmed and key not in self._confirmed:
             self._confirmed.add(key)
@@ -165,7 +165,7 @@ class Hierarchy:
         """
         if config_root not in self._configurations:
             logger.debug(
-                f"Register configuration {config_root} in hierarchy {id(self)}."
+                "Register configuration %s in hierarchy %d.", config_root, id(self)
             )
             self._configurations[config_root] = {}
 
@@ -181,9 +181,9 @@ class Hierarchy:
         :raises RuntimeError: If `template_root` already registered.
         """
         if template_root in self._templates:
-            raise RuntimeError(f"Template {template_root} already exists.")
+            raise RuntimeError("Template %s already exists.", template_root)
 
-        logger.debug(f"Register template {template_root} in hierarchy {id(self)}.")
+        logger.debug("Register template %s in hierarchy %d.", template_root, id(self))
         self._templates[template_root] = template
 
     def commit(self, environment):
@@ -195,15 +195,15 @@ class Hierarchy:
         """
         visitor = templates.TemplateVisitor(environment)
         for config_root, config in self._configurations.items():
-            logger.info(f"Process environment variables for {config_root}.")
+            logger.info("Process environment variables for %s.", config_root)
             visitor(config)
 
         for config_root, config in self._configurations.items():
-            logger.info(f"Write configuration file {config_root}.")
+            logger.info("Write configuration file %s.", config_root)
             config_root.dump_in(config)
 
         for template_root, template in self._templates.items():
-            logger.info(f"Write template file {template_root}.")
+            logger.info("Write template file %s.", template_root)
             template_root.dump_in(template)
 
     def mkdir(self, workon, environment):
@@ -215,19 +215,19 @@ class Hierarchy:
         :type environment: :class:`incipyt.system.Environment`
         """
         for config_root in self._configurations:
-            logger.debug(f"Commit {config_root} path.")
+            logger.debug("Commit %s path.", config_root)
             config_root.commit(workon, environment)
 
         for template_root in self._templates:
-            logger.debug(f"Commit template file {template_root}.")
+            logger.debug("Commit template file %s.", template_root)
             template_root.commit(workon, environment)
 
         for config_root in self._configurations:
-            logger.info(f"Mkdir folders for {config_root}.")
+            logger.info("Mkdir folders for %s.", config_root)
             config_root.mkdir_in()
 
         for template_root in self._templates:
-            logger.info(f"Mkdir folders for {template_root}.")
+            logger.info("Mkdir folders for %s.", template_root)
             template_root.mkdir_in()
 
 
@@ -253,19 +253,19 @@ def process_actions(workon, environment, actions):
 
     hierarchy = Hierarchy()
     for action in actions:
-        logger.info(f"Add {action} to hierarchy.")
+        logger.info("Add %s to hierarchy.", action)
         action.add_to(hierarchy)
 
-    logger.info(f"Mkdir folder for hierarchy on {workon_path}.")
+    logger.info("Mkdir folder for hierarchy on %s.", workon_path)
     hierarchy.mkdir(workon_path, environment)
 
     for action in actions:
-        logger.info(f"Running pre-action for {action}.")
+        logger.info("Running pre-action for %s.", action)
         action.pre(workon_path, environment)
 
     logger.info("Commit hierarchy.")
     hierarchy.commit(environment)
 
     for action in actions:
-        logger.info(f"Running post-action for {action}.")
+        logger.info("Running post-action for %s.", action)
         action.post(workon_path, environment)

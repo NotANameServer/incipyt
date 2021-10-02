@@ -21,7 +21,10 @@ class _Hook:
         """Call registered hooks."""
         if self._hooks:
             logger.debug(
-                f"{len(self._hooks)} {self} hook(s) called with {self._format_args(args)}"
+                "%d %s hook(s) called with %s",
+                len(self._hooks),
+                self,
+                self._format_args(args),
             )
 
         for hook in self._hooks:
