@@ -90,13 +90,10 @@ pyflakes = ["-F401"]
 flake8-docstrings = ["-*"]
 
 [tool.flakehell.exceptions."incipyt/__*__.py"]
-flake8-docstrings = ["-D100", "-D104"]
+flake8-docstrings = ["-D100", "-D103", "-D104"]
 
 [tool.flakehell.exceptions."incipyt/actions/*.py"]
 flake8-docstrings = ["-D100"]
-
-[tool.flakehell.exceptions."incipyt/cli.py"]
-flake8-docstrings = ["-D103"]
 
 [tool.flakehell.exceptions."tests/*.py"]
 flake8-docstrings = ["-*"]

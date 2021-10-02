@@ -2,7 +2,7 @@ from jinja2 import Template
 from pytest import fixture, mark, raises
 
 from incipyt._internal.templates import RenderContext
-from incipyt.system import Environment
+from incipyt.os import Environment
 from tests.utils import mock_stdin
 
 

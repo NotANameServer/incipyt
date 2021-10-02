@@ -1,11 +1,11 @@
 from incipyt import actions, hooks
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
-from incipyt.system import EnvValue
+from incipyt.os import EnvValue
 
 
 class Git(actions._Action):
-    """Action to add Git to :class:`incipyt.system.Hierarchy`."""
+    """Action to add Git to :class:`incipyt.os.Hierarchy`."""
 
     def __init__(self):
         hooks.VCSIgnore.register(self._hook)
@@ -19,7 +19,7 @@ class Git(actions._Action):
         - Documentation: {REPOSITORY}/wiki
 
         :param hierarchy: The actual hierarchy to update with git configuration.
-        :type hierarchy: :class:`incipyt.system.Hierarchy`
+        :type hierarchy: :class:`incipyt.os.Hierarchy`
         """
         hook_url = hooks.ProjectURL(hierarchy)
         hook_url("Repository", templates.Requires("{REPOSITORY}"))
@@ -38,7 +38,7 @@ class Git(actions._Action):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         environment.run(["git", "init", str(workon)])
 
@@ -57,6 +57,6 @@ class Git(actions._Action):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         environment.run(["git", "-C", str(workon), "add", "--all"])

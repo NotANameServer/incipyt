@@ -4,7 +4,6 @@ import collections
 import collections.abc
 import logging
 import os
-import pathlib
 import subprocess
 import sys
 
@@ -74,7 +73,7 @@ class Environment(collections.UserDict):
 
         :param auto_confirm: Do not ask confirmation for variables with a default value.
         :type auto_confirm: :class:`bool`
-        :param runner: Callable to run subprocess. Default if :func:`incipyt.system.Environment.default_runner`
+        :param runner: Callable to run subprocess. Default if :func:`incipyt.os.Environment.default_runner`
         :type runner: :class:`callable`
         """
         self.auto_confirm = auto_confirm
@@ -148,7 +147,7 @@ class Hierarchy:
 
     When the hierarchy is finally ready, functions :meth:`mkdir` :meth:`commit`
     can be used to write folder and files in a new folder after substituting
-    variables in path and files using an :class:`incipyt.system.Environment`.
+    variables in path and files using an :class:`incipyt.os.Environment`.
     """
 
     def __init__(self):
@@ -165,7 +164,7 @@ class Hierarchy:
         """
         if config_root not in self._configurations:
             logger.debug(
-                "Register configuration %s in hierarchy %d.", config_root, id(self)
+                "Register configuration %s in hierarchy %d.", str(config_root), id(self)
             )
             self._configurations[config_root] = {}
 
@@ -181,29 +180,31 @@ class Hierarchy:
         :raises RuntimeError: If `template_root` already registered.
         """
         if template_root in self._templates:
-            raise RuntimeError("Template %s already exists.", template_root)
+            raise RuntimeError("Template %s already exists.", str(template_root))
 
-        logger.debug("Register template %s in hierarchy %d.", template_root, id(self))
+        logger.debug(
+            "Register template %s in hierarchy %d.", str(template_root), id(self)
+        )
         self._templates[template_root] = template
 
     def commit(self, environment):
         """Commit current hierarchy on disk.
 
         :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         :raises RuntimeError: If one of the configuration file already exists.
         """
         visitor = templates.TemplateVisitor(environment)
         for config_root, config in self._configurations.items():
-            logger.info("Process environment variables for %s.", config_root)
+            logger.info("Process environment variables for %s.", str(config_root))
             visitor(config)
 
         for config_root, config in self._configurations.items():
-            logger.info("Write configuration file %s.", config_root)
+            logger.info("Write configuration file %s.", str(config_root))
             config_root.dump_in(config)
 
         for template_root, template in self._templates.items():
-            logger.info("Write template file %s.", template_root)
+            logger.info("Write template file %s.", str(template_root))
             template_root.dump_in(template)
 
     def mkdir(self, workon, environment):
@@ -212,60 +213,20 @@ class Hierarchy:
         :param workon: Work-on path.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         for config_root in self._configurations:
-            logger.debug("Commit %s path.", config_root)
+            logger.debug("Commit %s path.", str(config_root))
             config_root.commit(workon, environment)
 
         for template_root in self._templates:
-            logger.debug("Commit template file %s.", template_root)
+            logger.debug("Commit template file %s.", str(template_root))
             template_root.commit(workon, environment)
 
         for config_root in self._configurations:
-            logger.info("Mkdir folders for %s.", config_root)
+            logger.info("Mkdir folders for %s.", str(config_root))
             config_root.mkdir_in()
 
         for template_root in self._templates:
-            logger.info("Mkdir folders for %s.", template_root)
+            logger.info("Mkdir folders for %s.", str(template_root))
             template_root.mkdir_in()
-
-
-def process_actions(workon, environment, actions):
-    """Process a list of actions configuring required tools.
-
-    Performs five steps:
-    - Succesylly preform `add_to`function of actions to a new
-    :class:`incipyt.system.Hierarchy`.
-    - Make all directories.
-    - Run all `pre` functions of actions.
-    - Commit the hierarchy on the disk: all configuration files are created.
-    - Run all `post` functions of actions.
-
-    :param workon: Work-on path.
-    :type workon: :class:`str` or :class:`pathlib.Path`
-    :param environment: Environment to use for substitution in pattern.
-    :type environment: :class:`incipyt.system.Environment`
-    :param actions: List of actions to configure all tools.
-    :type actions: :class:`list`
-    """
-    workon_path = pathlib.Path(workon)
-
-    hierarchy = Hierarchy()
-    for action in actions:
-        logger.info("Add %s to hierarchy.", action)
-        action.add_to(hierarchy)
-
-    logger.info("Mkdir folder for hierarchy on %s.", workon_path)
-    hierarchy.mkdir(workon_path, environment)
-
-    for action in actions:
-        logger.info("Running pre-action for %s.", action)
-        action.pre(workon_path, environment)
-
-    logger.info("Commit hierarchy.")
-    hierarchy.commit(environment)
-
-    for action in actions:
-        logger.info("Running post-action for %s.", action)
-        action.post(workon_path, environment)

@@ -8,7 +8,7 @@ from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
 class Setuptools(actions._Action):
-    """Action to add Setuptools to :class:`incipyt.system.Hierarchy`."""
+    """Action to add Setuptools to :class:`incipyt.os.Hierarchy`."""
 
     def __init__(self, check=False):
         self.check_build = check
@@ -60,7 +60,7 @@ class Setuptools(actions._Action):
         choose when commiting.
 
         :param hierarchy: The actual hierarchy to update with setuptools configuration.
-        :type hierarchy: :class:`incipyt.system.Hierarchy`
+        :type hierarchy: :class:`incipyt.os.Hierarchy`
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
         pyproject = hierarchy.get_configuration(Toml("pyproject.toml"))
@@ -180,7 +180,7 @@ class Setuptools(actions._Action):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         environment.run(
             [

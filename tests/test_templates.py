@@ -8,7 +8,7 @@ from incipyt._internal.templates import (
     TemplateVisitor,
     Transform,
 )
-from incipyt.system import Environment
+from incipyt.os import Environment
 from tests.utils import mock_stdin
 
 

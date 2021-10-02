@@ -2,17 +2,17 @@ import os
 
 from incipyt import actions, hooks
 from incipyt._internal import templates
-from incipyt.system import EnvValue
+from incipyt.os import EnvValue
 
 
 class Venv(actions._Action):
-    """Action to add virtualenv to :class:`incipyt.system.Hierarchy`."""
+    """Action to add virtualenv to :class:`incipyt.os.Hierarchy`."""
 
     def add_to(self, hierarchy):
         """Add venv configuration to `hierarchy`, do nothing.
 
         :param hierarchy: The actual hierarchy to update with venv configuration.
-        :type hierarchy: :class:`incipyt.system.Hierarchy`
+        :type hierarchy: :class:`incipyt.os.Hierarchy`
         """
         hook = hooks.VCSIgnore(hierarchy)
         hook(templates.Transform(".env"))
@@ -23,7 +23,7 @@ class Venv(actions._Action):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         env_path = workon / ".env"
         py_path = env_path / ("Scripts" if os.name == "nt" else "bin") / "python"

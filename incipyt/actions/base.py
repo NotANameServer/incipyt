@@ -5,7 +5,7 @@ class Action:
         """Add this action's configuration and template to `hierarchy`.
 
         :param hierarchy: The actual hierarchy to update with this action
-        :type hierarchy: :class:`incipyt.system.Hierarchy`
+        :type hierarchy: :class:`incipyt.os.Hierarchy`
         """
 
     def __repr__(self):
@@ -17,7 +17,7 @@ class Action:
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
 
     def post(self, workon, environment):
@@ -26,5 +26,5 @@ class Action:
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """

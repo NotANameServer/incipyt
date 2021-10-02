@@ -2,7 +2,7 @@ from jinja2 import Template
 from pytest import fixture, mark, raises
 
 from incipyt._internal.dumpers import BaseDumper, CfgIni, Jinja, Requirement, Toml
-from incipyt.system import Environment
+from incipyt.os import Environment
 
 
 @fixture

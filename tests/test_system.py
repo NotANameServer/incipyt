@@ -2,7 +2,7 @@ import sys
 
 from pytest import fixture, mark, raises
 
-from incipyt.system import Environment, EnvValue, Hierarchy
+from incipyt.os import Environment, EnvValue, Hierarchy
 from incipyt._internal.dumpers import Jinja, Toml
 from incipyt._internal.templates import Requires
 

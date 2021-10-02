@@ -85,7 +85,7 @@ class Requires:
         environment.
 
         :param environment: Environment to use variables from.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         :return: The interpolated template string.
         :rtype: :class:`str`
         """
@@ -130,7 +130,7 @@ class MultipleValues:
         If it is callable, it will be evaluated.
 
         :param environment: Environment to pass to callables.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         :return: The user-choosen value.
         """
         return click.prompt(
@@ -364,7 +364,7 @@ class TemplateVisitor:
         """Class to visit a template dictionary and process it according to environment variables.
 
         :param environment: Environment to pass to callables.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         """
         self.environment = environment
 
@@ -412,7 +412,7 @@ class RenderContext(collections.abc.Mapping):
         """Class wrapping an environment and providing an interface to render templates.
 
         :param environment: Environment to get variables from.
-        :type environment: :class:`incipyt.system.Environment`
+        :type environment: :class:`incipyt.os.Environment`
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
         :param environment: Consider empty string value as an error.
