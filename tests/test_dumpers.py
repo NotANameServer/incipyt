@@ -1,35 +1,37 @@
-from jinja2 import Template
 from pytest import fixture, mark, raises
 
-from incipyt._internal.dumpers import BaseDumper, CfgIni, Jinja, Requirement, Toml
-from incipyt.system import Environment
+from incipyt._internal.dumpers import CfgIni, Requirement, TextFile, Toml
+from incipyt import project
 
 
 @fixture
-def env():
-    return Environment(auto_confirm=True)
+def reset_environ():
+    project.environ.clear()
 
 
-def test_format_path(env, tmp_path):
-    dmp = BaseDumper("{first}/{second}.ext")
-    env["first"] = "folder"
-    env["second"] = "file"
-    dmp.commit(tmp_path, env)
-    assert dmp.substitute_path() == tmp_path / "folder" / "file.ext"
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
+def test_format_path(dumper, reset_environ, tmp_path):
+    dmp = dumper("{first}/{second}.ext")
+    project.environ["first"] = project.EnvValue("folder", confirmed=True)
+    project.environ["second"] = project.EnvValue("file", confirmed=True)
+    dmp.commit(tmp_path)
+    assert dmp.format_path() == tmp_path / "folder" / "file.ext"
 
 
-def test_mkdir(env, tmp_path):
-    dmp = BaseDumper("folder/file")
-    dmp.commit(tmp_path, env)
-    dmp.mkdir_in()
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
+def test_mkdir(dumper, reset_environ, tmp_path):
+    dmp = dumper("folder/file")
+    dmp.commit(tmp_path)
+    dmp.mkdir()
     assert (tmp_path / "folder").is_dir()
 
 
-def test_path_exists(env, tmp_path):
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
+def test_path_exists(dumper, reset_environ, tmp_path):
     (tmp_path / "file").touch()
-    dmp = BaseDumper("file")
+    dmp = dumper("file")
     with raises(RuntimeError):
-        dmp.commit(tmp_path, env)
+        dmp.commit(tmp_path)
 
 
 @mark.parametrize(
@@ -58,19 +60,19 @@ def test_path_exists(env, tmp_path):
             ("[section]\n" 'first = "1"\n' "second = 2\n" 'third = [ "one", "two",]\n'),
         ),
         (
+            TextFile,
+            {None: "first"},
+            "first",
+        ),
+        (
             Requirement,
             {None: ("first", "second", "third")},
             "first\nsecond\nthird",
         ),
-        (
-            Jinja,
-            Template("first\nsecond\nthird\n"),
-            "first\nsecond\nthird",
-        ),
     ],
 )
-def test_dumpfile(dumper, data, res, env, tmp_path):
+def test_dumpfile(dumper, data, res, reset_environ, tmp_path):
     dmp = dumper("file")
-    dmp.commit(tmp_path, env)
+    dmp.commit(tmp_path)
     dmp.dump_in(data)
     assert (tmp_path / "file").read_text() == res

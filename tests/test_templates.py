@@ -2,96 +2,106 @@ import click
 from pytest import fixture, mark, raises
 
 from incipyt._internal.templates import (
-    MultipleValues,
-    Requires,
+    MultiStringTemplate,
+    StringTemplate,
     TemplateDict,
-    TemplateVisitor,
     Transform,
 )
-from incipyt.system import Environment
+from incipyt import project
 from tests.utils import mock_stdin
 
 
-class TestRequires:
+class TestStringTemplate:
     @fixture
-    def env(self):
-        return Environment(auto_confirm=True)
-
-    @fixture
-    def simple_rq(self):
-        return Requires("{ONE}")
+    def reset_environ(self):
+        project.environ.clear()
 
     @fixture
-    def kwarg_rq(self):
-        return Requires("{ONE}", ONE="1-kwarg")
+    def simple_st(self):
+        return StringTemplate("{ONE}")
 
     @fixture
-    def sanitizer_rq(self):
-        return Requires("{ONE}", sanitizer=lambda k, v: f"{v}-sanitizer")
+    def kwarg_st(self):
+        return StringTemplate("{ONE}", ONE="1-kwarg")
 
     @fixture
-    def multiple_rq(self):
-        return Requires("{ONE}-{TWO}-{THREE}")
+    def sanitizer_st(self):
+        return StringTemplate("{ONE}", sanitizer=lambda k, v: f"{v}-sanitizer")
 
-    def test_env_key_push(self, kwarg_rq, env):
-        kwarg_rq(env)
-        assert env["ONE"] == "1-kwarg"
+    @fixture
+    def multiple_st(self):
+        return StringTemplate("{ONE}-{TWO}-{THREE}")
 
-    def test_env_key_push_prompt(self, simple_rq, env, monkeypatch):
+    def test_env_key_push(self, kwarg_st, reset_environ, monkeypatch):
+        mock_stdin(monkeypatch, "")
+        kwarg_st.format()
+        assert project.environ["ONE"] == "1-kwarg"
+
+    def test_env_key_push_prompt(self, simple_st, reset_environ, monkeypatch):
         mock_stdin(monkeypatch, "1")
-        simple_rq(env)
-        assert env["ONE"] == "1"
+        simple_st.format()
+        assert project.environ["ONE"] == "1"
 
     @mark.parametrize(
-        "rq, variables, res",
+        "st, variables, stdin, res",
         (
-            ("simple_rq", {"ONE": "1"}, "1"),
-            ("kwarg_rq", {}, "1-kwarg"),
-            ("sanitizer_rq", {"ONE": "1"}, "1-sanitizer"),
-            ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
+            ("simple_st", {"ONE": "1"}, "", "1"),
+            ("kwarg_st", {}, "", "1-kwarg"),
+            ("sanitizer_st", {"ONE": "1"}, "", "1-sanitizer"),
+            ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
     )
-    def test_format(self, rq, variables, res, env, request):
-        rq = request.getfixturevalue(rq)
-        env |= variables
-        assert rq(env) == res
+    def test_format(
+        self, st, variables, stdin, res, reset_environ, request, monkeypatch
+    ):
+        mock_stdin(monkeypatch, stdin)
+        st = request.getfixturevalue(st)
+        project.environ |= variables
+        assert st.format() == res
 
-    @mark.parametrize("rq", ("simple_rq", "multiple_rq"))
-    def test_format_null(self, rq, env, request):
-        rq = request.getfixturevalue(rq)
-        env |= {"ONE": "", "TWO": "2", "THREE": "3"}
-        assert rq(env) is None
+    @mark.parametrize(
+        "st, stdin",
+        (
+            ("simple_st", ""),
+            ("multiple_st", "\n\n"),
+        ),
+    )
+    def test_format_null(self, st, stdin, reset_environ, request, monkeypatch):
+        mock_stdin(monkeypatch, stdin)
+        st = request.getfixturevalue(st)
+        project.environ |= {"ONE": "", "TWO": "2", "THREE": "3"}
+        assert st.format() is None
 
 
-class TestMultipleValue:
+class TestMultiStringTemplate:
     @fixture
-    def simple_mv(self):
-        return MultipleValues("a", "b")
+    def simple_mst(self):
+        return MultiStringTemplate("a", "b")
 
     @fixture
-    def callable_mv(self):
-        return MultipleValues(lambda env: "a", lambda env: "b")
+    def formattable_mst(self):
+        return MultiStringTemplate(StringTemplate("a"), StringTemplate("b"))
 
     @fixture
-    def env(self):
-        return Environment(auto_confirm=True)
+    def reset_environ(self):
+        project.environ.clear()
 
-    def test_mv_tail(self, simple_mv):
-        mv = MultipleValues("x", simple_mv)
-        assert mv._values == ["x", "a", "b"]
+    def test_mst_tail(self, simple_mst):
+        mst = MultiStringTemplate("x", simple_mst)
+        assert mst._values == ["x", "a", "b"]
 
-    @mark.parametrize("mv", ("simple_mv", "callable_mv"))
-    def test_call(self, mv, env, monkeypatch, request):
+    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
+    def test_call(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "a")
-        mv = request.getfixturevalue(mv)
-        assert mv(env) == "a"
+        mst = request.getfixturevalue(mst)
+        assert mst.format() == "a"
 
-    @mark.parametrize("mv", ("simple_mv", "callable_mv"))
-    def test_call_invalid(self, mv, env, monkeypatch, request):
+    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
+    def test_call_invalid(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "x")
-        mv = request.getfixturevalue(mv)
+        mst = request.getfixturevalue(mst)
         with raises(click.exceptions.Abort):
-            mv(env)
+            mst.format()
 
 
 class TestTemplateDict:
@@ -109,7 +119,7 @@ class TestTemplateDict:
 
     @fixture
     def multiple_td(self):
-        return TemplateDict({"1": MultipleValues("a", "b")})
+        return TemplateDict({"1": MultiStringTemplate("a", "b")})
 
     @fixture
     def sequence_td(self):
@@ -118,11 +128,11 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": Requires("x")}),
-            ("simple_td", {"1": MultipleValues(Requires("x"), "a")}),
+            ("empty_td", {"1": StringTemplate("x")}),
+            ("simple_td", {"1": MultiStringTemplate(StringTemplate("x"), "a")}),
             (
                 "multiple_td",
-                {"1": MultipleValues.from_items(Requires("x"), "a", "b")},
+                {"1": MultiStringTemplate.from_items(StringTemplate("x"), "a", "b")},
             ),
         ),
     )
@@ -135,7 +145,7 @@ class TestTemplateDict:
         "td, res",
         (
             ("empty_td", {"1": "x"}),
-            ("simple_td", {"1": MultipleValues("x", "a")}),
+            ("simple_td", {"1": MultiStringTemplate("x", "a")}),
         ),
     )
     def test_setitem_transform(self, td, res, request):
@@ -147,7 +157,7 @@ class TestTemplateDict:
         "td, res",
         (
             ("empty_td", {"1": "x"}),
-            ("simple_td", {"1": MultipleValues("x", "a")}),
+            ("simple_td", {"1": MultiStringTemplate("x", "a")}),
         ),
     )
     def test_setitem_notransform(self, td, res, request):
@@ -158,20 +168,23 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": Requires("x")}),
-            ("simple_td", {"1": MultipleValues(Requires("x"), "a")}),
+            ("empty_td", {"1": StringTemplate("x")}),
+            ("simple_td", {"1": MultiStringTemplate(StringTemplate("x"), "a")}),
         ),
     )
     def test_setitem_callable(self, td, res, request):
         td = request.getfixturevalue(td)
-        td["1"] = Requires("x")
+        td["1"] = StringTemplate("x")
         assert td == res
 
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
-            ("nested_td", {"1": {"2": {"3": MultipleValues(Requires("x"), "a")}}}),
+            ("empty_td", {"1": {"2": {"3": StringTemplate("x")}}}),
+            (
+                "nested_td",
+                {"1": {"2": {"3": MultiStringTemplate(StringTemplate("x"), "a")}}},
+            ),
         ),
     )
     def test_chained_setitem(self, td, res, request):
@@ -182,8 +195,8 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": [Requires("a"), Requires("x")]}),
-            ("sequence_td", {"1": ["a", "b", Requires("x")]}),
+            ("empty_td", {"1": [StringTemplate("a"), StringTemplate("x")]}),
+            ("sequence_td", {"1": ["a", "b", StringTemplate("x")]}),
         ),
     )
     def test_sequence_setitem(self, td, res, request):
@@ -206,8 +219,11 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": {"2": {"3": Requires("x")}}}),
-            ("nested_td", {"1": {"2": {"3": MultipleValues(Requires("x"), "a")}}}),
+            ("empty_td", {"1": {"2": {"3": StringTemplate("x")}}}),
+            (
+                "nested_td",
+                {"1": {"2": {"3": MultiStringTemplate(StringTemplate("x"), "a")}}},
+            ),
         ),
     )
     def test_ior(self, td, res, request):
@@ -237,8 +253,8 @@ class TestTemplateDict:
 
 class TestTemplateVisitor:
     @fixture
-    def visitor(self):
-        return TemplateVisitor(Environment(auto_confirm=True))
+    def reset_environ(self):
+        project.environ.clear()
 
     @fixture
     def empty_td(self):
@@ -246,23 +262,23 @@ class TestTemplateVisitor:
 
     @fixture
     def simple_td(self):
-        return TemplateDict({"1": Requires("{ONE}")})
+        return TemplateDict({"1": StringTemplate("{ONE}")})
 
     @fixture
     def nested_td(self):
-        return TemplateDict({"1": {"2": {"3": Requires("{ONE}")}}})
+        return TemplateDict({"1": {"2": {"3": StringTemplate("{ONE}")}}})
 
     @fixture
     def multiple_td(self):
-        return TemplateDict({"1": MultipleValues(Requires("{ONE}"), "b")})
+        return TemplateDict({"1": MultiStringTemplate(StringTemplate("{ONE}"), "b")})
 
     @fixture
     def sequence_td(self):
-        return TemplateDict({"1": [Requires("{ONE}"), {2: "b"}]})
+        return TemplateDict({"1": [StringTemplate("{ONE}"), {2: "b"}]})
 
     @fixture
     def single_td(self):
-        return TemplateDict({"1": [Requires("{ONE}")]})
+        return TemplateDict({"1": [StringTemplate("{ONE}")]})
 
     @mark.parametrize(
         "td, res, input_values",
@@ -279,10 +295,8 @@ class TestTemplateVisitor:
             ("multiple_td", {"1": "a"}, ["a", "a"]),
         ),
     )
-    def test_call(self, td, res, visitor, input_values, monkeypatch, request):
+    def test_call(self, td, res, reset_environ, input_values, monkeypatch, request):
         mock_stdin(monkeypatch, input_values)
         td = request.getfixturevalue(td)
-        print(td)
-        visitor(td)
-        print(td)
+        project._Structure._visit(td)
         assert td == res
