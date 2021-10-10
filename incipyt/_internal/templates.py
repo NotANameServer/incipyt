@@ -14,17 +14,10 @@ from typing import Any, Callable, NamedTuple
 
 import click
 
+from incipyt import project
 from incipyt._internal import utils
 
 logger = logging.getLogger(__name__)
-
-
-class PythonEnv(NamedTuple):
-    variable: str = "PYTHON_CMD"
-
-    @property
-    def requires(self):
-        return Requires(f"{{{self.variable}}}")
 
 
 class Transform(NamedTuple):
@@ -43,14 +36,14 @@ class Requires:
     """This class acts like a wrapper around a template string.
 
     When an instance is called, it renders the underlying template string using
-    environment values and overrides.
+    environ values and overrides.
     """
 
     def __init__(self, template, confirmed=False, sanitizer=None, **kwargs):
         r"""This class acts like a wrapper around a template string.
 
         When an instance is called, it renders the underlying template string
-        using environment values and overrides.
+        using environ values and overrides.
 
         :param template: A template string whose placeholders will be interpolated.
         :type template: :class:`str`
@@ -58,7 +51,7 @@ class Requires:
         :type confirmed: :class:`bool`, optionnal
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
-        :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environment. Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
+        :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environ. Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
         :type \**kwargs: :class:`str`, optionnal
         """
         self._confirmed = confirmed
@@ -80,16 +73,13 @@ class Requires:
             self, other, "_template", "_confirmed", "_sanitizer", "_kwargs"
         )
 
-    def __call__(self, environment):
-        """Render the underlying template string using variables from a given
-        environment.
+    def __call__(self):
+        """Render the underlying template string using variables from the environ.
 
-        :param environment: Environment to use variables from.
-        :type environment: :class:`incipyt.os.Environment`
         :return: The interpolated template string.
         :rtype: :class:`str`
         """
-        return RenderContext(environment, sanitizer=self._sanitizer).render_string(
+        return RenderContext(sanitizer=self._sanitizer).render_string(
             self._template,
             **{
                 key: (
@@ -124,22 +114,17 @@ class MultipleValues:
             [head] + tail._values if isinstance(tail, MultipleValues) else [head, tail]
         )
 
-    def __call__(self, environment):
+    def __call__(self):
         """Ask the user to pick a value using the command line interface.
 
         If it is callable, it will be evaluated.
 
-        :param environment: Environment to pass to callables.
-        :type environment: :class:`incipyt.os.Environment`
         :return: The user-choosen value.
         """
         return click.prompt(
             "Conflicting configuration, choose between",
             type=click.Choice(
-                [
-                    value(environment) if callable(value) else value
-                    for value in self._values
-                ]
+                [value() if callable(value) else value for value in self._values]
             ),
         )
 
@@ -353,20 +338,12 @@ class TemplateDict(collections.UserDict):
 
 
 class TemplateVisitor:
-    """Class to visit a template dictionary and process it according to environment variables.
+    """Class to visit a template dictionary and process it according to environ variables.
 
     All callable values of the template dictionary will be evaluated and
     replaced by their results. All nested structures will be recursively
     visited and processed too.
     """
-
-    def __init__(self, environment):
-        """Class to visit a template dictionary and process it according to environment variables.
-
-        :param environment: Environment to pass to callables.
-        :type environment: :class:`incipyt.os.Environment`
-        """
-        self.environment = environment
 
     def __call__(self, template):
         """Visit the `template` nested-dictionary structure.
@@ -378,10 +355,10 @@ class TemplateVisitor:
             return self(template.data)
 
         for key, value in template.items():
-            logger.debug("Visit %s to process environment variables.", key)
+            logger.debug("Visit %s to process environ variables.", key)
 
             if callable(value):
-                template[key] = value(self.environment)
+                template[key] = value()
 
             elif isinstance(value, collections.abc.MutableMapping):
                 self(value)
@@ -391,7 +368,7 @@ class TemplateVisitor:
             elif isinstance(value, collections.abc.MutableSequence):
                 for index, element in enumerate(value):
                     if callable(element):
-                        value[index] = element(self.environment)
+                        value[index] = element()
                     if isinstance(element, collections.abc.MutableMapping):
                         self(element)
                 template[key] = [element for element in value if element]
@@ -403,22 +380,20 @@ class TemplateVisitor:
 
 
 class RenderContext(collections.abc.Mapping):
-    """Class wrapping an environment and providing an interface to render templates.
+    """Class wrapping an environ and providing an interface to render templates.
 
     It can be used to render template strings and Jinja templates.
     """
 
-    def __init__(self, environment, sanitizer=None, value_error=True):
-        """Class wrapping an environment and providing an interface to render templates.
+    def __init__(self, sanitizer=None, value_error=True):
+        """Class wrapping an environ and providing an interface to render templates.
 
-        :param environment: Environment to get variables from.
-        :type environment: :class:`incipyt.os.Environment`
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
-        :param environment: Consider empty string value as an error.
-        :type environment: :class:`bool`, optional
+        :param environ: Consider empty string value as an error.
+        :type environ: :class:`bool`, optional
         """
-        self.data = environment
+        self.data = project.environ
         self._sanitizer = sanitizer
         self._keys = set()
         self._value_error = value_error
@@ -455,9 +430,9 @@ class RenderContext(collections.abc.Mapping):
     def render_template(self, template):
         """Render a Jinja template.
 
-        Variables will be request from the underlying environment, and
-        undefined variables will be created. An empty variable will cause the
-        whole render result to be `None`.
+        Variables will be request from the underlying environ, and undefined
+        variables will be created. An empty variable will cause the whole
+        render result to be `None`.
 
         :param template: Jinja template to render.
         :type template: :class:`jinja2.Template`
@@ -472,17 +447,16 @@ class RenderContext(collections.abc.Mapping):
     def render_string(self, template, **kwargs):
         r"""Render a template string.
 
-        Variables will be request from the underlying environment, and
-        undefined variables will be created. If `self._value_error` is `True`
-        and an empty variable will cause the whole render result to be `None`.
+        Variables will be request from the underlying environ, and undefined
+        variables will be created. If `self._value_error` is `True` and an
+        empty variable will cause the whole render result to be `None`.
 
         Additional variables can be specified using keyword arguments. They
-        will be added to the environment, hence they will override environment
-        values.
+        will be added to the environ, hence they will override environ values.
 
         :param template: Template string to render.
         :type template: :class:`str`
-        :param \**kwargs: Additional variables that will override environment variables.
+        :param \**kwargs: Additional variables that will override environ variables.
         :type \**kwargs: :class:`str`, optionnal
         :return: The rendered template or `None` if a context variable is empty.
         :rtype: :class:`str` or `None`

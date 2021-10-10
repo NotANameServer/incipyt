@@ -2,7 +2,7 @@ import sys
 
 from pytest import fixture, mark, raises
 
-from incipyt.os import Environment, EnvValue, Hierarchy
+from incipyt import project
 from incipyt._internal.dumpers import Jinja, Toml
 from incipyt._internal.templates import Requires
 
@@ -11,141 +11,138 @@ from jinja2 import Template
 from tests.utils import mock_stdin
 
 
-class TestEnvironment:
+class TestEnviron:
     @fixture
-    def empty_env(self, fake_process):
+    def empty_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        return Environment()
+        project.environ.clear()
 
     @fixture
-    def simple_env(self, fake_process):
+    def simple_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        env = Environment()
-        env["ONE"] = "1"
-        return env
+        project.environ.clear()
+        project.environ["ONE"] = "1"
 
     @fixture
     def empty_auto_env(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        return Environment(auto_confirm=True)
+        project.environ.clear()
 
     @fixture
     def simple_auto_env(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        env = Environment(auto_confirm=True)
-        env["ONE"] = "1"
-        return env
+        project.environ.clear()
+        project.environ["ONE"] = "1"
 
     @mark.parametrize(
         "env, input_values",
         (
-            ("empty_env", ["1"]),
-            ("simple_env", [""]),
+            ("empty_environ", ["1"]),
+            ("simple_environ", [""]),
             ("empty_auto_env", ["1"]),
             ("simple_auto_env", []),
         ),
     )
     def test_pull(self, env, input_values, monkeypatch, request):
-        env = request.getfixturevalue(env)
+        request.getfixturevalue(env)
         mock_stdin(monkeypatch, input_values)
-        assert env["ONE"] == "1"
+        assert project.environ["ONE"] == "1"
 
     @mark.parametrize(
         "env",
         (
-            "simple_env",
+            "simple_environ",
             "simple_auto_env",
         ),
     )
     def test_push(self, env, request):
-        env = request.getfixturevalue(env)
+        request.getfixturevalue(env)
         with raises(RuntimeError):
-            env["ONE"] = "11"
+            project.environ["ONE"] = "11"
 
     @mark.parametrize(
         "env, input_values",
         (
-            ("simple_env", [""]),
+            ("simple_environ", [""]),
             ("simple_auto_env", []),
         ),
     )
     def test_update(self, env, input_values, monkeypatch, request):
-        env = request.getfixturevalue(env)
-        env["ONE"] = EnvValue("11", update=True)
+        request.getfixturevalue(env)
+        project.environ["ONE"] = project.EnvValue("11", update=True)
         mock_stdin(monkeypatch, input_values)
-        assert env["ONE"] == "11"
+        assert project.environ["ONE"] == "11"
 
     @mark.parametrize(
         "env",
         (
-            "empty_env",
+            "empty_environ",
             "empty_auto_env",
         ),
     )
     def test_confirmed(self, env, request):
-        env = request.getfixturevalue(env)
-        env["ONE"] = EnvValue("1", confirmed=True)
-        assert env["ONE"] == "1"
+        request.getfixturevalue(env)
+        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
+        assert project.environ["ONE"] == "1"
 
     @mark.parametrize(
         "env",
         (
-            "empty_env",
-            "simple_env",
+            "empty_environ",
+            "simple_environ",
             "empty_auto_env",
             "simple_auto_env",
         ),
     )
     def test_python_cmd(self, env, request):
-        env = request.getfixturevalue(env)
-        assert env[env.python.variable] == sys.executable
+        request.getfixturevalue(env)
+        assert project.environ[project.python.variable] == sys.executable
 
     @mark.parametrize(
         "env",
         (
-            "empty_env",
-            "simple_env",
+            "empty_environ",
+            "simple_environ",
             "empty_auto_env",
             "simple_auto_env",
         ),
     )
     def test_iter(self, env, request):
-        env = request.getfixturevalue(env)
-        env["TWO"] = EnvValue("2", confirmed=True)
-        result = {key: env[key] for key in env}
-        assert result == {env.python.variable: sys.executable, "TWO": "2"}
+        request.getfixturevalue(env)
+        project.environ["TWO"] = project.EnvValue("2", confirmed=True)
+        result = {key: project.environ[key] for key in project.environ}
+        assert result == {project.python.variable: sys.executable, "TWO": "2"}
 
     @mark.parametrize(
         "env",
         (
-            "empty_env",
-            "simple_env",
+            "empty_environ",
+            "simple_environ",
             "empty_auto_env",
             "simple_auto_env",
         ),
     )
-    def test_run(self, env, fake_process, request):
-        env = request.getfixturevalue(env)
-        result = env.run(["cmd", "arg"])
-        assert result == "lineA\nlineB\n"
+    def test_run(self, env, request):
+        request.getfixturevalue(env)
+        result = project.run(["cmd", "arg"])
+        assert result.stdout.decode() == "lineA\nlineB\n"
 
 
 class TestHierarchy:
     @fixture
-    def env(self, fake_process):
+    def reset_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        env = Environment()
-        env["FOLDER_A"] = EnvValue("folderA", confirmed=True)
-        env["FOLDER_B"] = EnvValue("folderB", confirmed=True)
-        env["NAME_A"] = EnvValue("testA", confirmed=True)
-        env["NAME_B"] = EnvValue("testB", confirmed=True)
-        env["VALUE"] = EnvValue("1", confirmed=True)
-        env["CONTENT"] = EnvValue("text", confirmed=True)
-        return env
+        project.environ.clear()
+        project.environ["FOLDER_A"] = project.EnvValue("folderA", confirmed=True)
+        project.environ["FOLDER_B"] = project.EnvValue("folderB", confirmed=True)
+        project.environ["NAME_A"] = project.EnvValue("testA", confirmed=True)
+        project.environ["NAME_B"] = project.EnvValue("testB", confirmed=True)
+        project.environ["VALUE"] = project.EnvValue("1", confirmed=True)
+        project.environ["CONTENT"] = project.EnvValue("text", confirmed=True)
 
     @fixture
     def hierarchy(self):
-        hierarchy = Hierarchy()
+        hierarchy = project.Hierarchy()
         conf = hierarchy.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
         conf["section"] = {"first": "{VALUE}"}
         hierarchy.register_template(
@@ -162,14 +159,14 @@ class TestHierarchy:
         configuration = hierarchy.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
         assert configuration == {"section": {"first": Requires("{VALUE}")}}
 
-    def test_mkdir(self, hierarchy, env, tmp_path):
-        hierarchy.mkdir(tmp_path, env)
+    def test_mkdir(self, hierarchy, reset_environ, tmp_path):
+        hierarchy.mkdir(tmp_path)
         assert (tmp_path / "folderA").is_dir()
         assert (tmp_path / "folderB").is_dir()
 
-    def test_commit(self, hierarchy, env, tmp_path):
-        hierarchy.mkdir(tmp_path, env)
-        hierarchy.commit(env)
+    def test_commit(self, hierarchy, reset_environ, tmp_path):
+        hierarchy.mkdir(tmp_path)
+        hierarchy.commit()
         assert (
             tmp_path / "folderA" / "testA.toml"
         ).read_text() == '[section]\nfirst = "1"\n'

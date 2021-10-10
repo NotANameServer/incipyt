@@ -2,6 +2,7 @@
 
 import collections
 import collections.abc
+import dataclasses
 import logging
 import os
 import subprocess
@@ -10,30 +11,44 @@ import sys
 import click
 
 from incipyt._internal import templates
-from incipyt._internal.templates import PythonEnv
+
 from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
 
-class Environment(collections.UserDict):
-    """Manage environment variables using for substitutions in patterns.
+@dataclasses.dataclass
+class _Python:
+    variable: str = "PYTHON_CMD"
 
-    A :class:`Environment` object `env` is a dictionnary initialized with
-    system environment variables `os.env`, a variable can be add like that:
+    @property
+    def requires(self):
+        from incipyt._internal.templates import Requires
+
+        return Requires(f"{{{self.variable}}}")
+
+
+python = _Python()
+
+
+class _Environ(collections.UserDict):
+    """Manage environ variables using for substitutions in patterns.
+
+    A :class:`Environ` object `environ` is a dictionnary initialized with
+    system environ variables `os.environ`, a variable can be add like that:
 
     .. code-block::
 
-        env["VARIABLE_NAME"] = "something"
+        environ["VARIABLE_NAME"] = "something"
 
-    However such a variable will not be considered in `env` before being
+    However such a variable will not be considered in `environ` before being
     `confirmed`. Such confirmation will happen the first it is asked for:
 
     .. code-block::
 
-        var_first = env["VARIABLE_NAME"]
+        var_first = environ["VARIABLE_NAME"]
         # Prompt a message for confirmation of the value for `VARIABLE_NAME`
-        var_second = env["VARIABLE_NAME"]
+        var_second = environ["VARIABLE_NAME"]
         # As `VARIABLE_NAME` as been confirmed, don't ask anything
 
     Moreover, even if a specific variable hasn't been set, it can be asked for
@@ -42,57 +57,32 @@ class Environment(collections.UserDict):
 
     .. code-block::
 
-        env["VARIABLE_NAME"] = EnvValue("something", confirmed=True)
+        environ["VARIABLE_NAME"] = EnvValue("something", confirmed=True)
 
     Note that if a variable has been set, it cannot be set again, except if
     explicitly specified:
 
     .. code-block::
 
-        env["VARIABLE_NAME"] = EnvValue("new_value", update=True)
+        environ["VARIABLE_NAME"] = EnvValue("new_value", update=True)
 
     All iterative methods and in operator consider only `confirmed` variables.
     """
 
-    python = PythonEnv()
-
-    @staticmethod
-    def default_runner(command):
-        """Run `command` using :func:`subprocess.run`.
-
-        :param command: List of the command elements.
-        :type command: :class:`list`
-        :return: stdout docoded.
-        :rtype: :class:`str`
-        """
-        completed_process = subprocess.run(command, capture_output=True, check=True)
-        return completed_process.stdout.decode()
-
-    def __init__(self, auto_confirm=False, runner=None):
-        """Environment initializer.
-
-        :param auto_confirm: Do not ask confirmation for variables with a default value.
-        :type auto_confirm: :class:`bool`
-        :param runner: Callable to run subprocess. Default if :func:`incipyt.os.Environment.default_runner`
-        :type runner: :class:`callable`
-        """
-        self.auto_confirm = auto_confirm
-        self.runner = runner if runner else self.default_runner
-
+    def clear(self):
         self._confirmed = set()
         self.data = os.environ.copy()
 
-        if self.python.variable not in self.data:
-            self.data[self.python.variable] = sys.executable
-        self._confirmed.add(self.python.variable)
+        if python.variable not in self.data:
+            self.data[python.variable] = sys.executable
+        self._confirmed.add(python.variable)
+
+    def __init__(self):
+        self.clear()
 
     def __getitem__(self, key):
-        if not self.auto_confirm and key not in self._confirmed:
-            logger.debug("Environment variable %s not confirmed, request it.", key)
-            self.data[key] = self._requests(key)
-            self._confirmed.add(key)
-        elif self.auto_confirm and key not in self.data:
-            logger.debug("Missing environment variable %s, request it.", key)
+        if key not in self.data:
+            logger.debug("Missing environ variable %s, request it.", key)
             self.data[key] = self._requests(key)
 
         return self.data[key]
@@ -102,11 +92,9 @@ class Environment(collections.UserDict):
             env_value = EnvValue(env_value)
 
         if key in self.data and not env_value.update:
-            raise RuntimeError(
-                f"Environment variable {key} already exists, use update."
-            )
+            raise RuntimeError(f"Environ variable {key} already exists, use update.")
 
-        logger.debug("Set environment variable %s=%s.", key, env_value.value)
+        logger.debug("Set environ variable %s=%s.", key, env_value.value)
         self.data[key] = env_value.value
         if env_value.confirmed and key not in self._confirmed:
             self._confirmed.add(key)
@@ -121,19 +109,24 @@ class Environment(collections.UserDict):
             type=str,
         )
 
-    def run(self, command):
-        """Run a command after substitution using the environment.
 
-        :param command: List of the command elements.
-        :type command: :class:`list`
-        :return: stdout docoded.
-        :rtype: :class:`str`
-        """
-        cmd = [c(self) if callable(c) else c for c in command]
-        logger.info(" ".join(cmd))
-        result = self.runner(cmd)
-        logger.info(result)
-        return result
+environ = _Environ()
+
+
+def run(args, **kwargs):
+    r"""Run a command after substitution using the environ.
+
+    :param args: List of the command elements.
+    :type args: :class:`list`
+    :param \**kwargs: Other options forwarded to `subprocess.run`
+    :return: Represents a process that has finished
+    :rtype: :class:`subprocess.CompletedProcess`
+    """
+    formatted = [arg() if callable(arg) else arg for arg in args]
+    logger.info(" ".join(formatted))
+    result = subprocess.run(formatted, capture_output=True, check=True, **kwargs)
+    logger.info(result.stdout.decode())
+    return result
 
 
 class Hierarchy:
@@ -147,7 +140,7 @@ class Hierarchy:
 
     When the hierarchy is finally ready, functions :meth:`mkdir` :meth:`commit`
     can be used to write folder and files in a new folder after substituting
-    variables in path and files using an :class:`incipyt.os.Environment`.
+    variables in path and files using an :class:`incipyt.project.Environ`.
     """
 
     def __init__(self):
@@ -187,16 +180,14 @@ class Hierarchy:
         )
         self._templates[template_root] = template
 
-    def commit(self, environment):
+    def commit(self):
         """Commit current hierarchy on disk.
 
-        :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.os.Environment`
         :raises RuntimeError: If one of the configuration file already exists.
         """
-        visitor = templates.TemplateVisitor(environment)
+        visitor = templates.TemplateVisitor()
         for config_root, config in self._configurations.items():
-            logger.info("Process environment variables for %s.", str(config_root))
+            logger.info("Process environ variables for %s.", str(config_root))
             visitor(config)
 
         for config_root, config in self._configurations.items():
@@ -207,21 +198,19 @@ class Hierarchy:
             logger.info("Write template file %s.", str(template_root))
             template_root.dump_in(template)
 
-    def mkdir(self, workon, environment):
+    def mkdir(self, workon):
         """Make all directories of the hierarchy in workon.
 
         :param workon: Work-on path.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment to use for substitution in pattern.
-        :type environment: :class:`incipyt.os.Environment`
         """
         for config_root in self._configurations:
             logger.debug("Commit %s path.", str(config_root))
-            config_root.commit(workon, environment)
+            config_root.commit(workon)
 
         for template_root in self._templates:
             logger.debug("Commit template file %s.", str(template_root))
-            template_root.commit(workon, environment)
+            template_root.commit(workon)
 
         for config_root in self._configurations:
             logger.info("Mkdir folders for %s.", str(config_root))

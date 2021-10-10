@@ -1,8 +1,11 @@
 import collections.abc
-from typing import Any, NamedTuple
+import dataclasses
+
+from typing import Any
 
 
-class EnvValue(NamedTuple):
+@dataclasses.dataclass
+class EnvValue:
     value: Any
     update: bool = False
     confirmed: bool = False

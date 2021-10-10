@@ -61,7 +61,7 @@ test = [
 ]
 
 [project.scripts]
-incipyt = "incipyt.cli:main"
+incipyt = "incipyt.__main__:main"
 
 [tool.flakehell]
 exclude = [

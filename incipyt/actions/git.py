@@ -1,11 +1,10 @@
-from incipyt import actions, hooks
+from incipyt import actions, hooks, project
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
-from incipyt.os import EnvValue
 
 
 class Git(actions._Action):
-    """Action to add Git to :class:`incipyt.os.Hierarchy`."""
+    """Action to add Git to :class:`incipyt.project.Hierarchy`."""
 
     def __init__(self):
         hooks.VCSIgnore.register(self._hook)
@@ -19,7 +18,7 @@ class Git(actions._Action):
         - Documentation: {REPOSITORY}/wiki
 
         :param hierarchy: The actual hierarchy to update with git configuration.
-        :type hierarchy: :class:`incipyt.os.Hierarchy`
+        :type hierarchy: :class:`incipyt.project.Hierarchy`
         """
         hook_url = hooks.ProjectURL(hierarchy)
         hook_url("Repository", templates.Requires("{REPOSITORY}"))
@@ -30,33 +29,33 @@ class Git(actions._Action):
         gitignore = hierarchy.get_configuration(Requirement(".gitignore"))
         gitignore[None] = [value]
 
-    def pre(self, workon, environment):
+    def pre(self, workon):
         """Run `git init`.
 
         Also push {AUTHOR_NAME} and {AUTHOR_EMAIL} using `git config user.*`.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.os.Environment`
         """
-        environment.run(["git", "init", str(workon)])
+        project.run(["git", "init", str(workon)])
 
-        environment["AUTHOR_NAME"] = EnvValue(
-            environment.run(["git", "-C", str(workon), "config", "user.name"]).strip(),
+        project.environ["AUTHOR_NAME"] = project.EnvValue(
+            project.run(["git", "-C", str(workon), "config", "user.name"])
+            .stdout.decode()
+            .strip(),
             update=True,
         )
-        environment["AUTHOR_EMAIL"] = EnvValue(
-            environment.run(["git", "-C", str(workon), "config", "user.email"]).strip(),
+        project.environ["AUTHOR_EMAIL"] = project.EnvValue(
+            project.run(["git", "-C", str(workon), "config", "user.email"])
+            .stdout.decode()
+            .strip(),
             update=True,
         )
 
-    def post(self, workon, environment):
+    def post(self, workon):
         """Run `git add --all`.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.os.Environment`
         """
-        environment.run(["git", "-C", str(workon), "add", "--all"])
+        project.run(["git", "-C", str(workon), "add", "--all"])

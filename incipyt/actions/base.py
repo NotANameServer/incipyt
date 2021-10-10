@@ -5,26 +5,22 @@ class Action:
         """Add this action's configuration and template to `hierarchy`.
 
         :param hierarchy: The actual hierarchy to update with this action
-        :type hierarchy: :class:`incipyt.os.Hierarchy`
+        :type hierarchy: :class:`incipyt.project.Hierarchy`
         """
 
     def __repr__(self):
         return self.__class__.__name__
 
-    def pre(self, workon, environment):
+    def pre(self, workon):
         """Pre-action, do after creating all folders.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do pre-action
-        :type environment: :class:`incipyt.os.Environment`
         """
 
-    def post(self, workon, environment):
+    def post(self, workon):
         """Pre-action, do before writting configuration and template files.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.os.Environment`
         """

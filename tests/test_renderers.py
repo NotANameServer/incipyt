@@ -1,26 +1,26 @@
 from jinja2 import Template
 from pytest import fixture, mark, raises
 
+from incipyt import project
 from incipyt._internal.templates import RenderContext
-from incipyt.os import Environment
+
 from tests.utils import mock_stdin
 
 
 class _Context:
     @fixture
-    def env(self):
-        env = Environment(auto_confirm=True)
-        env["VARIABLE_NAME"] = "value"
-        env["EMPTY_VARIABLE"] = ""
-        return env
+    def reset_environ(self):
+        project.environ.clear()
+        project.environ["VARIABLE_NAME"] = "value"
+        project.environ["EMPTY_VARIABLE"] = ""
 
     @fixture
-    def simple_ctx(self, env):
-        return RenderContext(env)
+    def simple_ctx(self, reset_environ):
+        return RenderContext()
 
     @fixture
-    def no_error_ctx(self, env):
-        return RenderContext(env, value_error=False)
+    def no_error_ctx(self, reset_environ):
+        return RenderContext(value_error=False)
 
     @fixture
     def populated_ctx(self, simple_ctx):

@@ -8,14 +8,14 @@ from incipyt._internal.templates import (
     TemplateVisitor,
     Transform,
 )
-from incipyt.os import Environment
+from incipyt import project
 from tests.utils import mock_stdin
 
 
 class TestRequires:
     @fixture
-    def env(self):
-        return Environment(auto_confirm=True)
+    def reset_environ(self):
+        project.environ.clear()
 
     @fixture
     def simple_rq(self):
@@ -33,14 +33,14 @@ class TestRequires:
     def multiple_rq(self):
         return Requires("{ONE}-{TWO}-{THREE}")
 
-    def test_env_key_push(self, kwarg_rq, env):
-        kwarg_rq(env)
-        assert env["ONE"] == "1-kwarg"
+    def test_env_key_push(self, kwarg_rq, reset_environ):
+        kwarg_rq()
+        assert project.environ["ONE"] == "1-kwarg"
 
-    def test_env_key_push_prompt(self, simple_rq, env, monkeypatch):
+    def test_env_key_push_prompt(self, simple_rq, reset_environ, monkeypatch):
         mock_stdin(monkeypatch, "1")
-        simple_rq(env)
-        assert env["ONE"] == "1"
+        simple_rq()
+        assert project.environ["ONE"] == "1"
 
     @mark.parametrize(
         "rq, variables, res",
@@ -51,16 +51,16 @@ class TestRequires:
             ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
         ),
     )
-    def test_format(self, rq, variables, res, env, request):
+    def test_format(self, rq, variables, res, reset_environ, request):
         rq = request.getfixturevalue(rq)
-        env |= variables
-        assert rq(env) == res
+        project.environ |= variables
+        assert rq() == res
 
     @mark.parametrize("rq", ("simple_rq", "multiple_rq"))
-    def test_format_null(self, rq, env, request):
+    def test_format_null(self, rq, reset_environ, request):
         rq = request.getfixturevalue(rq)
-        env |= {"ONE": "", "TWO": "2", "THREE": "3"}
-        assert rq(env) is None
+        project.environ |= {"ONE": "", "TWO": "2", "THREE": "3"}
+        assert rq() is None
 
 
 class TestMultipleValue:
@@ -70,28 +70,28 @@ class TestMultipleValue:
 
     @fixture
     def callable_mv(self):
-        return MultipleValues(lambda env: "a", lambda env: "b")
+        return MultipleValues(lambda: "a", lambda: "b")
 
     @fixture
-    def env(self):
-        return Environment(auto_confirm=True)
+    def reset_environ(self):
+        project.environ.clear()
 
     def test_mv_tail(self, simple_mv):
         mv = MultipleValues("x", simple_mv)
         assert mv._values == ["x", "a", "b"]
 
     @mark.parametrize("mv", ("simple_mv", "callable_mv"))
-    def test_call(self, mv, env, monkeypatch, request):
+    def test_call(self, mv, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "a")
         mv = request.getfixturevalue(mv)
-        assert mv(env) == "a"
+        assert mv() == "a"
 
     @mark.parametrize("mv", ("simple_mv", "callable_mv"))
-    def test_call_invalid(self, mv, env, monkeypatch, request):
+    def test_call_invalid(self, mv, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "x")
         mv = request.getfixturevalue(mv)
         with raises(click.exceptions.Abort):
-            mv(env)
+            mv()
 
 
 class TestTemplateDict:
@@ -238,7 +238,8 @@ class TestTemplateDict:
 class TestTemplateVisitor:
     @fixture
     def visitor(self):
-        return TemplateVisitor(Environment(auto_confirm=True))
+        project.environ.clear()
+        return TemplateVisitor()
 
     @fixture
     def empty_td(self):

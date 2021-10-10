@@ -18,8 +18,7 @@ class BaseDumper(type(pathlib.Path())):
         self._root = None
         return self
 
-    def commit(self, root, environment):
-        self._environment = environment
+    def commit(self, root):
         self._root = root
 
         path = self.substitute_path()
@@ -31,9 +30,9 @@ class BaseDumper(type(pathlib.Path())):
 
     def substitute_path(self):
         return pathlib.Path(
-            templates.RenderContext(
-                self._environment, sanitizer=self._sanitizer
-            ).render_string(str(self._root / self))
+            templates.RenderContext(sanitizer=self._sanitizer).render_string(
+                str(self._root / self)
+            )
         )
 
 
@@ -57,9 +56,7 @@ class Jinja(BaseDumper):
     def dump_in(self, template):
         with self.substitute_path().open("w+") as file:
             file.write(
-                templates.RenderContext(
-                    self._environment, value_error=False
-                ).render_template(template)
+                templates.RenderContext(value_error=False).render_template(template)
             )
 
 

@@ -2,13 +2,13 @@ import textwrap
 
 from jinja2 import Template
 
-from incipyt import actions, hooks
+from incipyt import actions, hooks, project
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
 class Setuptools(actions._Action):
-    """Action to add Setuptools to :class:`incipyt.os.Hierarchy`."""
+    """Action to add Setuptools to :class:`incipyt.project.Hierarchy`."""
 
     def __init__(self, check=False):
         self.check_build = check
@@ -60,7 +60,7 @@ class Setuptools(actions._Action):
         choose when commiting.
 
         :param hierarchy: The actual hierarchy to update with setuptools configuration.
-        :type hierarchy: :class:`incipyt.os.Hierarchy`
+        :type hierarchy: :class:`incipyt.project.Hierarchy`
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
         pyproject = hierarchy.get_configuration(Toml("pyproject.toml"))
@@ -174,17 +174,15 @@ class Setuptools(actions._Action):
         setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
-    def post(self, workon, environment):
+    def post(self, workon):
         """Editable install and build for test.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
-        :param environment: Environment used to do post-action
-        :type environment: :class:`incipyt.os.Environment`
         """
-        environment.run(
+        project.run(
             [
-                environment.python.requires,
+                project.python.requires,
                 "-m",
                 "pip",
                 "install",
@@ -193,4 +191,4 @@ class Setuptools(actions._Action):
             ]
         )
         if self.check_build:
-            environment.run([environment.python.requires, "-m", "build", f"{workon}"])
+            project.run([project.python.requires, "-m", "build", f"{workon}"])
