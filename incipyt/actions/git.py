@@ -4,29 +4,26 @@ from incipyt._internal.dumpers import Requirement
 
 
 class Git(actions._Action):
-    """Action to add Git to :class:`incipyt.project.Hierarchy`."""
+    """Action to add Git to :class:`incipyt.project._Structure`."""
 
     def __init__(self):
         hooks.VCSIgnore.register(self._hook)
 
-    def add_to(self, hierarchy):
-        """Add git configuration to `hierarchy`.
+    def add_to_structure(self):
+        """Add git configuration to `project.structure`.
 
         Register git related project URLs:
         - Repository: {REPOSITORY}
         - Issue: {REPOSITORY}/issues
         - Documentation: {REPOSITORY}/wiki
-
-        :param hierarchy: The actual hierarchy to update with git configuration.
-        :type hierarchy: :class:`incipyt.project.Hierarchy`
         """
-        hook_url = hooks.ProjectURL(hierarchy)
+        hook_url = hooks.ProjectURL()
         hook_url("Repository", templates.Requires("{REPOSITORY}"))
         hook_url("Issue", templates.Requires("{REPOSITORY}/issues"))
         hook_url("Documentation", templates.Requires("{REPOSITORY}/wiki"))
 
-    def _hook(self, hierarchy, value):
-        gitignore = hierarchy.get_configuration(Requirement(".gitignore"))
+    def _hook(self, value):
+        gitignore = project.structure.get_configuration(Requirement(".gitignore"))
         gitignore[None] = [value]
 
     def pre(self, workon):

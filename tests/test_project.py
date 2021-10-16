@@ -128,7 +128,7 @@ class TestEnviron:
         assert result.stdout.decode() == "lineA\nlineB\n"
 
 
-class TestHierarchy:
+class TestStructure:
     @fixture
     def reset_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
@@ -141,32 +141,33 @@ class TestHierarchy:
         project.environ["CONTENT"] = project.EnvValue("text", confirmed=True)
 
     @fixture
-    def hierarchy(self):
-        hierarchy = project.Hierarchy()
-        conf = hierarchy.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
+    def reset_structure(self):
+        project.structure.clear()
+        conf = project.structure.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
         conf["section"] = {"first": "{VALUE}"}
-        hierarchy.register_template(
+        project.structure.register_template(
             Jinja("{FOLDER_B}/{NAME_B}"),
             Template("{{CONTENT}}\n"),
         )
-        return hierarchy
 
-    def test_get_new_configuration(self, hierarchy):
-        configuration = hierarchy.get_configuration(Toml("testC.toml"))
+    def test_get_new_configuration(self, reset_structure):
+        configuration = project.structure.get_configuration(Toml("testC.toml"))
         assert configuration == {}
 
-    def test_get_old_configuration(self, hierarchy):
-        configuration = hierarchy.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
+    def test_get_old_configuration(self, reset_structure):
+        configuration = project.structure.get_configuration(
+            Toml("{FOLDER_A}/{NAME_A}.toml")
+        )
         assert configuration == {"section": {"first": Requires("{VALUE}")}}
 
-    def test_mkdir(self, hierarchy, reset_environ, tmp_path):
-        hierarchy.mkdir(tmp_path)
+    def test_mkdir(self, reset_structure, reset_environ, tmp_path):
+        project.structure.mkdir(tmp_path)
         assert (tmp_path / "folderA").is_dir()
         assert (tmp_path / "folderB").is_dir()
 
-    def test_commit(self, hierarchy, reset_environ, tmp_path):
-        hierarchy.mkdir(tmp_path)
-        hierarchy.commit()
+    def test_commit(self, reset_structure, reset_environ, tmp_path):
+        project.structure.mkdir(tmp_path)
+        project.structure.commit()
         assert (
             tmp_path / "folderA" / "testA.toml"
         ).read_text() == '[section]\nfirst = "1"\n'

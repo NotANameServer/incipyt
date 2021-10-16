@@ -129,7 +129,7 @@ def run(args, **kwargs):
     return result
 
 
-class Hierarchy:
+class _Structure:
     """Represents all configuration and template files to commit for the new project.
 
     An instance internally stores mappables between path objects and template
@@ -138,14 +138,17 @@ class Hierarchy:
     Functions :meth:`get_configuration` and :meth:`register_template` add
     respectively configuration dictionary and template to the instance.
 
-    When the hierarchy is finally ready, functions :meth:`mkdir` :meth:`commit`
+    When the project structure is finally ready, functions :meth:`mkdir` :meth:`commit`
     can be used to write folder and files in a new folder after substituting
     variables in path and files using an :class:`incipyt.project.Environ`.
     """
 
-    def __init__(self):
+    def clear(self):
         self._configurations = {}
         self._templates = {}
+
+    def __init__(self):
+        self.clear()
 
     def get_configuration(self, config_root):
         """Get a configuration dictionary associated to the relative path `config_root`.
@@ -157,7 +160,7 @@ class Hierarchy:
         """
         if config_root not in self._configurations:
             logger.debug(
-                "Register configuration %s in hierarchy %d.", str(config_root), id(self)
+                "Register configuration %s in project structure.", str(config_root)
             )
             self._configurations[config_root] = {}
 
@@ -175,13 +178,11 @@ class Hierarchy:
         if template_root in self._templates:
             raise RuntimeError("Template %s already exists.", str(template_root))
 
-        logger.debug(
-            "Register template %s in hierarchy %d.", str(template_root), id(self)
-        )
+        logger.debug("Register template %s in project structure.", str(template_root))
         self._templates[template_root] = template
 
     def commit(self):
-        """Commit current hierarchy on disk.
+        """Commit current project structure on disk.
 
         :raises RuntimeError: If one of the configuration file already exists.
         """
@@ -199,7 +200,7 @@ class Hierarchy:
             template_root.dump_in(template)
 
     def mkdir(self, workon):
-        """Make all directories of the hierarchy in workon.
+        """Make all directories of the project structure in workon.
 
         :param workon: Work-on path.
         :type workon: :class:`pathlib.Path`
@@ -219,3 +220,6 @@ class Hierarchy:
         for template_root in self._templates:
             logger.info("Mkdir folders for %s.", str(template_root))
             template_root.mkdir_in()
+
+
+structure = _Structure()

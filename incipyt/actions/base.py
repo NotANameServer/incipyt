@@ -1,12 +1,8 @@
 class Action:
     """Base Class for any `Action`. Concrete `Action` should subclass it."""
 
-    def add_to(self, hierarchy):
-        """Add this action's configuration and template to `hierarchy`.
-
-        :param hierarchy: The actual hierarchy to update with this action
-        :type hierarchy: :class:`incipyt.project.Hierarchy`
-        """
+    def add_to_structure(self):
+        """Add this action's configuration and template to project structure`."""
 
     def __repr__(self):
         return self.__class__.__name__

@@ -5,15 +5,11 @@ from incipyt._internal import templates
 
 
 class Venv(actions._Action):
-    """Action to add virtualenv to :class:`incipyt.project.Hierarchy`."""
+    """Action to add virtualenv to :class:`incipyt.project._Structure`."""
 
-    def add_to(self, hierarchy):
-        """Add venv configuration to `hierarchy`, do nothing.
-
-        :param hierarchy: The actual hierarchy to update with venv configuration.
-        :type hierarchy: :class:`incipyt.project.Hierarchy`
-        """
-        hook = hooks.VCSIgnore(hierarchy)
+    def add_to_structure(self):
+        """Add venv configuration to `project.structure`, do nothing."""
+        hook = hooks.VCSIgnore()
         hook(templates.Transform(".env"))
 
     def pre(self, workon):

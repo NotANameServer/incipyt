@@ -11,9 +11,6 @@ class _Hook:
         # Each subclass must have its own _hooks attribute
         cls._hooks = []
 
-    def __init__(self, hierarchy):
-        self._hierarchy = hierarchy
-
     def __repr__(self):
         return self.__class__.__name__
 
@@ -28,7 +25,7 @@ class _Hook:
             )
 
         for hook in self._hooks:
-            hook(self._hierarchy, *args)
+            hook(*args)
 
     def _format_args(self, args):
         return f"arguments: {args}"

@@ -8,7 +8,7 @@ from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
 
 class Setuptools(actions._Action):
-    """Action to add Setuptools to :class:`incipyt.project.Hierarchy`."""
+    """Action to add Setuptools to :class:`incipyt.project._Structure`."""
 
     def __init__(self, check=False):
         self.check_build = check
@@ -16,8 +16,8 @@ class Setuptools(actions._Action):
         hooks.Classifier.register(self._hook_classifier)
         hooks.ProjectURL.register(self._hook_url)
 
-    def add_to(self, hierarchy):
-        """Add setuptools configuration to `hierarchy`.
+    def add_to_structure(self):
+        """Add setuptools configuration to `project.structure`.
 
         :file:`pyptoject.toml`
 
@@ -59,12 +59,10 @@ class Setuptools(actions._Action):
         value is appended to the current one(s), the user will be asked to
         choose when commiting.
 
-        :param hierarchy: The actual hierarchy to update with setuptools configuration.
-        :type hierarchy: :class:`incipyt.project.Hierarchy`
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
-        pyproject = hierarchy.get_configuration(Toml("pyproject.toml"))
-        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
+        pyproject = project.structure.get_configuration(Toml("pyproject.toml"))
+        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
 
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
@@ -110,15 +108,15 @@ class Setuptools(actions._Action):
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
-        hierarchy.register_template(
+        project.structure.register_template(
             Jinja("LICENSE"),
             Template("Copyright (c) {{AUTHOR_NAME}}\n"),
         )
-        hierarchy.register_template(
+        project.structure.register_template(
             Jinja("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
             Template("\n"),
         )
-        hierarchy.register_template(
+        project.structure.register_template(
             Jinja("README.md"),
             Template(
                 textwrap.dedent(
@@ -136,7 +134,7 @@ class Setuptools(actions._Action):
                 )
             ),
         )
-        hierarchy.register_template(
+        project.structure.register_template(
             Jinja("setup.py"),
             Template(
                 textwrap.dedent(
@@ -149,29 +147,29 @@ class Setuptools(actions._Action):
             ),
         )
 
-        hook_build = hooks.BuildDependancy(hierarchy)
+        hook_build = hooks.BuildDependancy()
         hook_build(templates.Transform("build"))
 
-        hook_classifier = hooks.Classifier(hierarchy)
+        hook_classifier = hooks.Classifier()
         hook_classifier(
             templates.Transform("Programming Language :: Python :: 3 :: Only")
         )
 
-        hook_vcs = hooks.VCSIgnore(hierarchy)
+        hook_vcs = hooks.VCSIgnore()
         hook_vcs(templates.Transform("build"))
         hook_vcs(templates.Transform("dist"))
         hook_vcs(templates.Transform("*.egg-info"))
 
-    def _hook_classifier(self, hierarchy, value):
-        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
+    def _hook_classifier(self, value):
+        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "classifiers"] = [value]
 
-    def _hook_dependancy(self, hierarchy, value):
-        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
+    def _hook_dependancy(self, value):
+        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["options.extras_require", "dev"] = [value]
 
-    def _hook_url(self, hierarchy, url_kind, url_value):
-        setup = hierarchy.get_configuration(CfgIni("setup.cfg"))
+    def _hook_url(self, url_kind, url_value):
+        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
     def post(self, workon):
