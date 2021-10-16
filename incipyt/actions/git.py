@@ -1,4 +1,4 @@
-from incipyt import actions, hooks, project
+from incipyt import actions, signals, project
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
@@ -7,7 +7,7 @@ class Git(actions._Action):
     """Action to add Git to :class:`incipyt.project._Structure`."""
 
     def __init__(self):
-        hooks.VCSIgnore.register(self._hook)
+        signals.vcs_ignore.connect(self._slot)
 
     def add_to_structure(self):
         """Add git configuration to `project.structure`.
@@ -17,14 +17,19 @@ class Git(actions._Action):
         - Issue: {REPOSITORY}/issues
         - Documentation: {REPOSITORY}/wiki
         """
-        hook_url = hooks.ProjectURL()
-        hook_url("Repository", templates.Requires("{REPOSITORY}"))
-        hook_url("Issue", templates.Requires("{REPOSITORY}/issues"))
-        hook_url("Documentation", templates.Requires("{REPOSITORY}/wiki"))
+        signals.project_url.emit(
+            url_kind="Repository", url_value=templates.Requires("{REPOSITORY}")
+        )
+        signals.project_url.emit(
+            url_kind="Issue", url_value=templates.Requires("{REPOSITORY}/issues")
+        )
+        signals.project_url.emit(
+            url_kind="Documentation", url_value=templates.Requires("{REPOSITORY}/wiki")
+        )
 
-    def _hook(self, value):
+    def _slot(self, pattern, **kwargs):
         gitignore = project.structure.get_configuration(Requirement(".gitignore"))
-        gitignore[None] = [value]
+        gitignore[None] = [pattern]
 
     def pre(self, workon):
         """Run `git init`.

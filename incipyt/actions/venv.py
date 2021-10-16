@@ -1,6 +1,6 @@
 import os
 
-from incipyt import actions, hooks, project
+from incipyt import actions, signals, project
 from incipyt._internal import templates
 
 
@@ -9,8 +9,7 @@ class Venv(actions._Action):
 
     def add_to_structure(self):
         """Add venv configuration to `project.structure`, do nothing."""
-        hook = hooks.VCSIgnore()
-        hook(templates.Transform(".env"))
+        signals.vcs_ignore.emit(pattern=templates.Transform(".env"))
 
     def pre(self, workon):
         """Run `python -m venv .env`.

@@ -2,7 +2,7 @@ import textwrap
 
 from jinja2 import Template
 
-from incipyt import actions, hooks, project
+from incipyt import actions, signals, project
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, Jinja, Toml
 
@@ -12,9 +12,9 @@ class Setuptools(actions._Action):
 
     def __init__(self, check=False):
         self.check_build = check
-        hooks.BuildDependancy.register(self._hook_dependancy)
-        hooks.Classifier.register(self._hook_classifier)
-        hooks.ProjectURL.register(self._hook_url)
+        signals.build_dependancy.connect(self._slot_dependancy)
+        signals.classifier.connect(self._slot_classifier)
+        signals.project_url.connect(self._slot_url)
 
     def add_to_structure(self):
         """Add setuptools configuration to `project.structure`.
@@ -147,28 +147,27 @@ class Setuptools(actions._Action):
             ),
         )
 
-        hook_build = hooks.BuildDependancy()
-        hook_build(templates.Transform("build"))
+        signals.build_dependancy.emit(dep_name=templates.Transform("build"))
 
-        hook_classifier = hooks.Classifier()
-        hook_classifier(
-            templates.Transform("Programming Language :: Python :: 3 :: Only")
+        signals.classifier.emit(
+            classifier=templates.Transform(
+                "Programming Language :: Python :: 3 :: Only"
+            )
         )
 
-        hook_vcs = hooks.VCSIgnore()
-        hook_vcs(templates.Transform("build"))
-        hook_vcs(templates.Transform("dist"))
-        hook_vcs(templates.Transform("*.egg-info"))
+        signals.vcs_ignore.emit(pattern=templates.Transform("build"))
+        signals.vcs_ignore.emit(pattern=templates.Transform("dist"))
+        signals.vcs_ignore.emit(pattern=templates.Transform("*.egg-info"))
 
-    def _hook_classifier(self, value):
+    def _slot_classifier(self, classifier, **kwargs):
         setup = project.structure.get_configuration(CfgIni("setup.cfg"))
-        setup["metadata", "classifiers"] = [value]
+        setup["metadata", "classifiers"] = [classifier]
 
-    def _hook_dependancy(self, value):
+    def _slot_dependancy(self, dep_name, **kwargs):
         setup = project.structure.get_configuration(CfgIni("setup.cfg"))
-        setup["options.extras_require", "dev"] = [value]
+        setup["options.extras_require", "dev"] = [dep_name]
 
-    def _hook_url(self, url_kind, url_value):
+    def _slot_url(self, url_kind, url_value, **kwargs):
         setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "project_urls", url_kind] = url_value
 
