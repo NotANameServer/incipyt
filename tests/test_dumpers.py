@@ -14,13 +14,13 @@ def test_format_path(reset_environ, tmp_path):
     project.environ["first"] = project.EnvValue("folder", confirmed=True)
     project.environ["second"] = project.EnvValue("file", confirmed=True)
     dmp.commit(tmp_path)
-    assert dmp.substitute_path() == tmp_path / "folder" / "file.ext"
+    assert dmp.format_path() == tmp_path / "folder" / "file.ext"
 
 
 def test_mkdir(reset_environ, tmp_path):
     dmp = BaseDumper("folder/file")
     dmp.commit(tmp_path)
-    dmp.mkdir_in()
+    dmp.mkdir()
     assert (tmp_path / "folder").is_dir()
 
 

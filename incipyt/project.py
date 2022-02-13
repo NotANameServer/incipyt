@@ -191,7 +191,7 @@ class _Structure:
 
         for config_root in self._configurations:
             logger.info("Mkdir folders for %s.", str(config_root))
-            config_root.mkdir_in()
+            config_root.mkdir()
 
     @staticmethod
     def _visit(template):

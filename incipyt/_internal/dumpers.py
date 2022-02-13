@@ -8,32 +8,48 @@ import toml
 from incipyt._internal import templates, utils
 
 
-class BaseDumper(type(pathlib.Path())):
-    def __new__(cls, path, sanitizer=None):
-        # As pathlib runs some magic in __new__ to instanciate a Path subclass
-        # that matches the current platform, special precautions must be taken
-        # when subclassing it
-        self = super().__new__(cls, path)
-        self._sanitizer = sanitizer
+class BaseDumper:
+    def __init__(self, path, sanitizer=None):
+        self._path = pathlib.Path(path)
         self._root = None
-        return self
+        self._sanitizer = sanitizer
 
     def commit(self, root):
         self._root = root
 
-        path = self.substitute_path()
+        path = self.format_path()
         if path.exists():
             raise RuntimeError(f"File {path} already exists.")
 
-    def mkdir_in(self):
-        self.substitute_path().parent.mkdir(parents=True, exist_ok=True)
+    def mkdir(self):
+        self.format_path().parent.mkdir(parents=True, exist_ok=True)
 
-    def substitute_path(self):
+    def open(self, mode="w+", **kwargs):  # noqa: A003
+        return self.format_path().open(mode=mode, **kwargs)
+
+    def format_path(self):
+        if self._root is None:
+            raise RuntimeError("Root is missing.")
+
         return pathlib.Path(
             templates.RenderContext(sanitizer=self._sanitizer).render_string(
-                str(self._root / self)
+                str(self._root / self._path)
             )
         )
+
+    def __hash__(self):
+        return hash(self._path)
+
+    def __repr__(self):
+        return utils.make_repr(
+            self,
+            root=self._root,
+            path=self._path,
+            sanitizer=self._sanitizer,
+        )
+
+    def __eq__(self, other):
+        return utils.attrs_eq(self, other, "_path")
 
 
 class CfgIni(BaseDumper):
@@ -48,23 +64,23 @@ class CfgIni(BaseDumper):
                     )
         config_cfg = configparser.ConfigParser()
         config_cfg.read_dict(config)
-        with self.substitute_path().open("w+") as file:
+        with self.open() as file:
             config_cfg.write(file)
 
 
 class Raw(BaseDumper):
     def dump_in(self, config):
-        with self.substitute_path().open("w+") as file:
+        with self.open() as file:
             file.write(config[None])
 
 
 class Requirement(BaseDumper):
     def dump_in(self, config):
-        with self.substitute_path().open("w+") as file:
+        with self.open() as file:
             file.write("\n".join(config[None]))
 
 
 class Toml(BaseDumper):
     def dump_in(self, config):
-        with self.substitute_path().open("w+") as file:
+        with self.open() as file:
             toml.dump(config, file)
