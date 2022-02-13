@@ -19,7 +19,9 @@ class Venv(actions._Action):
         """
         env_path = workon / ".env"
         py_path = env_path / ("Scripts" if os.name == "nt" else "bin") / "python"
-        project.run([project.python.requires, "-m", "venv", str(env_path)])
+        project.run(
+            [project.python.requires, "-m", "venv", "--upgrade-deps", str(env_path)]
+        )
         project.environ[project.python.variable] = project.EnvValue(
             str(py_path), update=True
         )
