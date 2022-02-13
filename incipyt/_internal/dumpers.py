@@ -52,12 +52,10 @@ class CfgIni(BaseDumper):
             config_cfg.write(file)
 
 
-class Jinja(BaseDumper):
-    def dump_in(self, template):
+class Raw(BaseDumper):
+    def dump_in(self, config):
         with self.substitute_path().open("w+") as file:
-            file.write(
-                templates.RenderContext(value_error=False).render_template(template)
-            )
+            file.write(config[None])
 
 
 class Requirement(BaseDumper):

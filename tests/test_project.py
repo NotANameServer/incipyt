@@ -3,10 +3,8 @@ import sys
 from pytest import fixture, mark, raises
 
 from incipyt import project
-from incipyt._internal.dumpers import Jinja, Toml
+from incipyt._internal.dumpers import Raw, Toml
 from incipyt._internal.templates import Requires
-
-from jinja2 import Template
 
 from tests.utils import mock_stdin
 
@@ -21,7 +19,7 @@ class TestEnviron:
     def simple_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
-        project.environ["ONE"] = "1"
+        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
 
     @fixture
     def empty_auto_env(self, fake_process):
@@ -32,7 +30,7 @@ class TestEnviron:
     def simple_auto_env(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
-        project.environ["ONE"] = "1"
+        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
 
     @mark.parametrize(
         "env, input_values",
@@ -102,9 +100,7 @@ class TestEnviron:
         "env",
         (
             "empty_environ",
-            "simple_environ",
             "empty_auto_env",
-            "simple_auto_env",
         ),
     )
     def test_iter(self, env, request):
@@ -143,12 +139,12 @@ class TestStructure:
     @fixture
     def reset_structure(self):
         project.structure.clear()
-        conf = project.structure.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))
-        conf["section"] = {"first": "{VALUE}"}
-        project.structure.register_template(
-            Jinja("{FOLDER_B}/{NAME_B}"),
-            Template("{{CONTENT}}\n"),
-        )
+        project.structure.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))[
+            "section"
+        ] = {"first": "{VALUE}"}
+        project.structure.get_configuration(Raw("{FOLDER_B}/{NAME_B}"))[
+            None
+        ] = "{CONTENT}"
 
     def test_get_new_configuration(self, reset_structure):
         configuration = project.structure.get_configuration(Toml("testC.toml"))

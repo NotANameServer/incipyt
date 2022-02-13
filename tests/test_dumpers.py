@@ -1,7 +1,6 @@
-from jinja2 import Template
 from pytest import fixture, mark, raises
 
-from incipyt._internal.dumpers import BaseDumper, CfgIni, Jinja, Requirement, Toml
+from incipyt._internal.dumpers import BaseDumper, CfgIni, Requirement, Toml
 from incipyt import project
 
 
@@ -12,8 +11,8 @@ def reset_environ():
 
 def test_format_path(reset_environ, tmp_path):
     dmp = BaseDumper("{first}/{second}.ext")
-    project.environ["first"] = "folder"
-    project.environ["second"] = "file"
+    project.environ["first"] = project.EnvValue("folder", confirmed=True)
+    project.environ["second"] = project.EnvValue("file", confirmed=True)
     dmp.commit(tmp_path)
     assert dmp.substitute_path() == tmp_path / "folder" / "file.ext"
 
@@ -60,11 +59,6 @@ def test_path_exists(reset_environ, tmp_path):
         (
             Requirement,
             {None: ("first", "second", "third")},
-            "first\nsecond\nthird",
-        ),
-        (
-            Jinja,
-            Template("first\nsecond\nthird\n"),
             "first\nsecond\nthird",
         ),
     ],

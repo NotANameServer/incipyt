@@ -1,4 +1,3 @@
-from jinja2 import Template
 from pytest import fixture, mark, raises
 
 from incipyt import project
@@ -11,8 +10,8 @@ class _Context:
     @fixture
     def reset_environ(self):
         project.environ.clear()
-        project.environ["VARIABLE_NAME"] = "value"
-        project.environ["EMPTY_VARIABLE"] = ""
+        project.environ["VARIABLE_NAME"] = project.EnvValue("value", confirmed=True)
+        project.environ["EMPTY_VARIABLE"] = project.EnvValue("", confirmed=True)
 
     @fixture
     def simple_ctx(self, reset_environ):
@@ -87,7 +86,8 @@ class TestRenderString(_Context):
         assert ctx.render_string("{VARIABLE_NAME}") == "value"
 
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_interp_kwarg(self, ctx, request):
+    def test_interp_kwarg(self, ctx, monkeypatch, request):
+        mock_stdin(monkeypatch, "")
         ctx = request.getfixturevalue(ctx)
         assert ctx.render_string("{OTHER_NAME}", OTHER_NAME="value") == "value"
 
@@ -107,30 +107,3 @@ class TestRenderString(_Context):
     def test_interp_empty(self, ctx, res, request):
         ctx = request.getfixturevalue(ctx)
         assert ctx.render_string("{VARIABLE_NAME}{EMPTY_VARIABLE}") == res
-
-
-class TestRenderTemplate(_Context):
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_interp(self, ctx, request):
-        ctx = request.getfixturevalue(ctx)
-        assert ctx.render_template(Template("{{ VARIABLE_NAME }}")) == "value"
-
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_iterp_undefined(self, ctx, monkeypatch, request):
-        mock_stdin(monkeypatch, "value")
-        ctx = request.getfixturevalue(ctx)
-        assert ctx.render_template(Template("{{ OTHER_NAME }}")) == "value"
-
-    @mark.parametrize(
-        "ctx, res",
-        (
-            ("simple_ctx", None),
-            ("no_error_ctx", "value"),
-        ),
-    )
-    def test_iterp_empty(self, ctx, res, request):
-        ctx = request.getfixturevalue(ctx)
-        assert (
-            ctx.render_template(Template("{{ VARIABLE_NAME }}{{ EMPTY_VARIABLE }}"))
-            == res
-        )

@@ -1,10 +1,8 @@
 import textwrap
 
-from jinja2 import Template
-
 from incipyt import actions, signals, project
 from incipyt._internal import sanitizers, templates
-from incipyt._internal.dumpers import CfgIni, Jinja, Toml
+from incipyt._internal.dumpers import CfgIni, Raw, Toml
 
 
 class Setuptools(actions._Action):
@@ -96,7 +94,7 @@ class Setuptools(actions._Action):
                 template,
                 sanitizer=sanitizers.version,
                 PACKAGE_VERSION="0.0.0",
-                PYTHON_VERSION="3.6",
+                PYTHON_VERSION="3.7",
             ),
         )
 
@@ -108,43 +106,39 @@ class Setuptools(actions._Action):
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
-        project.structure.register_template(
-            Jinja("LICENSE"),
-            Template("Copyright (c) {{AUTHOR_NAME}}\n"),
-        )
-        project.structure.register_template(
-            Jinja("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package),
-            Template("\n"),
-        )
-        project.structure.register_template(
-            Jinja("README.md"),
-            Template(
-                textwrap.dedent(
-                    """\
-                    # {{PROJECT_NAME}}
+        project.structure.get_configuration(Raw("LICENSE"))[
+            None
+        ] = "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>\n\n"
 
-                    {{SUMMARY_DESCRIPTION}}
+        project.structure.get_configuration(
+            Raw("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
+        )[None] = "\n"
 
-                    ## Usage
+        project.structure.get_configuration(Raw("README.md"))[
+            None
+        ] = templates.Requires(
+            textwrap.dedent(
+                """\
+                # {PROJECT_NAME}
 
-                    ## Contribute
+                {SUMMARY_DESCRIPTION}
 
-                    Copyright (c) {{AUTHOR_NAME}}\n\n
-                    """
-                )
+                ## Usage
+
+                ## Contribute
+
+                Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>\n
+                """
             ),
+            value_error=False,
         )
-        project.structure.register_template(
-            Jinja("setup.py"),
-            Template(
-                textwrap.dedent(
-                    """\
-                    import setuptools
 
-                    setuptools.setup()\n\n
-                    """
-                )
-            ),
+        project.structure.get_configuration(Raw("setup.py"))[None] = textwrap.dedent(
+            """\
+            import setuptools
+
+            setuptools.setup()\n
+            """
         )
 
         signals.build_dependancy.emit(dep_name=templates.Transform("build"))

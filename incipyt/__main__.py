@@ -20,16 +20,11 @@ logger = logging.getLogger(__name__)
 )
 @click.version_option()
 @click.option(
-    "--yes",
-    is_flag=True,
-    help="Do not ask confirmation for variables with a default value.",
-)
-@click.option(
     "--check-build",
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
-def main(folder, yes, check_build):
+def main(folder, check_build):
     logging.basicConfig(level="INFO")
 
     if folder == pathlib.Path():

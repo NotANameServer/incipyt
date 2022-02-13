@@ -30,7 +30,6 @@ classifiers = [
 ]
 dependencies = [
   "click",
-  "Jinja2",
   "signalslot",
   "toml",
 ]
@@ -40,7 +39,7 @@ dev = [
   "black",
   "build",
   "flake8",
-  "flakehell",
+  "flakeheaven",
   "flake8-bandit",
   "flake8-bugbear",
   "flake8-builtins",
@@ -64,15 +63,13 @@ test = [
 [project.scripts]
 incipyt = "incipyt.__main__:main"
 
-[tool.flakehell]
+[tool.flakeheaven]
 exclude = [
   ".env",
   ".git",
 ]
-# Fix combatibility with flake8 3.9.[1-2] as of writing
-extended_default_ignore = []
 
-[tool.flakehell.plugins]
+[tool.flakeheaven.plugins]
 flake8-bandit = ["+*", "-S101", "-S404", "-S603", "-S607"]
 flake8-bugbear = ["+*"]
 flake8-builtins = ["+*"]
@@ -84,17 +81,17 @@ pep8-naming = ["+*"]
 pycodestyle = ["+*", "-W503", "-E501"]
 pyflakes = ["+*"]
 
-[tool.flakehell.exceptions."incipyt/*__init__.py"]
+[tool.flakeheaven.exceptions."incipyt/*__init__.py"]
 pyflakes = ["-F401"]
 
-[tool.flakehell.exceptions."incipyt/_*/*.py"]
+[tool.flakeheaven.exceptions."incipyt/_*/*.py"]
 flake8-docstrings = ["-*"]
 
-[tool.flakehell.exceptions."incipyt/__*__.py"]
+[tool.flakeheaven.exceptions."incipyt/__*__.py"]
 flake8-docstrings = ["-D100", "-D103", "-D104"]
 
-[tool.flakehell.exceptions."incipyt/actions/*.py"]
+[tool.flakeheaven.exceptions."incipyt/actions/*.py"]
 flake8-docstrings = ["-D100"]
 
-[tool.flakehell.exceptions."tests/*.py"]
+[tool.flakeheaven.exceptions."tests/*.py"]
 flake8-docstrings = ["-*"]

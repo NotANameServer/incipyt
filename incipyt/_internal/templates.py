@@ -1,9 +1,9 @@
 """This module contains classes related to template definition and rendering.
 
 Incipyt mainly uses two kinds of templates: bare template strings that behave
-like builtin Python string formatting and Jinja 2 templates. It also provides
-special wrappers to allow easier templating of collections data structures,
-such as dict-like template objects.
+like builtin Python string formatting. It also provides special wrappers to
+allow easier templating of collections data structures, such as dict-like
+template objects.
 """
 
 import collections
@@ -39,7 +39,9 @@ class Requires:
     environ values and overrides.
     """
 
-    def __init__(self, template, confirmed=False, sanitizer=None, **kwargs):
+    def __init__(
+        self, template, confirmed=False, sanitizer=None, value_error=True, **kwargs
+    ):
         r"""This class acts like a wrapper around a template string.
 
         When an instance is called, it renders the underlying template string
@@ -51,11 +53,14 @@ class Requires:
         :type confirmed: :class:`bool`, optionnal
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
+        :param value_error: Empty values generate errors.
+        :type value_error: :class:`bool`
         :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environ. Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
         :type \**kwargs: :class:`str`, optionnal
         """
         self._confirmed = confirmed
         self._sanitizer = sanitizer
+        self._value_error = value_error
         self._template = template
         self._kwargs = kwargs
 
@@ -65,6 +70,7 @@ class Requires:
             template=self._template,
             confirmed=self._confirmed,
             sanitizer=self._sanitizer,
+            value_error=self._value_error,
             kwargs=self._kwargs,
         )
 
@@ -79,7 +85,9 @@ class Requires:
         :return: The interpolated template string.
         :rtype: :class:`str`
         """
-        return RenderContext(sanitizer=self._sanitizer).render_string(
+        return RenderContext(
+            sanitizer=self._sanitizer, value_error=self._value_error
+        ).render_string(
             self._template,
             **{
                 key: (
@@ -337,52 +345,10 @@ class TemplateDict(collections.UserDict):
         return transform(value)
 
 
-class TemplateVisitor:
-    """Class to visit a template dictionary and process it according to environ variables.
-
-    All callable values of the template dictionary will be evaluated and
-    replaced by their results. All nested structures will be recursively
-    visited and processed too.
-    """
-
-    def __call__(self, template):
-        """Visit the `template` nested-dictionary structure.
-
-        :param template: The template dictionary to visit.
-        :type template: :class:`collections.abc.Mapping`
-        """
-        if isinstance(template, TemplateDict):
-            return self(template.data)
-
-        for key, value in template.items():
-            logger.debug("Visit %s to process environ variables.", key)
-
-            if callable(value):
-                template[key] = value()
-
-            elif isinstance(value, collections.abc.MutableMapping):
-                self(value)
-                if not value:
-                    template[key] = None
-
-            elif isinstance(value, collections.abc.MutableSequence):
-                for index, element in enumerate(value):
-                    if callable(element):
-                        value[index] = element()
-                    if isinstance(element, collections.abc.MutableMapping):
-                        self(element)
-                template[key] = [element for element in value if element]
-                if not template[key]:
-                    template[key] = None
-
-        for key in [key for key, value in template.items() if value is None]:
-            del template[key]
-
-
 class RenderContext(collections.abc.Mapping):
     """Class wrapping an environ and providing an interface to render templates.
 
-    It can be used to render template strings and Jinja templates.
+    It can be used to render template strings.
     """
 
     def __init__(self, sanitizer=None, value_error=True):
@@ -394,8 +360,8 @@ class RenderContext(collections.abc.Mapping):
         :type environ: :class:`bool`, optional
         """
         self.data = project.environ
-        self._sanitizer = sanitizer
         self._keys = set()
+        self._sanitizer = sanitizer
         self._value_error = value_error
 
     def __contains__(self, key):
@@ -426,23 +392,6 @@ class RenderContext(collections.abc.Mapping):
 
     def items(self):
         return zip(self.keys(), self.values())
-
-    def render_template(self, template):
-        """Render a Jinja template.
-
-        Variables will be request from the underlying environ, and undefined
-        variables will be created. An empty variable will cause the whole
-        render result to be `None`.
-
-        :param template: Jinja template to render.
-        :type template: :class:`jinja2.Template`
-        :return: The rendered template or `None` if a context variable is empty.
-        :rtype: :class:`str` or `None`
-        """
-        with contextlib.suppress(ValueError):
-            return "".join(
-                template.root_render_func(template.new_context(self, shared=True))
-            )
 
     def render_string(self, template, **kwargs):
         r"""Render a template string.

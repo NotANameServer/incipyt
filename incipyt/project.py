@@ -81,9 +81,10 @@ class _Environ(collections.UserDict):
         self.clear()
 
     def __getitem__(self, key):
-        if key not in self.data:
+        if key not in self._confirmed:
             logger.debug("Missing environ variable %s, request it.", key)
             self.data[key] = self._requests(key)
+            self._confirmed.add(key)
 
         return self.data[key]
 
@@ -145,7 +146,6 @@ class _Structure:
 
     def clear(self):
         self._configurations = {}
-        self._templates = {}
 
     def __init__(self):
         self.clear()
@@ -166,38 +166,18 @@ class _Structure:
 
         return templates.TemplateDict(self._configurations[config_root])
 
-    def register_template(self, template_root, template):
-        """Register a Jinja template associated to the relative path `config_root`.
-
-        :param template_root: Relative path of the configuration file.
-        :type template_root: :class:`pathlib.PurePath`
-        :param template: A Jinja template to register.
-        :type template: :class:`jinja2.Template`
-        :raises RuntimeError: If `template_root` already registered.
-        """
-        if template_root in self._templates:
-            raise RuntimeError("Template %s already exists.", str(template_root))
-
-        logger.debug("Register template %s in project structure.", str(template_root))
-        self._templates[template_root] = template
-
     def commit(self):
         """Commit current project structure on disk.
 
         :raises RuntimeError: If one of the configuration file already exists.
         """
-        visitor = templates.TemplateVisitor()
         for config_root, config in self._configurations.items():
             logger.info("Process environ variables for %s.", str(config_root))
-            visitor(config)
+            _Structure._visit(config)
 
         for config_root, config in self._configurations.items():
             logger.info("Write configuration file %s.", str(config_root))
             config_root.dump_in(config)
-
-        for template_root, template in self._templates.items():
-            logger.info("Write template file %s.", str(template_root))
-            template_root.dump_in(template)
 
     def mkdir(self, workon):
         """Make all directories of the project structure in workon.
@@ -209,17 +189,47 @@ class _Structure:
             logger.debug("Commit %s path.", str(config_root))
             config_root.commit(workon)
 
-        for template_root in self._templates:
-            logger.debug("Commit template file %s.", str(template_root))
-            template_root.commit(workon)
-
         for config_root in self._configurations:
             logger.info("Mkdir folders for %s.", str(config_root))
             config_root.mkdir_in()
 
-        for template_root in self._templates:
-            logger.info("Mkdir folders for %s.", str(template_root))
-            template_root.mkdir_in()
+    @staticmethod
+    def _visit(template):
+        """Visit the `template` nested-dictionary structure.
+
+        All callable values of the template dictionary will be evaluated and
+        replaced by their results. All nested structures will be recursively
+        visited and processed too.
+
+        :param template: The template dictionary to visit.
+        :type template: :class:`collections.abc.Mapping`
+        """
+        if isinstance(template, templates.TemplateDict):
+            return _Structure._visit(template.data)
+
+        for key, value in template.items():
+            logger.debug("Visit %s to process environ variables.", key)
+
+            if callable(value):
+                template[key] = value()
+
+            elif isinstance(value, collections.abc.MutableMapping):
+                _Structure._visit(value)
+                if not value:
+                    template[key] = None
+
+            elif isinstance(value, collections.abc.MutableSequence):
+                for index, element in enumerate(value):
+                    if callable(element):
+                        value[index] = element()
+                    if isinstance(element, collections.abc.MutableMapping):
+                        _Structure._visit(element)
+                template[key] = [element for element in value if element]
+                if not template[key]:
+                    template[key] = None
+
+        for key in [key for key, value in template.items() if value is None]:
+            del template[key]
 
 
 structure = _Structure()

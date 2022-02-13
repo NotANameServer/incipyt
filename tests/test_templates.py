@@ -5,7 +5,6 @@ from incipyt._internal.templates import (
     MultipleValues,
     Requires,
     TemplateDict,
-    TemplateVisitor,
     Transform,
 )
 from incipyt import project
@@ -33,7 +32,8 @@ class TestRequires:
     def multiple_rq(self):
         return Requires("{ONE}-{TWO}-{THREE}")
 
-    def test_env_key_push(self, kwarg_rq, reset_environ):
+    def test_env_key_push(self, kwarg_rq, reset_environ, monkeypatch):
+        mock_stdin(monkeypatch, "")
         kwarg_rq()
         assert project.environ["ONE"] == "1-kwarg"
 
@@ -43,21 +43,31 @@ class TestRequires:
         assert project.environ["ONE"] == "1"
 
     @mark.parametrize(
-        "rq, variables, res",
+        "rq, variables, stdin, res",
         (
-            ("simple_rq", {"ONE": "1"}, "1"),
-            ("kwarg_rq", {}, "1-kwarg"),
-            ("sanitizer_rq", {"ONE": "1"}, "1-sanitizer"),
-            ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
+            ("simple_rq", {"ONE": "1"}, "", "1"),
+            ("kwarg_rq", {}, "", "1-kwarg"),
+            ("sanitizer_rq", {"ONE": "1"}, "", "1-sanitizer"),
+            ("multiple_rq", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
     )
-    def test_format(self, rq, variables, res, reset_environ, request):
+    def test_format(
+        self, rq, variables, stdin, res, reset_environ, request, monkeypatch
+    ):
+        mock_stdin(monkeypatch, stdin)
         rq = request.getfixturevalue(rq)
         project.environ |= variables
         assert rq() == res
 
-    @mark.parametrize("rq", ("simple_rq", "multiple_rq"))
-    def test_format_null(self, rq, reset_environ, request):
+    @mark.parametrize(
+        "rq, stdin",
+        (
+            ("simple_rq", ""),
+            ("multiple_rq", "\n\n"),
+        ),
+    )
+    def test_format_null(self, rq, stdin, reset_environ, request, monkeypatch):
+        mock_stdin(monkeypatch, stdin)
         rq = request.getfixturevalue(rq)
         project.environ |= {"ONE": "", "TWO": "2", "THREE": "3"}
         assert rq() is None
@@ -237,9 +247,8 @@ class TestTemplateDict:
 
 class TestTemplateVisitor:
     @fixture
-    def visitor(self):
+    def reset_environ(self):
         project.environ.clear()
-        return TemplateVisitor()
 
     @fixture
     def empty_td(self):
@@ -280,10 +289,8 @@ class TestTemplateVisitor:
             ("multiple_td", {"1": "a"}, ["a", "a"]),
         ),
     )
-    def test_call(self, td, res, visitor, input_values, monkeypatch, request):
+    def test_call(self, td, res, reset_environ, input_values, monkeypatch, request):
         mock_stdin(monkeypatch, input_values)
         td = request.getfixturevalue(td)
-        print(td)
-        visitor(td)
-        print(td)
+        project._Structure._visit(td)
         assert td == res
