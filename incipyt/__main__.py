@@ -5,7 +5,7 @@ import sys
 
 import click
 
-from incipyt import actions, project
+from incipyt import tools, project
 
 logger = logging.getLogger(__name__)
 
@@ -38,25 +38,25 @@ def main(folder, check_build):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         project.environ["PROJECT_NAME"] = folder.name
 
-    actions_todo = [actions.Git(), actions.Venv(), actions.Setuptools(check_build)]
+    tools_to_install = [tools.Git(), tools.Venv(), tools.Setuptools(check_build)]
 
-    for action in actions_todo:
-        logger.info("Add %s to project structure.", action)
-        action.add_to_structure()
+    for tool in tools_to_install:
+        logger.info("Add %s to project structure.", tool)
+        tool.add_to_structure()
 
     logger.info("Mkdir folder for project structure on %s.", str(folder))
     project.structure.mkdir(folder)
 
-    for action in actions_todo:
-        logger.info("Running pre-action for %s.", action)
-        action.pre(folder)
+    for tool in tools_to_install:
+        logger.info("Running pre-script for %s.", tool)
+        tool.pre(folder)
 
     logger.info("Commit project structure.")
     project.structure.commit()
 
-    for action in actions_todo:
-        logger.info("Running post-action for %s.", action)
-        action.post(folder)
+    for tool in tools_to_install:
+        logger.info("Running post-script for %s.", tool)
+        tool.post(folder)
 
 
 # Remove '' and current working directory from the first entry of sys.path, if

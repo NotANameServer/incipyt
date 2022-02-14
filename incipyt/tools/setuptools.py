@@ -1,12 +1,12 @@
 import textwrap
 
-from incipyt import actions, signals, project
+from incipyt import tools, signals, project
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, Raw, Toml
 
 
-class Setuptools(actions._Action):
-    """Action to add Setuptools to :class:`incipyt.project._Structure`."""
+class Setuptools(tools._Tool):
+    """Scripts to add Setuptools to :class:`incipyt.project._Structure`."""
 
     def __init__(self, check=False):
         self.check_build = check

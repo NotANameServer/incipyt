@@ -1,11 +1,11 @@
 import os
 
-from incipyt import actions, signals, project
+from incipyt import tools, signals, project
 from incipyt._internal import templates
 
 
-class Venv(actions._Action):
-    """Action to add virtualenv to :class:`incipyt.project._Structure`."""
+class Venv(tools._Tool):
+    """Scripts to add virtualenv to :class:`incipyt.project._Structure`."""
 
     def add_to_structure(self):
         """Add venv configuration to `project.structure`, do nothing."""

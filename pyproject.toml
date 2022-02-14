@@ -90,7 +90,7 @@ flake8-docstrings = ["-*"]
 [tool.flakeheaven.exceptions."incipyt/__*__.py"]
 flake8-docstrings = ["-D100", "-D103", "-D104"]
 
-[tool.flakeheaven.exceptions."incipyt/actions/*.py"]
+[tool.flakeheaven.exceptions."incipyt/tools/*.py"]
 flake8-docstrings = ["-D100"]
 
 [tool.flakeheaven.exceptions."tests/*.py"]

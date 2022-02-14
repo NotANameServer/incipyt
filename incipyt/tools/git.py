@@ -1,10 +1,10 @@
-from incipyt import actions, signals, project
+from incipyt import tools, signals, project
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
 
-class Git(actions._Action):
-    """Action to add Git to :class:`incipyt.project._Structure`."""
+class Git(tools._Tool):
+    """Scripts to add Git to :class:`incipyt.project._Structure`."""
 
     def __init__(self):
         signals.vcs_ignore.connect(self._slot)
