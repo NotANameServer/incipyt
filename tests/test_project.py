@@ -4,7 +4,7 @@ from pytest import fixture, mark, raises
 
 from incipyt import project
 from incipyt._internal.dumpers import Raw, Toml
-from incipyt._internal.templates import Requires
+from incipyt._internal.templates import StringTemplate
 
 from tests.utils import mock_stdin
 
@@ -154,7 +154,7 @@ class TestStructure:
         configuration = project.structure.get_configuration(
             Toml("{FOLDER_A}/{NAME_A}.toml")
         )
-        assert configuration == {"section": {"first": Requires("{VALUE}")}}
+        assert configuration == {"section": {"first": StringTemplate("{VALUE}")}}
 
     def test_mkdir(self, reset_structure, reset_environ, tmp_path):
         project.structure.mkdir(tmp_path)

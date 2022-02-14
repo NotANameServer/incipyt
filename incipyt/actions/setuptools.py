@@ -78,7 +78,9 @@ class Setuptools(actions._Action):
             "long_description": templates.Transform("file: README.md"),
             "long_description_content_type": templates.Transform("text/markdown"),
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
-            "name": templates.Requires("{PROJECT_NAME}", sanitizer=sanitizers.project),
+            "name": templates.StringTemplate(
+                "{PROJECT_NAME}", sanitizer=sanitizers.project
+            ),
         }
 
         setup |= templates.Transform(
@@ -90,7 +92,7 @@ class Setuptools(actions._Action):
                     "python_requires": ">={PYTHON_VERSION}",
                 },
             },
-            lambda template: templates.Requires(
+            lambda template: templates.StringTemplate(
                 template,
                 sanitizer=sanitizers.version,
                 PACKAGE_VERSION="0.0.0",
@@ -98,11 +100,11 @@ class Setuptools(actions._Action):
             ),
         )
 
-        setup["options", "packages"] = templates.Requires(
+        setup["options", "packages"] = templates.StringTemplate(
             "{PROJECT_NAME}", sanitizer=sanitizers.package
         )
 
-        setup["options.package_data", "*"] = templates.Requires(
+        setup["options.package_data", "*"] = templates.StringTemplate(
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
@@ -116,7 +118,7 @@ class Setuptools(actions._Action):
 
         project.structure.get_configuration(Raw("README.md"))[
             None
-        ] = templates.Requires(
+        ] = templates.StringTemplate(
             textwrap.dedent(
                 """\
                 # {PROJECT_NAME}
@@ -173,7 +175,7 @@ class Setuptools(actions._Action):
         """
         project.run(
             [
-                project.python.requires,
+                project.python.string_template,
                 "-m",
                 "pip",
                 "install",
@@ -182,4 +184,4 @@ class Setuptools(actions._Action):
             ]
         )
         if self.check_build:
-            project.run([project.python.requires, "-m", "build", f"{workon}"])
+            project.run([project.python.string_template, "-m", "build", f"{workon}"])

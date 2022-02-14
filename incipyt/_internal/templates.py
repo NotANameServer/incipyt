@@ -32,42 +32,43 @@ class Transform(NamedTuple):
     transform: Callable = lambda x: x
 
 
-class Requires:
-    """This class acts like a wrapper around a template string.
+class StringTemplate:
+    """This class acts like a wrapper around a format string.
 
-    When an instance is called, it renders the underlying template string using
+    When an instance is called, it renders the underlying format string using
     environ values and overrides.
     """
 
     def __init__(
-        self, template, confirmed=False, sanitizer=None, value_error=True, **kwargs
+        self, format_string, confirmed=False, sanitizer=None, value_error=True, **kwargs
     ):
-        r"""This class acts like a wrapper around a template string.
+        r"""This class acts like a wrapper around a format string.
 
-        When an instance is called, it renders the underlying template string
+        When an instance is called, it renders the underlying format string
         using environ values and overrides.
 
-        :param template: A template string whose placeholders will be interpolated.
-        :type template: :class:`str`
+        :param format_string: A format string whose keyword argument will be substituted.
+        :type format_string: :class:`str`
         :param confirmed: Confirmed status for new variables from keyword args.
         :type confirmed: :class:`bool`, optionnal
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
         :param value_error: Empty values generate errors.
         :type value_error: :class:`bool`
-        :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environ. Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
+        :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environ.
+            Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
         :type \**kwargs: :class:`str`, optionnal
         """
         self._confirmed = confirmed
         self._sanitizer = sanitizer
         self._value_error = value_error
-        self._template = template
+        self._format_string = format_string
         self._kwargs = kwargs
 
     def __repr__(self):
         return utils.make_repr(
             self,
-            template=self._template,
+            format_string=self._format_string,
             confirmed=self._confirmed,
             sanitizer=self._sanitizer,
             value_error=self._value_error,
@@ -76,19 +77,19 @@ class Requires:
 
     def __eq__(self, other):
         return utils.attrs_eq(
-            self, other, "_template", "_confirmed", "_sanitizer", "_kwargs"
+            self, other, "_format_string", "_confirmed", "_sanitizer", "_kwargs"
         )
 
-    def __call__(self):
-        """Render the underlying template string using variables from the environ.
+    def format(self):  # noqa: A003
+        """Format the underlying format string using variables from the environ.
 
-        :return: The interpolated template string.
+        :return: The formatted string.
         :rtype: :class:`str`
         """
-        return RenderContext(
+        return FormatterEnviron(
             sanitizer=self._sanitizer, value_error=self._value_error
-        ).render_string(
-            self._template,
+        ).format(
+            self._format_string,
             **{
                 key: (
                     value
@@ -100,7 +101,7 @@ class Requires:
         )
 
 
-class MultipleValues:
+class MultiStringTemplate:
     """Class to hold multiple values for a single key.
 
     When an instance is called, the user will be asked to pick a value using
@@ -108,31 +109,36 @@ class MultipleValues:
     """
 
     def __init__(self, head, tail):
-        """Class to hold multiple values for a single key.
+        """Class to hold multiple string for a single key.
 
-        When an instance is called, the user will be asked to pick a value
+        When an instance is called, the user will be asked to pick a string
         using the command line interface.
 
         :param head: Entry to put a the head of the stack.
         :type tail: :class:str
         :param tail: Tail of the stack.
-        :type tail: :class:`incipyt._intternal.templates.MultipleValues` or any bare value
+        :type tail: :class:`incipyt._intternal.templates.MultiStringTemplate` or any bare value
         """
         self._values = (
-            [head] + tail._values if isinstance(tail, MultipleValues) else [head, tail]
+            [head] + tail._values
+            if isinstance(tail, MultiStringTemplate)
+            else [head, tail]
         )
 
-    def __call__(self):
+    def format(self):  # noqa: A003
         """Ask the user to pick a value using the command line interface.
 
-        If it is callable, it will be evaluated.
+        If it is formattable, it will be formatted.
 
         :return: The user-choosen value.
         """
         return click.prompt(
             "Conflicting configuration, choose between",
             type=click.Choice(
-                [value() if callable(value) else value for value in self._values]
+                [
+                    value.format() if utils.formattable(value) else value
+                    for value in self._values
+                ]
             ),
         )
 
@@ -148,7 +154,7 @@ class MultipleValues:
 
         :param \*args: Entries to wrap.
         :return: New class instance
-        :rtype: :class:`incipyt._intternal.templates.MultipleValues`
+        :rtype: :class:`incipyt._intternal.templates.MultiStringTemplate`
         """
         instance = cls.__new__(cls)
         instance._values = list(args)
@@ -168,25 +174,25 @@ class TemplateDict(collections.UserDict):
 
     Following exemples assume `cfg` is a `TemplateDict` around an empty `dict`.
 
-    Bare values will be wrapped into :class:`incipyt._internal.templates.Requires`
+    Bare values will be wrapped into :class:`incipyt._internal.templates.StringTemplate`
     automatically :
 
     >>> cfg["key"] = "{VARIABLE_NAME}"
     >>> print(cfg)
-        {"key": Requires("{VARIABLE_NAME}")}
+        {"key": StringTemplate("{VARIABLE_NAME}")}
 
     Callables will be kept as-is:
 
-    >>> cfg["key"] = a_callable
+    >>> cfg["key"] = a_formattable
     >>> print(cfg)
-        {"key": a_callable}
+        {"key": a_formattable}
 
     Values of :class:`incipyt._internal.templates.Transform` instances will be
     evaluated accordingly to their transform:
 
-    >>> cfg["key"] = Transform("{VARIABLE_NAME}", a_callable)
+    >>> cfg["key"] = Transform("{VARIABLE_NAME}", a_formattable)
     >>> print(cfg)
-        {"key": a_callable("{VARIABLE_NAME}")}
+        {"key": a_formattable("{VARIABLE_NAME}")}
 
     Not giving an explicit callable to
     :class:`incipyt._internal.templates.Transform` will default to the identity
@@ -200,11 +206,11 @@ class TemplateDict(collections.UserDict):
 
     >>> cfg["key"] = ["{VARIABLE_NAME}"]
     >>> print(cfg)
-        {"key": [Requires("{VARIABLE_NAME}")]}
+        {"key": [StringTemplate("{VARIABLE_NAME}")]}
 
     >>> cfg["key"] = {"keyB": "{VARIABLE_NAME}"}
     >>> print(cfg)
-        {"key": {"keyB": Requires("{VARIABLE_NAME}")}}
+        {"key": {"keyB": StringTemplate("{VARIABLE_NAME}")}}
 
     :Nested keys:
 
@@ -212,25 +218,25 @@ class TemplateDict(collections.UserDict):
 
     >>> cfg["keyA", "keyB"] = "{VARIABLE_NAME}"
     >>> print(cfg)
-        {"keyA": {"keyB": Requires("{VARIABLE_NAME}")}}
+        {"keyA": {"keyB": StringTemplate("{VARIABLE_NAME}")}}
 
     :Multiple values:
 
-    Instances of :class:`incipyt._internal.templates.MultipleValues` will be
+    Instances of :class:`incipyt._internal.templates.MultiStringTemplate` will be
     created in case of value overrides. For instance, if `previous_value` is
-    callable:
+    formattable:
 
     >>> cfg == TemplateDict({"key": previous_value})
     >>> cfg["key"] = "{VARIABLE_NAME}"
     >>> print(cfg)
-        {"key": MulitpleValues(Requires("{VARIABLE_NAME}"), previous_value)}
+        {"key": MulitpleValues(StringTemplate("{VARIABLE_NAME}"), previous_value)}
 
     If `previous_list` is a mutable sequence, any value not already present in
     it will be appended:
 
     >>> cfg == TemplateDict({"key": previous_list})
     >>> cfg["key"] = ["{VARIABLE_NAME}"]
-    >>> cfg == {"key": previous_list + [Requires("{VARIABLE_NAME}")]}
+    >>> cfg == {"key": previous_list + [StringTemplate("{VARIABLE_NAME}")]}
         True
 
     :Inplace union:
@@ -240,7 +246,7 @@ class TemplateDict(collections.UserDict):
     >>> cfg = TemplateDict({})
     >>> cgf |= {"keyA": "{VARIABLE_NAME}", "keyB": "{OTHER_NAME}"}
     >>> print(cfg)
-        {"keyA": Requires("{VARIABLE_NAME}"), "keyB": Requires("{OTHER_NAME}")}
+        {"keyA": StringTemplate("{VARIABLE_NAME}"), "keyB": StringTemplate("{OTHER_NAME}")}
     """
 
     def __init__(self, mapping):
@@ -288,7 +294,7 @@ class TemplateDict(collections.UserDict):
             value = self._get_value(value, transform)
             if key in config:
                 if config[key] != value:
-                    config[key] = MultipleValues(value, config[key])
+                    config[key] = MultiStringTemplate(value, config[key])
             else:
                 config[key] = value
 
@@ -313,7 +319,7 @@ class TemplateDict(collections.UserDict):
         """Wrap `value` in :class:`incipyt._internal.templates.Transform` if needed.
 
         Wrapping with a `None` transform will result in
-        :class:`incipyt._internal.templates.Requires` being used.
+        :class:`incipyt._internal.templates.StringTemplate` being used.
 
         :param value: A bare value or already wrapped value.
         :type value: :class:`str` or :class:`incipyt._internal.templates.Transform`
@@ -325,27 +331,27 @@ class TemplateDict(collections.UserDict):
         if isinstance(value, Transform):
             assert callable(value[1]), "Second Transform element has to be callable."
             return value
-        return Transform(value, transform if transform else Requires)
+        return Transform(value, transform if transform else StringTemplate)
 
     @staticmethod
     def _get_value(value, transform):
         """Transform a value according to its wrapped transformation or fallback.
 
-        :param value: Value to transform. If it is callable, it will not be transformed.
+        :param value: Value to transform. If it is formattable, it will not be transformed.
         :type value: :class:`str` or :class:`function` or :class:`incipyt._internal.templates.Transform`
         :param transform: Fallback callable for transformation.
         :type transform: :class:`function`
         :return: Transformed `value`.
-        :rtype: :class:`str` or :class:`callable`
+        :rtype: :class:`str` or `formattable`
         """
         if isinstance(value, Transform):
             return value.transform(value.value)
-        if callable(value):
+        if utils.formattable(value) and not isinstance(value, str):
             return value
         return transform(value)
 
 
-class RenderContext(collections.abc.Mapping):
+class FormatterEnviron(collections.abc.Mapping):
     """Class wrapping an environ and providing an interface to render templates.
 
     It can be used to render template strings.
@@ -393,8 +399,8 @@ class RenderContext(collections.abc.Mapping):
     def items(self):
         return zip(self.keys(), self.values())
 
-    def render_string(self, template, **kwargs):
-        r"""Render a template string.
+    def format(self, format_string, **kwargs):  # noqa: A003
+        r"""Render a format string.
 
         Variables will be request from the underlying environ, and undefined
         variables will be created. If `self._value_error` is `True` and an
@@ -403,7 +409,7 @@ class RenderContext(collections.abc.Mapping):
         Additional variables can be specified using keyword arguments. They
         will be added to the environ, hence they will override environ values.
 
-        :param template: Template string to render.
+        :param template: A format string whose keyword argument will be substituted.
         :type template: :class:`str`
         :param \**kwargs: Additional variables that will override environ variables.
         :type \**kwargs: :class:`str`, optionnal
@@ -411,10 +417,10 @@ class RenderContext(collections.abc.Mapping):
         :rtype: :class:`str` or `None`
         """
 
-        self._keys = {item[1] for item in Formatter().parse(template) if item[1]}
+        self._keys = {item[1] for item in Formatter().parse(format_string) if item[1]}
         for key in self:
             if key in kwargs:
                 self.data[key] = kwargs[key]
 
         with contextlib.suppress(ValueError):
-            return template.format(**self)
+            return format_string.format(**self)

@@ -1,7 +1,7 @@
 from pytest import fixture, mark, raises
 
 from incipyt import project
-from incipyt._internal.templates import RenderContext
+from incipyt._internal.templates import FormatterEnviron
 
 from tests.utils import mock_stdin
 
@@ -15,19 +15,19 @@ class _Context:
 
     @fixture
     def simple_ctx(self, reset_environ):
-        return RenderContext()
+        return FormatterEnviron()
 
     @fixture
     def no_error_ctx(self, reset_environ):
-        return RenderContext(value_error=False)
+        return FormatterEnviron(value_error=False)
 
     @fixture
     def populated_ctx(self, simple_ctx):
-        simple_ctx.render_string("{VARIABLE_NAME}")
+        simple_ctx.format("{VARIABLE_NAME}")
         return simple_ctx
 
 
-class TestRenderContext(_Context):
+class TestFormatterEnviron(_Context):
     def test_contains(self, simple_ctx):
         assert "VARIABLE_NAME" in simple_ctx
 
@@ -83,19 +83,19 @@ class TestRenderString(_Context):
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
     def test_interp(self, ctx, request):
         ctx = request.getfixturevalue(ctx)
-        assert ctx.render_string("{VARIABLE_NAME}") == "value"
+        assert ctx.format("{VARIABLE_NAME}") == "value"
 
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
     def test_interp_kwarg(self, ctx, monkeypatch, request):
         mock_stdin(monkeypatch, "")
         ctx = request.getfixturevalue(ctx)
-        assert ctx.render_string("{OTHER_NAME}", OTHER_NAME="value") == "value"
+        assert ctx.format("{OTHER_NAME}", OTHER_NAME="value") == "value"
 
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
     def test_interp_undefined(self, ctx, monkeypatch, request):
         mock_stdin(monkeypatch, "value")
         ctx = request.getfixturevalue(ctx)
-        assert ctx.render_string("{OTHER_NAME}") == "value"
+        assert ctx.format("{OTHER_NAME}") == "value"
 
     @mark.parametrize(
         "ctx, res",
@@ -106,4 +106,4 @@ class TestRenderString(_Context):
     )
     def test_interp_empty(self, ctx, res, request):
         ctx = request.getfixturevalue(ctx)
-        assert ctx.render_string("{VARIABLE_NAME}{EMPTY_VARIABLE}") == res
+        assert ctx.format("{VARIABLE_NAME}{EMPTY_VARIABLE}") == res

@@ -12,7 +12,7 @@ import click
 
 from incipyt._internal import templates
 
-from incipyt._internal.utils import EnvValue
+from incipyt._internal.utils import EnvValue, formattable
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +22,10 @@ class _Python:
     variable: str = "PYTHON_CMD"
 
     @property
-    def requires(self):
-        from incipyt._internal.templates import Requires
+    def string_template(self):
+        from incipyt._internal.templates import StringTemplate
 
-        return Requires(f"{{{self.variable}}}")
+        return StringTemplate(f"{{{self.variable}}}")
 
 
 python = _Python()
@@ -83,7 +83,7 @@ class _Environ(collections.UserDict):
     def __getitem__(self, key):
         if key not in self._confirmed:
             logger.debug("Missing environ variable %s, request it.", key)
-            self.data[key] = self._requests(key)
+            self.data[key] = self._prompt(key)
             self._confirmed.add(key)
 
         return self.data[key]
@@ -103,7 +103,7 @@ class _Environ(collections.UserDict):
     def __iter__(self):
         return iter(self._confirmed)
 
-    def _requests(self, key):
+    def _prompt(self, key):
         return click.prompt(
             key.replace("_", " ").lower().capitalize(),
             default=self.data[key] if key in self.data else "",
@@ -123,7 +123,7 @@ def run(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    formatted = [arg() if callable(arg) else arg for arg in args]
+    formatted = [arg.format() if formattable(arg) else arg for arg in args]
     logger.info(" ".join(formatted))
     result = subprocess.run(formatted, capture_output=True, check=True, **kwargs)
     logger.info(result.stdout.decode())
@@ -197,7 +197,7 @@ class _Structure:
     def _visit(template):
         """Visit the `template` nested-dictionary structure.
 
-        All callable values of the template dictionary will be evaluated and
+        All formattable values of the template dictionary will be evaluated and
         replaced by their results. All nested structures will be recursively
         visited and processed too.
 
@@ -210,8 +210,8 @@ class _Structure:
         for key, value in template.items():
             logger.debug("Visit %s to process environ variables.", key)
 
-            if callable(value):
-                template[key] = value()
+            if formattable(value):
+                template[key] = value.format()
 
             elif isinstance(value, collections.abc.MutableMapping):
                 _Structure._visit(value)
@@ -220,9 +220,9 @@ class _Structure:
 
             elif isinstance(value, collections.abc.MutableSequence):
                 for index, element in enumerate(value):
-                    if callable(element):
-                        value[index] = element()
-                    if isinstance(element, collections.abc.MutableMapping):
+                    if formattable(element):
+                        value[index] = element.format()
+                    elif isinstance(element, collections.abc.MutableMapping):
                         _Structure._visit(element)
                 template[key] = [element for element in value if element]
                 if not template[key]:

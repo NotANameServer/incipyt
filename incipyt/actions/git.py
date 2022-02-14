@@ -18,13 +18,14 @@ class Git(actions._Action):
         - Documentation: {REPOSITORY}/wiki
         """
         signals.project_url.emit(
-            url_kind="Repository", url_value=templates.Requires("{REPOSITORY}")
+            url_kind="Repository", url_value=templates.StringTemplate("{REPOSITORY}")
         )
         signals.project_url.emit(
-            url_kind="Issue", url_value=templates.Requires("{REPOSITORY}/issues")
+            url_kind="Issue", url_value=templates.StringTemplate("{REPOSITORY}/issues")
         )
         signals.project_url.emit(
-            url_kind="Documentation", url_value=templates.Requires("{REPOSITORY}/wiki")
+            url_kind="Documentation",
+            url_value=templates.StringTemplate("{REPOSITORY}/wiki"),
         )
 
     def _slot(self, pattern, **kwargs):

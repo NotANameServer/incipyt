@@ -56,3 +56,13 @@ def attrs_eq(a, b, *args):
         return all(getattr(a, attr) == getattr(b, attr) for attr in args)
     except AttributeError:
         return False
+
+
+def formattable(obj):
+    r"""Know if an object is formattable.
+
+    :param obj: Object to know if :meth:`format` can be used.
+    :return: `True` :meth:`format` can be called.
+    :rtype: :class:`bool`
+    """
+    return hasattr(obj, "format") and callable(obj.format)

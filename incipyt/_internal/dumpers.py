@@ -32,7 +32,7 @@ class BaseDumper:
             raise RuntimeError("Root is missing.")
 
         return pathlib.Path(
-            templates.RenderContext(sanitizer=self._sanitizer).render_string(
+            templates.FormatterEnviron(sanitizer=self._sanitizer).format(
                 str(self._root / self._path)
             )
         )
