@@ -17,7 +17,7 @@ maintainers = [
 ]
 name = "incipyt"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.7, <4.0"
 version = "0.0.0"
 classifiers = [
   "Development Status :: 1 - Planning",
@@ -51,7 +51,7 @@ dev = [
   "pre-commit",
 ]
 doc = [
-  "m2r",
+  "m2r2",
   "sphinxcontrib-apidoc",
   "sphinx_rtd_theme",
 ]

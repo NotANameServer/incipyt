@@ -59,7 +59,7 @@ def attrs_eq(a, b, *args):
 
 
 def formattable(obj):
-    r"""Know if an object is formattable.
+    """Know if an object is formattable.
 
     :param obj: Object to know if :meth:`format` can be used.
     :return: `True` :meth:`format` can be called.
