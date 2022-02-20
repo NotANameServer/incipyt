@@ -10,7 +10,7 @@ class Setuptools(tools.Tool):
 
     def __init__(self, check=False):
         self.check_build = check
-        signals.build_dependancy.connect(self._slot_dependancy)
+        signals.build_dependency.connect(self._slot_dependency)
         signals.classifier.connect(self._slot_classifier)
         signals.project_url.connect(self._slot_url)
 
@@ -145,7 +145,7 @@ class Setuptools(tools.Tool):
             """
         )
 
-        signals.build_dependancy.emit(dep_name=templates.Transform("build"))
+        signals.build_dependency.emit(dep_name=templates.Transform("build"))
 
         signals.classifier.emit(
             classifier=templates.Transform(
@@ -161,7 +161,7 @@ class Setuptools(tools.Tool):
         setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["metadata", "classifiers"] = [classifier]
 
-    def _slot_dependancy(self, dep_name, **kwargs):
+    def _slot_dependency(self, dep_name, **kwargs):
         setup = project.structure.get_configuration(CfgIni("setup.cfg"))
         setup["options.extras_require", "dev"] = [dep_name]
 
