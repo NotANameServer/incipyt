@@ -4,7 +4,7 @@ from incipyt import tools, signals, project
 from incipyt._internal import templates
 
 
-class Venv(tools._Tool):
+class Venv(tools.Tool):
     """Scripts to add virtualenv to :class:`incipyt.project._Structure`."""
 
     def add_to_structure(self):

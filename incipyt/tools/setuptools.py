@@ -5,7 +5,7 @@ from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, Raw, Toml
 
 
-class Setuptools(tools._Tool):
+class Setuptools(tools.Tool):
     """Scripts to add Setuptools to :class:`incipyt.project._Structure`."""
 
     def __init__(self, check=False):

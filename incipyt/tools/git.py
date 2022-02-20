@@ -3,7 +3,7 @@ from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
 
-class Git(tools._Tool):
+class Git(tools.Tool):
     """Scripts to add Git to :class:`incipyt.project._Structure`."""
 
     def __init__(self):

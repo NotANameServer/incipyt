@@ -3,16 +3,22 @@ import collections.abc
 import configparser
 import pathlib
 
+from abc import ABC, abstractmethod
+
 import toml
 
 from incipyt._internal import templates, utils
 
 
-class BaseDumper:
+class BaseDumper(ABC):
     def __init__(self, path, sanitizer=None):
         self._path = pathlib.Path(path)
         self._root = None
         self._sanitizer = sanitizer
+
+    @abstractmethod
+    def dump_in(self, config):
+        raise NotImplementedError
 
     def commit(self, root):
         self._root = root

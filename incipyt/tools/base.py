@@ -1,4 +1,7 @@
-class Tool:
+from abc import ABC
+
+
+class Tool(ABC):
     """Base Class for any `Tool`. Concrete `Tool` should subclass it."""
 
     def add_to_structure(self):
