@@ -1,6 +1,6 @@
 from pytest import fixture, mark, raises
 
-from incipyt._internal.dumpers import CfgIni, Requirement, Raw, Toml
+from incipyt._internal.dumpers import CfgIni, Requirement, TextFile, Toml
 from incipyt import project
 
 
@@ -9,7 +9,7 @@ def reset_environ():
     project.environ.clear()
 
 
-@mark.parametrize("dumper", (CfgIni, Toml, Raw, Requirement))
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
 def test_format_path(dumper, reset_environ, tmp_path):
     dmp = dumper("{first}/{second}.ext")
     project.environ["first"] = project.EnvValue("folder", confirmed=True)
@@ -18,7 +18,7 @@ def test_format_path(dumper, reset_environ, tmp_path):
     assert dmp.format_path() == tmp_path / "folder" / "file.ext"
 
 
-@mark.parametrize("dumper", (CfgIni, Toml, Raw, Requirement))
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
 def test_mkdir(dumper, reset_environ, tmp_path):
     dmp = dumper("folder/file")
     dmp.commit(tmp_path)
@@ -26,7 +26,7 @@ def test_mkdir(dumper, reset_environ, tmp_path):
     assert (tmp_path / "folder").is_dir()
 
 
-@mark.parametrize("dumper", (CfgIni, Toml, Raw, Requirement))
+@mark.parametrize("dumper", (CfgIni, Toml, TextFile, Requirement))
 def test_path_exists(dumper, reset_environ, tmp_path):
     (tmp_path / "file").touch()
     dmp = dumper("file")
@@ -60,7 +60,7 @@ def test_path_exists(dumper, reset_environ, tmp_path):
             ("[section]\n" 'first = "1"\n' "second = 2\n" 'third = [ "one", "two",]\n'),
         ),
         (
-            Raw,
+            TextFile,
             {None: "first"},
             "first",
         ),

@@ -2,7 +2,7 @@ import textwrap
 
 from incipyt import tools, signals, project
 from incipyt._internal import sanitizers, templates
-from incipyt._internal.dumpers import CfgIni, Raw, Toml
+from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 
 
 class Setuptools(tools.Tool):
@@ -108,15 +108,15 @@ class Setuptools(tools.Tool):
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
-        project.structure.get_configuration(Raw("LICENSE"))[
+        project.structure.get_configuration(TextFile("LICENSE"))[
             None
         ] = "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>\n\n"
 
         project.structure.get_configuration(
-            Raw("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
+            TextFile("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
         )[None] = "\n"
 
-        project.structure.get_configuration(Raw("README.md"))[
+        project.structure.get_configuration(TextFile("README.md"))[
             None
         ] = templates.StringTemplate(
             textwrap.dedent(
@@ -135,7 +135,9 @@ class Setuptools(tools.Tool):
             value_error=False,
         )
 
-        project.structure.get_configuration(Raw("setup.py"))[None] = textwrap.dedent(
+        project.structure.get_configuration(TextFile("setup.py"))[
+            None
+        ] = textwrap.dedent(
             """\
             import setuptools
 

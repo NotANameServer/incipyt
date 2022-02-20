@@ -74,7 +74,7 @@ class CfgIni(BaseDumper):
             config_cfg.write(file)
 
 
-class Raw(BaseDumper):
+class TextFile(BaseDumper):
     def dump_in(self, config):
         with self.open() as file:
             file.write(config[None])

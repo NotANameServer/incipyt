@@ -3,7 +3,7 @@ import sys
 from pytest import fixture, mark, raises
 
 from incipyt import project
-from incipyt._internal.dumpers import Raw, Toml
+from incipyt._internal.dumpers import TextFile, Toml
 from incipyt._internal.templates import StringTemplate
 
 from tests.utils import mock_stdin
@@ -142,7 +142,7 @@ class TestStructure:
         project.structure.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))[
             "section"
         ] = {"first": "{VALUE}"}
-        project.structure.get_configuration(Raw("{FOLDER_B}/{NAME_B}"))[
+        project.structure.get_configuration(TextFile("{FOLDER_B}/{NAME_B}"))[
             None
         ] = "{CONTENT}"
 
