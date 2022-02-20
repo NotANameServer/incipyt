@@ -2,10 +2,8 @@
 
 import collections
 import collections.abc
-import dataclasses
 import logging
 import os
-import subprocess
 import sys
 
 import click
@@ -15,20 +13,6 @@ from incipyt._internal import templates
 from incipyt._internal.utils import EnvValue, formattable
 
 logger = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass
-class _Python:
-    variable: str = "PYTHON_CMD"
-
-    @property
-    def string_template(self):
-        from incipyt._internal.templates import StringTemplate
-
-        return StringTemplate(f"{{{self.variable}}}")
-
-
-python = _Python()
 
 
 class _Environ(collections.UserDict):
@@ -73,9 +57,9 @@ class _Environ(collections.UserDict):
         self._confirmed = set()
         self.data = os.environ.copy()
 
-        if python.variable not in self.data:
-            self.data[python.variable] = sys.executable
-        self._confirmed.add(python.variable)
+        if "PYTHON_CMD" not in self.data:
+            self.data["PYTHON_CMD"] = sys.executable
+        self._confirmed.add("PYTHON_CMD")
 
     def __init__(self):
         self.clear()
@@ -114,22 +98,6 @@ class _Environ(collections.UserDict):
 environ = _Environ()
 
 
-def run(args, **kwargs):
-    r"""Run a command after substitution using the environ.
-
-    :param args: List of the command elements.
-    :type args: :class:`list`
-    :param \**kwargs: Other options forwarded to `subprocess.run`
-    :return: Represents a process that has finished
-    :rtype: :class:`subprocess.CompletedProcess`
-    """
-    formatted = [arg.format() if formattable(arg) else arg for arg in args]
-    logger.info(" ".join(formatted))
-    result = subprocess.run(formatted, capture_output=True, check=True, **kwargs)
-    logger.info(result.stdout.decode())
-    return result
-
-
 class _Structure:
     """Represents all configuration and template files to commit for the new project.
 
@@ -154,7 +122,7 @@ class _Structure:
         """Get a configuration dictionary associated to the relative path `config_root`.
 
         :param config_root: Relative path of the configuration file.
-        :type config_root: :class:`pathlib.PurePath`
+        :type config_root: :class:`pathlib.Path`
         :return: A reference to the configuration dictionary
         :rtype: :class:`dict`
         """

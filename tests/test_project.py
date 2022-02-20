@@ -2,7 +2,7 @@ import sys
 
 from pytest import fixture, mark, raises
 
-from incipyt import project
+from incipyt import project, commands
 from incipyt._internal.dumpers import TextFile, Toml
 from incipyt._internal.templates import StringTemplate
 
@@ -94,7 +94,7 @@ class TestEnviron:
     )
     def test_python_cmd(self, env, request):
         request.getfixturevalue(env)
-        assert project.environ[project.python.variable] == sys.executable
+        assert project.environ["PYTHON_CMD"] == sys.executable
 
     @mark.parametrize(
         "env",
@@ -107,7 +107,7 @@ class TestEnviron:
         request.getfixturevalue(env)
         project.environ["TWO"] = project.EnvValue("2", confirmed=True)
         result = {key: project.environ[key] for key in project.environ}
-        assert result == {project.python.variable: sys.executable, "TWO": "2"}
+        assert result == {"PYTHON_CMD": sys.executable, "TWO": "2"}
 
     @mark.parametrize(
         "env",
@@ -120,7 +120,7 @@ class TestEnviron:
     )
     def test_run(self, env, request):
         request.getfixturevalue(env)
-        result = project.run(["cmd", "arg"])
+        result = commands.run(["cmd", "arg"])
         assert result.stdout.decode() == "lineA\nlineB\n"
 
 

@@ -1,6 +1,6 @@
 import textwrap
 
-from incipyt import tools, signals, project
+from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 
@@ -175,15 +175,6 @@ class Setuptools(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        project.run(
-            [
-                project.python.string_template,
-                "-m",
-                "pip",
-                "install",
-                "--editable",
-                f"{workon}[dev]",
-            ]
-        )
+        commands.pip(["install", "--editable", f"{workon}[dev]"])
         if self.check_build:
-            project.run([project.python.string_template, "-m", "build", f"{workon}"])
+            commands.build([f"{workon}"])

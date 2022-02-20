@@ -1,6 +1,6 @@
 import os
 
-from incipyt import tools, signals, project
+from incipyt import commands, signals, tools
 from incipyt._internal import templates
 
 
@@ -18,16 +18,7 @@ class Venv(tools.Tool):
         :type workon: :class:`pathlib.Path`
         """
         env_path = workon / ".env"
-        py_path = env_path / ("Scripts" if os.name == "nt" else "bin") / "python"
-        project.run(
-            [
-                project.python.string_template,
-                "-m",
-                "venv",
-                "--upgrade-deps",
-                str(env_path),
-            ]
-        )
-        project.environ[project.python.variable] = project.EnvValue(
-            str(py_path), update=True
+        commands.venv(["--upgrade-deps", str(env_path)])
+        commands.setenv_python_cmd(
+            env_path / ("Scripts" if os.name == "nt" else "bin") / "python"
         )

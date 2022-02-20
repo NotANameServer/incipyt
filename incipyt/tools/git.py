@@ -1,4 +1,4 @@
-from incipyt import tools, signals, project
+from incipyt import commands, project, signals, tools
 from incipyt._internal import templates
 from incipyt._internal.dumpers import Requirement
 
@@ -40,16 +40,16 @@ class Git(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        project.run(["git", "init", str(workon)])
+        commands.run(["git", "init", str(workon)])
 
         project.environ["AUTHOR_NAME"] = project.EnvValue(
-            project.run(["git", "-C", str(workon), "config", "user.name"])
+            commands.run(["git", "-C", str(workon), "config", "user.name"])
             .stdout.decode()
             .strip(),
             update=True,
         )
         project.environ["AUTHOR_EMAIL"] = project.EnvValue(
-            project.run(["git", "-C", str(workon), "config", "user.email"])
+            commands.run(["git", "-C", str(workon), "config", "user.email"])
             .stdout.decode()
             .strip(),
             update=True,
@@ -61,4 +61,4 @@ class Git(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        project.run(["git", "-C", str(workon), "add", "--all"])
+        commands.run(["git", "-C", str(workon), "add", "--all"])
