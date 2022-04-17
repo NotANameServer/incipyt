@@ -139,19 +139,19 @@ class TestStructure:
     @fixture
     def reset_structure(self):
         project.structure.clear()
-        project.structure.get_configuration(Toml("{FOLDER_A}/{NAME_A}.toml"))[
+        project.structure.get_config_dict(Toml("{FOLDER_A}/{NAME_A}.toml"))[
             "section"
         ] = {"first": "{VALUE}"}
-        project.structure.get_configuration(TextFile("{FOLDER_B}/{NAME_B}"))[
-            None
-        ] = "{CONTENT}"
+        project.structure.get_config_list(
+            TextFile("{FOLDER_B}/{NAME_B}", sep="\n\n")
+        ).append("{CONTENT}")
 
     def test_get_new_configuration(self, reset_structure):
-        configuration = project.structure.get_configuration(Toml("testC.toml"))
+        configuration = project.structure.get_config_dict(Toml("testC.toml"))
         assert configuration == {}
 
     def test_get_old_configuration(self, reset_structure):
-        configuration = project.structure.get_configuration(
+        configuration = project.structure.get_config_dict(
             Toml("{FOLDER_A}/{NAME_A}.toml")
         )
         assert configuration == {"section": {"first": StringTemplate("{VALUE}")}}
@@ -167,4 +167,4 @@ class TestStructure:
         assert (
             tmp_path / "folderA" / "testA.toml"
         ).read_text() == '[section]\nfirst = "1"\n'
-        assert (tmp_path / "folderB" / "testB").read_text() == "text"
+        assert (tmp_path / "folderB" / "testB").read_text() == "text\n\n"

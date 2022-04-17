@@ -319,13 +319,23 @@ class TemplateDict(abc.MutableMapping):
         """
         self.data = data
 
-    def __getitem__(self, key):
-        if isinstance(self.data[key], abc.MutableMapping):
-            return TemplateDict(self.data[key])
-        elif isinstance(self.data[key], abc.MutableSequence):
-            return TemplateList(self.data[key])
+    def __getitem__(self, keys):
+        if not utils.is_nonstring_sequence(keys):
+            keys = (keys,)
+
+        config = self.data
+
+        for key in keys:
+            if key not in config:
+                raise KeyError(f"Index [{', '.join(keys)}] does not exist.")
+            config = config[key]
+
+        if isinstance(config, abc.MutableMapping):
+            return TemplateDict(config)
+        elif utils.is_nonstring_sequence(config):
+            return TemplateList(config)
         else:
-            return self.data[key]
+            return config
 
     def __iter__(self):
         return iter(self.data)
@@ -342,41 +352,49 @@ class TemplateDict(abc.MutableMapping):
         )
 
     def __setitem__(self, keys, value):
-        value, transform = Transform._get_transform(value)
-        if not utils.is_nonstring_sequence(keys):
-            keys = (keys,)
+        if utils.is_nonstring_sequence(keys):
+            config = self.data
 
-        if isinstance(value, abc.Mapping):
-            for k, v in value.items():
-                self[keys + (k,)] = Transform._get_transform(v, transform)
+            for key in keys[:-1]:
+                if key not in config:
+                    config[key] = {}
+                config = config[key]
+
+            self[keys[:-1]][keys[-1]] = value
             return
 
-        config = self.data
+        value, transform = Transform._get_transform(value)
 
-        for key in keys[:-1]:
-            if key not in config:
-                config[key] = {}
-            config = config[key]
+        if isinstance(value, abc.Mapping):
+            if keys not in self.data:
+                self.data[keys] = {}
 
-        key = keys[-1]
+            assert not utils.is_nonstring_sequence(
+                self.data[keys]
+            ), f"{self.data[keys]} is already a sequence, cannot set to a dict."
+            for key, value in value.items():
+                TemplateDict(self.data[keys])[key] = Transform._get_transform(
+                    value, transform
+                )
 
-        if utils.is_nonstring_sequence(value):
-            if key not in config:
-                config[key] = []
+        elif utils.is_nonstring_sequence(value):
+            if keys not in self.data:
+                self.data[keys] = []
 
             assert not isinstance(
-                config[key], abc.Mapping
-            ), f"{config[key]} is already a mapping, cannot set to a sequence."
-
-            config = TemplateList(config[key])
-            config += Transform._get_transform(value, transform)
+                self.data[keys], abc.Mapping
+            ), f"{self.data[keys]} is already a mapping, cannot set to a list."
+            TemplateList(self.data[keys]).extend(
+                Transform._get_transform(value, transform)
+            )
 
         else:
-            value = Transform._get_transform(value, transform)
-            if key in config:
-                config[key] = MultiStringTemplate(value, config[key])
+            if keys in self.data:
+                self.data[keys] = MultiStringTemplate(
+                    Transform._get_transform(value, transform), self.data[keys]
+                )
             else:
-                config[key] = Transform._get_value(value, transform)
+                self.data[keys] = Transform._get_value(value, transform)
 
     def update(self, other=(), /, **kwds):
         other, transform_other = Transform._get_transform(other)
@@ -417,7 +435,7 @@ class TemplateList(abc.MutableSequence):
         self.data = data
 
     def __getitem__(self, index):
-        if isinstance(self.data[index], abc.MutableSequence):
+        if utils.is_nonstring_sequence(self.data[index]):
             return TemplateList(self.data[index])
         elif isinstance(self.data[index], abc.MutableMapping):
             return TemplateDict(self.data[index])
@@ -446,10 +464,16 @@ class TemplateList(abc.MutableSequence):
     def insert(self, index, value):
         value, transform = Transform._get_transform(value)
 
-        if isinstance(value, abc.Mapping):
+        if utils.is_nonstring_sequence(value):
+            self.data.insert(index, [])
+            TemplateList(self.data[index]).extend(
+                Transform._get_transform(value, transform)
+            )
+        elif isinstance(value, abc.Mapping):
             self.data.insert(index, {})
-            dict_proxy = TemplateDict(self.data[index])
-            dict_proxy |= Transform._get_transform(value, transform)
+            TemplateDict(self.data[index]).update(
+                Transform._get_transform(value, transform)
+            )
         else:
             new_value = Transform._get_value(value, transform)
             if new_value not in self.data:
