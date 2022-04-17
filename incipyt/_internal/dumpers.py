@@ -75,15 +75,13 @@ class CfgIni(BaseDumper):
 
 
 class TextFile(BaseDumper):
+    def __init__(self, path, sep="\n", sanitizer=None):
+        super().__init__(path, sanitizer)
+        self._sep = sep
+
     def dump_in(self, config):
         with self.open() as file:
-            file.write(config[None])
-
-
-class Requirement(BaseDumper):
-    def dump_in(self, config):
-        with self.open() as file:
-            file.write("\n".join(config[None]))
+            file.write(self._sep.join(config) + self._sep)
 
 
 class Toml(BaseDumper):

@@ -2,10 +2,9 @@ import click
 from pytest import fixture, mark, raises
 
 from incipyt._internal.templates import (
-    MultiStringTemplate,
+    ChoiceTemplate,
     StringTemplate,
     TemplateDict,
-    Transform,
 )
 from incipyt import project
 from tests.utils import mock_stdin
@@ -73,22 +72,26 @@ class TestStringTemplate:
         assert st.format() is None
 
 
-class TestMultiStringTemplate:
+class TestChoiceTemplate:
     @fixture
     def simple_mst(self):
-        return MultiStringTemplate("a", "b")
+        return ChoiceTemplate("a", "b")
 
     @fixture
     def formattable_mst(self):
-        return MultiStringTemplate(StringTemplate("a"), StringTemplate("b"))
+        return ChoiceTemplate(StringTemplate("a"), StringTemplate("b"))
 
     @fixture
     def reset_environ(self):
         project.environ.clear()
 
     def test_mst_tail(self, simple_mst):
-        mst = MultiStringTemplate("x", simple_mst)
-        assert mst._values == ["x", "a", "b"]
+        mst = ChoiceTemplate("x", simple_mst)
+        assert mst._values == {
+            StringTemplate("x"),
+            StringTemplate("a"),
+            StringTemplate("b"),
+        }
 
     @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
     def test_call(self, mst, reset_environ, monkeypatch, request):
@@ -104,35 +107,38 @@ class TestMultiStringTemplate:
             mst.format()
 
 
-class TestTemplateDict:
+class TestTemplateCollection:
     @fixture
     def empty_td(self):
         return TemplateDict({})
 
     @fixture
     def simple_td(self):
-        return TemplateDict({"1": "a"})
+        return TemplateDict({"1": StringTemplate("a")})
 
     @fixture
     def nested_td(self):
-        return TemplateDict({"1": {"2": {"3": "a"}}})
+        return TemplateDict({"1": {"2": {"3": StringTemplate("a")}}})
 
     @fixture
-    def multiple_td(self):
-        return TemplateDict({"1": MultiStringTemplate("a", "b")})
+    def choice_td(self):
+        return TemplateDict({"1": ChoiceTemplate("a", "b")})
 
     @fixture
     def sequence_td(self):
-        return TemplateDict({"1": ["a", "b"]})
+        return TemplateDict({"1": [StringTemplate("a"), StringTemplate("b")]})
 
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": StringTemplate("x")}),
-            ("simple_td", {"1": MultiStringTemplate(StringTemplate("x"), "a")}),
+            ("empty_td", TemplateDict({"1": StringTemplate("x")})),
             (
-                "multiple_td",
-                {"1": MultiStringTemplate.from_items(StringTemplate("x"), "a", "b")},
+                "simple_td",
+                TemplateDict({"1": ChoiceTemplate("x", "a")}),
+            ),
+            (
+                "choice_td",
+                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
             ),
         ),
     )
@@ -144,32 +150,15 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": "x"}),
-            ("simple_td", {"1": MultiStringTemplate("x", "a")}),
-        ),
-    )
-    def test_setitem_transform(self, td, res, request):
-        td = request.getfixturevalue(td)
-        td["1"] = Transform("", lambda _: "x")
-        assert td == res
-
-    @mark.parametrize(
-        "td, res",
-        (
-            ("empty_td", {"1": "x"}),
-            ("simple_td", {"1": MultiStringTemplate("x", "a")}),
-        ),
-    )
-    def test_setitem_notransform(self, td, res, request):
-        td = request.getfixturevalue(td)
-        td["1"] = Transform("x")
-        assert td == res
-
-    @mark.parametrize(
-        "td, res",
-        (
-            ("empty_td", {"1": StringTemplate("x")}),
-            ("simple_td", {"1": MultiStringTemplate(StringTemplate("x"), "a")}),
+            ("empty_td", TemplateDict({"1": StringTemplate("x")})),
+            (
+                "simple_td",
+                TemplateDict({"1": ChoiceTemplate("x", "a")}),
+            ),
+            (
+                "choice_td",
+                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
+            ),
         ),
     )
     def test_setitem_callable(self, td, res, request):
@@ -180,10 +169,10 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": {"2": {"3": StringTemplate("x")}}}),
+            ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
             (
                 "nested_td",
-                {"1": {"2": {"3": MultiStringTemplate(StringTemplate("x"), "a")}}},
+                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
             ),
         ),
     )
@@ -195,8 +184,22 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": [StringTemplate("a"), StringTemplate("x")]}),
-            ("sequence_td", {"1": ["a", "b", StringTemplate("x")]}),
+            (
+                "empty_td",
+                TemplateDict({"1": [StringTemplate("a"), StringTemplate("x")]}),
+            ),
+            (
+                "sequence_td",
+                TemplateDict(
+                    {
+                        "1": [
+                            StringTemplate("a"),
+                            StringTemplate("b"),
+                            StringTemplate("x"),
+                        ]
+                    }
+                ),
+            ),
         ),
     )
     def test_sequence_setitem(self, td, res, request):
@@ -207,22 +210,45 @@ class TestTemplateDict:
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": ["x"]}),
-            ("sequence_td", {"1": ["a", "b", "x"]}),
+            (
+                "empty_td",
+                TemplateDict(
+                    {
+                        "1": [
+                            StringTemplate("a"),
+                            [StringTemplate("x"), StringTemplate("y")],
+                            {"2": StringTemplate("z")},
+                        ]
+                    }
+                ),
+            ),
+            (
+                "sequence_td",
+                TemplateDict(
+                    {
+                        "1": [
+                            StringTemplate("a"),
+                            StringTemplate("b"),
+                            [StringTemplate("x"), StringTemplate("y")],
+                            {"2": StringTemplate("z")},
+                        ]
+                    }
+                ),
+            ),
         ),
     )
-    def test_sequence_setitem_transform(self, td, res, request):
+    def test_nested_sequence_setitem(self, td, res, request):
         td = request.getfixturevalue(td)
-        td["1"] = [Transform("", lambda _: "x")]
+        td["1"] = ["a", ["x", "y"], {"2": "z"}]
         assert td == res
 
     @mark.parametrize(
         "td, res",
         (
-            ("empty_td", {"1": {"2": {"3": StringTemplate("x")}}}),
+            ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
             (
                 "nested_td",
-                {"1": {"2": {"3": MultiStringTemplate(StringTemplate("x"), "a")}}},
+                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
             ),
         ),
     )
@@ -230,25 +256,6 @@ class TestTemplateDict:
         td = request.getfixturevalue(td)
         td |= {"1": {"2": {"3": "x"}}}
         assert td == res
-
-    def test_or(self, simple_td):
-        with raises(NotImplementedError):
-            simple_td | {}
-
-    @mark.xfail
-    @mark.parametrize("td", ("simple_td", "multiple_td"))
-    @mark.parametrize("val", (["x"], {"2": "x"}))
-    def test_bare_override(self, td, val, request):
-        td = request.getfixturevalue(td)
-        with raises(AssertionError):
-            td["1"] = val
-
-    @mark.xfail
-    @mark.parametrize("td", ("nested_td", "sequence_td"))
-    def test_override(self, td, request):
-        td = request.getfixturevalue(td)
-        with raises(AssertionError):
-            td["1"] = "x"
 
 
 class TestTemplateVisitor:
@@ -258,27 +265,27 @@ class TestTemplateVisitor:
 
     @fixture
     def empty_td(self):
-        return TemplateDict({})
+        return {}
 
     @fixture
     def simple_td(self):
-        return TemplateDict({"1": StringTemplate("{ONE}")})
+        return {"1": StringTemplate("{ONE}")}
 
     @fixture
     def nested_td(self):
-        return TemplateDict({"1": {"2": {"3": StringTemplate("{ONE}")}}})
+        return {"1": {"2": {"3": StringTemplate("{ONE}")}}}
 
     @fixture
-    def multiple_td(self):
-        return TemplateDict({"1": MultiStringTemplate(StringTemplate("{ONE}"), "b")})
+    def choice_td(self):
+        return {"1": ChoiceTemplate("{ONE}", "b")}
 
     @fixture
     def sequence_td(self):
-        return TemplateDict({"1": [StringTemplate("{ONE}"), {2: "b"}]})
+        return {"1": [StringTemplate("{ONE}"), {2: StringTemplate("b")}]}
 
     @fixture
     def single_td(self):
-        return TemplateDict({"1": [StringTemplate("{ONE}")]})
+        return {"1": [StringTemplate("{ONE}")]}
 
     @mark.parametrize(
         "td, res, input_values",
@@ -292,7 +299,7 @@ class TestTemplateVisitor:
             ("sequence_td", {"1": [{2: "b"}]}, [""]),
             ("single_td", {"1": ["a"]}, ["a"]),
             ("single_td", {}, [""]),
-            ("multiple_td", {"1": "a"}, ["a", "a"]),
+            ("choice_td", {"1": "a"}, ["a", "a"]),
         ),
     )
     def test_call(self, td, res, reset_environ, input_values, monkeypatch, request):

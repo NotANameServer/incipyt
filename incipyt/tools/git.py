@@ -1,6 +1,5 @@
 from incipyt import commands, project, signals, tools
-from incipyt._internal import templates
-from incipyt._internal.dumpers import Requirement
+from incipyt._internal.dumpers import TextFile
 
 
 class Git(tools.Tool):
@@ -17,20 +16,14 @@ class Git(tools.Tool):
         - Issue: {REPOSITORY}/issues
         - Documentation: {REPOSITORY}/wiki
         """
+        signals.project_url.emit(url_kind="Repository", url_value="{REPOSITORY}")
+        signals.project_url.emit(url_kind="Issue", url_value="{REPOSITORY}/issues")
         signals.project_url.emit(
-            url_kind="Repository", url_value=templates.StringTemplate("{REPOSITORY}")
-        )
-        signals.project_url.emit(
-            url_kind="Issue", url_value=templates.StringTemplate("{REPOSITORY}/issues")
-        )
-        signals.project_url.emit(
-            url_kind="Documentation",
-            url_value=templates.StringTemplate("{REPOSITORY}/wiki"),
+            url_kind="Documentation", url_value="{REPOSITORY}/wiki"
         )
 
     def _slot(self, pattern, **kwargs):
-        gitignore = project.structure.get_configuration(Requirement(".gitignore"))
-        gitignore[None] = [pattern]
+        project.structure.get_config_list(TextFile(".gitignore")).append(pattern)
 
     def pre(self, workon):
         """Run `git init`.

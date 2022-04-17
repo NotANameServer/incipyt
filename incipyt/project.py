@@ -1,16 +1,16 @@
 """TO-DO."""
 
 import collections
-import collections.abc
 import logging
 import os
 import sys
+from collections import abc
 
 import click
 
 from incipyt._internal import templates
 
-from incipyt._internal.utils import EnvValue, formattable
+from incipyt._internal.utils import EnvValue, is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +125,10 @@ class _Environ(collections.UserDict):
             type=str,
         )
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
 
 environ = _Environ()
 
@@ -149,13 +153,13 @@ class _Structure:
     def __init__(self):
         self.clear()
 
-    def get_configuration(self, config_root):
+    def get_config_dict(self, config_root):
         """Get a configuration dictionary associated to the relative path `config_root`.
 
         :param config_root: Relative path of the configuration file.
         :type config_root: :class:`pathlib.Path`
         :return: A reference to the configuration dictionary
-        :rtype: :class:`dict`
+        :rtype: :class:`incipyt._internal.templates.TempateDict`
         """
         if config_root not in self._configurations:
             logger.debug(
@@ -163,7 +167,29 @@ class _Structure:
             )
             self._configurations[config_root] = {}
 
+        assert isinstance(
+            self._configurations[config_root], abc.MutableMapping
+        ), f"{config_root} is not a dict."
         return templates.TemplateDict(self._configurations[config_root])
+
+    def get_config_list(self, config_root):
+        """Get a configuration list associated to the relative path `config_root`.
+
+        :param config_root: Relative path of the configuration file.
+        :type config_root: :class:`pathlib.Path`
+        :return: A reference to the configuration list
+        :rtype: :class:`incipyt._internal.templates.TempateList`
+        """
+        if config_root not in self._configurations:
+            logger.debug(
+                "Register configuration %s in project structure.", str(config_root)
+            )
+            self._configurations[config_root] = []
+
+        assert is_nonstring_sequence(
+            self._configurations[config_root]
+        ), f"{config_root} is not a list."
+        return templates.TemplateList(self._configurations[config_root])
 
     def commit(self):
         """Commit current project structure on disk.
@@ -196,39 +222,41 @@ class _Structure:
     def _visit(template):
         """Visit the `template` nested-dictionary structure.
 
-        All formattable values of the template dictionary will be evaluated and
-        replaced by their results. All nested structures will be recursively
+        All :class:`incipyt._internal.templates.Formattable` values of the template dictionary will be
+        evaluated and replaced by their results. All nested structures will be recursively
         visited and processed too.
 
-        :param template: The template dictionary to visit.
-        :type template: :class:`collections.abc.Mapping`
+        :param template: The template dictionary or list to visit.
+        :type template: :class:`collections.abc.MutableMapping` of :class:`collections.abc.MutableSequence`
         """
-        if isinstance(template, templates.TemplateDict):
-            return _Structure._visit(template.data)
+        if is_nonstring_sequence(template):
+            for index, value in enumerate(template):
+                if isinstance(value, templates.Formattable):
+                    template[index] = value.format()
+                else:
+                    _Structure._visit(value)
+                if not template[index]:
+                    template[index] = None
 
-        for key, value in template.items():
-            logger.debug("Visit %s to process environ variables.", key)
+            while None in template:
+                template.remove(None)
 
-            if formattable(value):
-                template[key] = value.format()
+        elif isinstance(template, abc.MutableMapping):  # noqa: SIM106
+            for key, value in template.items():
+                logger.debug("Visit %s to process environ variables.", key)
 
-            elif isinstance(value, collections.abc.MutableMapping):
-                _Structure._visit(value)
-                if not value:
-                    template[key] = None
-
-            elif isinstance(value, collections.abc.MutableSequence):
-                for index, element in enumerate(value):
-                    if formattable(element):
-                        value[index] = element.format()
-                    elif isinstance(element, collections.abc.MutableMapping):
-                        _Structure._visit(element)
-                template[key] = [element for element in value if element]
+                if isinstance(value, templates.Formattable):
+                    template[key] = value.format()
+                else:
+                    _Structure._visit(value)
                 if not template[key]:
                     template[key] = None
 
-        for key in [key for key, value in template.items() if value is None]:
-            del template[key]
+            for key in [key for key, value in template.items() if value is None]:
+                del template[key]
+
+        else:
+            raise TypeError(f"{type(template)} do not support visitation.")
 
 
 structure = _Structure()

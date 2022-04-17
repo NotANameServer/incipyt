@@ -59,46 +59,44 @@ class Setuptools(tools.Tool):
 
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
-        pyproject = project.structure.get_configuration(Toml("pyproject.toml"))
-        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
+        pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
+        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
 
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
 
-        pyproject["build-system"] = templates.Transform(
-            {
-                "requires": ["setuptools", "wheel"],
-                "build-backend": "setuptools.build_meta",
-            }
-        )
+        pyproject["build-system"] = {
+            "requires": ["setuptools", "wheel"],
+            "build-backend": "setuptools.build_meta",
+        }
 
         setup["metadata"] = {
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
-            "long_description": templates.Transform("file: README.md"),
-            "long_description_content_type": templates.Transform("text/markdown"),
+            "long_description": "file: README.md",
+            "long_description_content_type": "text/markdown",
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.StringTemplate(
                 "{PROJECT_NAME}", sanitizer=sanitizers.project
             ),
         }
 
-        setup |= templates.Transform(
-            {
-                "metadata": {
-                    "version": "{PACKAGE_VERSION}",
-                },
-                "options": {
-                    "python_requires": ">={PYTHON_VERSION}",
-                },
+        setup |= {
+            "metadata": {
+                "version": templates.StringTemplate(
+                    "{PACKAGE_VERSION}",
+                    sanitizer=sanitizers.version,
+                    PACKAGE_VERSION="0.0.0",
+                )
             },
-            lambda template: templates.StringTemplate(
-                template,
-                sanitizer=sanitizers.version,
-                PACKAGE_VERSION="0.0.0",
-                PYTHON_VERSION="3.7",
-            ),
-        )
+            "options": {
+                "python_requires": templates.StringTemplate(
+                    ">={PYTHON_VERSION}",
+                    sanitizer=sanitizers.version,
+                    PYTHON_VERSION="3.7",
+                )
+            },
+        }
 
         setup["options", "packages"] = templates.StringTemplate(
             "{PROJECT_NAME}", sanitizer=sanitizers.package
@@ -108,19 +106,18 @@ class Setuptools(tools.Tool):
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
-        project.structure.get_configuration(TextFile("LICENSE"))[
-            None
-        ] = "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>\n\n"
+        project.structure.get_config_list(TextFile("LICENSE", sep="\n\n")).append(
+            "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"
+        )
 
-        project.structure.get_configuration(
+        project.structure.get_config_list(
             TextFile("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
-        )[None] = "\n"
+        ).append("")
 
-        project.structure.get_configuration(TextFile("README.md"))[
-            None
-        ] = templates.StringTemplate(
-            textwrap.dedent(
-                """\
+        project.structure.get_config_list(TextFile("README.md", sep="\n\n")).append(
+            templates.StringTemplate(
+                textwrap.dedent(
+                    """\
                 # {PROJECT_NAME}
 
                 {SUMMARY_DESCRIPTION}
@@ -129,45 +126,47 @@ class Setuptools(tools.Tool):
 
                 ## Contribute
 
-                Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>\n
-                """
-            ),
-            value_error=False,
-        )
-
-        project.structure.get_configuration(TextFile("setup.py"))[
-            None
-        ] = textwrap.dedent(
-            """\
-            import setuptools
-
-            setuptools.setup()\n
-            """
-        )
-
-        signals.build_dependency.emit(dep_name=templates.Transform("build"))
-
-        signals.classifier.emit(
-            classifier=templates.Transform(
-                "Programming Language :: Python :: 3 :: Only"
+                Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"""
+                ),
+                value_error=False,
             )
         )
 
-        signals.vcs_ignore.emit(pattern=templates.Transform("build"))
-        signals.vcs_ignore.emit(pattern=templates.Transform("dist"))
-        signals.vcs_ignore.emit(pattern=templates.Transform("*.egg-info"))
+        project.structure.get_config_list(TextFile("setup.py")).append(
+            textwrap.dedent(
+                """\
+            import setuptools
+
+            setuptools.setup()"""
+            )
+        )
+
+        signals.build_dependency.emit(dep_name="build")
+
+        signals.classifier.emit(
+            classifier="Programming Language :: Python :: 3 :: Only"
+        )
+
+        signals.vcs_ignore.emit(pattern="build")
+        signals.vcs_ignore.emit(pattern="dist")
+        signals.vcs_ignore.emit(pattern="*.egg-info")
 
     def _slot_classifier(self, classifier, **kwargs):
-        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
-        setup["metadata", "classifiers"] = [classifier]
+        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
+        if ("metadata", "classifiers") not in setup:
+            setup["metadata", "classifiers"] = []
+        setup["metadata", "classifiers"].append(classifier)
 
     def _slot_dependency(self, dep_name, **kwargs):
-        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
-        setup["options.extras_require", "dev"] = [dep_name]
+        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
+        if ("options.extras_require", "dev") not in setup:
+            setup["options.extras_require", "dev"] = []
+        setup["options.extras_require", "dev"].append(dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
-        setup = project.structure.get_configuration(CfgIni("setup.cfg"))
-        setup["metadata", "project_urls", url_kind] = url_value
+        project.structure.get_config_dict(CfgIni("setup.cfg"))[
+            "metadata", "project_urls"
+        ] = {url_kind: url_value}
 
     def post(self, workon):
         """Editable install and build for test.
