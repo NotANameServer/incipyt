@@ -58,6 +58,10 @@ def attrs_eq(a, b, *args):
         return False
 
 
+def attrs_hash(a, *args, **kwargs):
+    return hash(tuple(getattr(a, attr) for attr in args) + tuple(kwargs.items()))
+
+
 def formattable(obj):
     """Know if an object is formattable.
 

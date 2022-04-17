@@ -172,9 +172,6 @@ class _Structure:
         :param template: The template dictionary to visit.
         :type template: :class:`collections.abc.Mapping`
         """
-        if isinstance(template, templates.TemplateDict):
-            return _Structure._visit(template.data)
-
         for key, value in template.items():
             logger.debug("Visit %s to process environ variables.", key)
 
@@ -183,16 +180,16 @@ class _Structure:
 
             elif isinstance(value, collections.abc.MutableMapping):
                 _Structure._visit(value)
-                if not value:
+                if not template[key]:
                     template[key] = None
 
             elif isinstance(value, collections.abc.MutableSequence):
                 for index, element in enumerate(value):
                     if formattable(element):
-                        value[index] = element.format()
+                        template[key][index] = element.format()
                     elif isinstance(element, collections.abc.MutableMapping):
                         _Structure._visit(element)
-                template[key] = [element for element in value if element]
+                template[key] = [element for element in template[key] if element]
                 if not template[key]:
                     template[key] = None
 

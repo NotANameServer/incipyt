@@ -6,9 +6,9 @@ allow easier templating of collections data structures, such as dict-like
 template objects.
 """
 
-import collections
 import contextlib
 import logging
+from collections import abc
 from string import Formatter
 from typing import Any, Callable, NamedTuple
 
@@ -18,18 +18,6 @@ from incipyt import project
 from incipyt._internal import utils
 
 logger = logging.getLogger(__name__)
-
-
-class Transform(NamedTuple):
-    """Compound type containing a value and a "transform".
-
-    A transform is a callable that will be used to transform the value. If no
-    transform is provided, the identity function will be used, hence the value
-    will not be transformed.
-    """
-
-    value: Any
-    transform: Callable = lambda x: x
 
 
 class StringTemplate:
@@ -65,19 +53,25 @@ class StringTemplate:
         self._format_string = format_string
         self._kwargs = kwargs
 
-    def __repr__(self):
-        return utils.make_repr(
-            self,
-            format_string=self._format_string,
-            confirmed=self._confirmed,
-            sanitizer=self._sanitizer,
-            value_error=self._value_error,
-            kwargs=self._kwargs,
-        )
-
     def __eq__(self, other):
         return utils.attrs_eq(
-            self, other, "_format_string", "_confirmed", "_sanitizer", "_kwargs"
+            self,
+            other,
+            "_format_string",
+            "_confirmed",
+            "_sanitizer",
+            "_value_error",
+            "_kwargs",
+        )
+
+    def __hash__(self):
+        return utils.attrs_hash(
+            self,
+            "_format_string",
+            "_confirmed",
+            "_sanitizer",
+            "_value_error",
+            **self._kwargs,
         )
 
     def format(self):  # noqa: A003
@@ -100,6 +94,65 @@ class StringTemplate:
             },
         )
 
+    def __repr__(self):
+        return utils.make_repr(
+            self,
+            format_string=self._format_string,
+            confirmed=self._confirmed,
+            sanitizer=self._sanitizer,
+            value_error=self._value_error,
+            kwargs=self._kwargs,
+        )
+
+
+class Transform(NamedTuple):
+    """Compound type containing a value and a "transform".
+
+    A transform is a callable that will be used to transform the value. If no
+    transform is provided, the identity function will be used, hence the value
+    will not be transformed.
+    """
+
+    value: Any
+    transform: Callable = StringTemplate
+
+    @staticmethod
+    def _get_transform(value, transform=StringTemplate):
+        """Wrap `value` in :class:`incipyt._internal.templates.Transform` if needed.
+
+        Wrapping with a `None` transform will result in
+        :class:`incipyt._internal.templates.StringTemplate` being used.
+
+        :param value: A bare value or already wrapped value.
+        :type value: :class:`str` or :class:`incipyt._internal.templates.Transform`
+        :param transform: Callable to be wrapped.
+        :type transform: :class:`function` or `None`, optionnal
+        :return: Original or wrapped `value`.
+        :rtype: :class:`incipyt._internal.templates.Transform`
+        """
+        if isinstance(value, Transform):
+            assert callable(value.transform), "Transform has to be callable."
+            return value
+        return Transform(value, transform)
+
+    @staticmethod
+    def _get_value(value, transform):
+        """Transform a value according to its wrapped transformation or fallback.
+
+        :param value: Value to transform. If it is formattable, it will not be transformed.
+        :type value: :class:`str` or :class:`function` or :class:`incipyt._internal.templates.Transform`
+        :param transform: Fallback callable for transformation.
+        :type transform: :class:`function`
+        :return: Transformed `value`.
+        :rtype: :class:`str` or `formattable`
+        """
+        if isinstance(value, Transform):
+            return Transform._get_value(*value)
+        elif utils.formattable(value) and not isinstance(value, str):
+            return value
+        else:
+            return transform(value)
+
 
 class MultiStringTemplate:
     """Class to hold multiple values for a single key.
@@ -120,9 +173,12 @@ class MultiStringTemplate:
         :type tail: :class:`incipyt._intternal.templates.MultiStringTemplate` or any bare value
         """
         self._values = (
-            [head] + tail._values
+            {Transform._get_value(*Transform._get_transform(head))} | tail._values
             if isinstance(tail, MultiStringTemplate)
-            else [head, tail]
+            else {
+                Transform._get_value(*Transform._get_transform(head)),
+                Transform._get_value(*Transform._get_transform(tail)),
+            }
         )
 
     def format(self):  # noqa: A003
@@ -142,11 +198,14 @@ class MultiStringTemplate:
             ),
         )
 
-    def __repr__(self):
-        return f"{type(self).__name__}({self._values})"
-
     def __eq__(self, other):
         return utils.attrs_eq(self, other, "_values")
+
+    def __hash__(self):
+        return hash(tuple(self._values))
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self._values})"
 
     @classmethod
     def from_items(cls, *args):
@@ -156,12 +215,13 @@ class MultiStringTemplate:
         :return: New class instance
         :rtype: :class:`incipyt._intternal.templates.MultiStringTemplate`
         """
-        instance = cls.__new__(cls)
-        instance._values = list(args)
+        instance = cls(args[0], args[1])
+        for value in args[2:]:
+            instance = cls(value, instance)
         return instance
 
 
-class TemplateDict(collections.UserDict):
+class TemplateDict(abc.MutableMapping):
     """Proxy class around a provided mapping.
 
     This is itended to ease configuration templating.
@@ -249,24 +309,46 @@ class TemplateDict(collections.UserDict):
         {"keyA": StringTemplate("{VARIABLE_NAME}"), "keyB": StringTemplate("{OTHER_NAME}")}
     """
 
-    def __init__(self, mapping):
+    def __init__(self, data):
         """Proxy class around a provided mapping.
 
         This is itended to ease configuration templating.
 
         :param mapping: Existing mapping holding entries to wrap.
-        :type mapping: :class:`collections.abc.MutableMapping`
+        :type mapping: :class:`abc.MutableMapping`
         """
-        self.data = mapping
+        self.data = data
+
+    def __getitem__(self, key):
+        if isinstance(self.data[key], abc.MutableMapping):
+            return TemplateDict(self.data[key])
+        elif isinstance(self.data[key], abc.MutableSequence):
+            return TemplateList(self.data[key])
+        else:
+            return self.data[key]
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return utils.make_repr(self, "data")
+
+    def __delitem__(self, key):
+        raise NotImplementedError(
+            f"{type(self)} do not support __delitem__, add-only dict-like."
+        )
 
     def __setitem__(self, keys, value):
-        value, transform = self._get_transform(value)
+        value, transform = Transform._get_transform(value)
         if not utils.is_nonstring_sequence(keys):
             keys = (keys,)
 
-        if isinstance(value, collections.abc.Mapping):
+        if isinstance(value, abc.Mapping):
             for k, v in value.items():
-                self[keys + (k,)] = self._get_transform(v, transform)
+                self[keys + (k,)] = Transform._get_transform(v, transform)
             return
 
         config = self.data
@@ -283,75 +365,104 @@ class TemplateDict(collections.UserDict):
                 config[key] = []
 
             assert not isinstance(
-                config[key], collections.abc.Mapping
+                config[key], abc.Mapping
             ), f"{config[key]} is already a mapping, cannot set to a sequence."
 
-            for v in value:
-                if v not in config[key]:
-                    config[key].append(self._get_value(v, transform))
+            config = TemplateList(config[key])
+            config += Transform._get_transform(value, transform)
 
         else:
-            value = self._get_value(value, transform)
+            value = Transform._get_transform(value, transform)
             if key in config:
-                if config[key] != value:
-                    config[key] = MultiStringTemplate(value, config[key])
+                config[key] = MultiStringTemplate(value, config[key])
             else:
-                config[key] = value
+                config[key] = Transform._get_value(value, transform)
+
+    def update(self, other=(), /, **kwds):
+        other, transform_other = Transform._get_transform(other)
+
+        if hasattr(other, "keys") and callable(other.keys):
+            for key in other.keys():
+                self[key] = Transform._get_transform(other[key], transform_other)
+        else:
+            for key, value in other:
+                self[key] = Transform._get_transform(value, transform_other)
+
+        kwds, transform_kwds = Transform._get_transform(kwds)
+
+        for key, value in kwds.items():
+            self[key] = Transform._get_transform(value, transform_kwds)
 
     def __ior__(self, other):
-        other, transform = self._get_transform(other)
-
-        assert isinstance(
-            other, collections.abc.Mapping
-        ), f"RHS of |= for {type(self)} should be a mapping."
-
-        for key, value in other.items():
-            self[key] = self._get_transform(value, transform)
+        self.update(other)
         return self
 
-    def __or__(self, other):
+
+class TemplateList(abc.MutableSequence):
+    """Proxy class around a provided mapping.
+
+    This is itended to ease configuration templating.
+
+    See :class:`TemplateDict` for usage details.
+    """
+
+    def __init__(self, data):
+        """Proxy class around a provided sequence.
+
+        This is itended to ease configuration templating.
+
+        :param mapping: Existing mapping holding entries to wrap.
+        :type mapping: :class:`abc.MutableSequence`
+        """
+        self.data = data
+
+    def __getitem__(self, index):
+        if isinstance(self.data[index], abc.MutableSequence):
+            return TemplateList(self.data[index])
+        elif isinstance(self.data[index], abc.MutableMapping):
+            return TemplateDict(self.data[index])
+        else:
+            return self.data[index]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return utils.make_repr(self, "data")
+
+    def __eq__(self, other):
+        return utils.attrs_eq(self, other, "data")
+
+    def __setitem__(self, index, value):
         raise NotImplementedError(
-            f"{type(self)} do not support |, use self.data | or |=."
+            f"{type(self)} do not support __setitem__, add-only list-like."
         )
 
-    @staticmethod
-    def _get_transform(value, transform=None):
-        """Wrap `value` in :class:`incipyt._internal.templates.Transform` if needed.
+    def __delitem__(self, value):
+        raise NotImplementedError(
+            f"{type(self)} do not support del, add-only list-like."
+        )
 
-        Wrapping with a `None` transform will result in
-        :class:`incipyt._internal.templates.StringTemplate` being used.
+    def insert(self, index, value):
+        value, transform = Transform._get_transform(value)
 
-        :param value: A bare value or already wrapped value.
-        :type value: :class:`str` or :class:`incipyt._internal.templates.Transform`
-        :param transform: Callable to be wrapped.
-        :type transform: :class:`function` or `None`, optionnal
-        :return: Original or wrapped `value`.
-        :rtype: :class:`incipyt._internal.templates.Transform`
-        """
-        if isinstance(value, Transform):
-            assert callable(value[1]), "Second Transform element has to be callable."
-            return value
-        return Transform(value, transform if transform else StringTemplate)
+        if isinstance(value, abc.Mapping):
+            self.data.insert(index, {})
+            dict_proxy = TemplateDict(self.data[index])
+            dict_proxy |= Transform._get_transform(value, transform)
+        else:
+            new_value = Transform._get_value(value, transform)
+            if new_value not in self.data:
+                self.data.insert(index, new_value)
 
-    @staticmethod
-    def _get_value(value, transform):
-        """Transform a value according to its wrapped transformation or fallback.
+    def extend(self, other):
+        other, transform = Transform._get_transform(other)
 
-        :param value: Value to transform. If it is formattable, it will not be transformed.
-        :type value: :class:`str` or :class:`function` or :class:`incipyt._internal.templates.Transform`
-        :param transform: Fallback callable for transformation.
-        :type transform: :class:`function`
-        :return: Transformed `value`.
-        :rtype: :class:`str` or `formattable`
-        """
-        if isinstance(value, Transform):
-            return value.transform(value.value)
-        if utils.formattable(value) and not isinstance(value, str):
-            return value
-        return transform(value)
+        for value in other:
+            self.append(Transform._get_transform(value, transform))
 
 
-class FormatterEnviron(collections.abc.Mapping):
+class FormatterEnviron(abc.Mapping):
     """Class wrapping an environ and providing an interface to render templates.
 
     It can be used to render template strings.
