@@ -5,7 +5,6 @@ from incipyt._internal.templates import (
     MultiStringTemplate,
     StringTemplate,
     TemplateDict,
-    Transform,
 )
 from incipyt import project
 from tests.utils import mock_stdin
@@ -79,7 +78,7 @@ class TestMultiStringTemplate:
         return MultiStringTemplate("a", "b")
 
     @fixture
-    def formattable_mst(self):
+    def has_format_mst(self):
         return MultiStringTemplate(StringTemplate("a"), StringTemplate("b"))
 
     @fixture
@@ -88,19 +87,20 @@ class TestMultiStringTemplate:
 
     def test_mst_tail(self, simple_mst):
         mst = MultiStringTemplate("x", simple_mst)
+        print(mst)
         assert mst._values == {
             StringTemplate("x"),
             StringTemplate("a"),
             StringTemplate("b"),
         }
 
-    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
+    @mark.parametrize("mst", ("simple_mst", "has_format_mst"))
     def test_call(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "a")
         mst = request.getfixturevalue(mst)
         assert mst.format() == "a"
 
-    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
+    @mark.parametrize("mst", ("simple_mst", "has_format_mst"))
     def test_call_invalid(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "x")
         mst = request.getfixturevalue(mst)
@@ -146,36 +146,6 @@ class TestTemplateDict:
     def test_setitem(self, td, res, request):
         td = request.getfixturevalue(td)
         td["1"] = "x"
-        assert td == res
-
-    @mark.parametrize(
-        "td, res",
-        (
-            ("empty_td", TemplateDict({"1": StringTemplate("x")})),
-            (
-                "simple_td",
-                TemplateDict({"1": MultiStringTemplate("x", "a")}),
-            ),
-        ),
-    )
-    def test_setitem_transform(self, td, res, request):
-        td = request.getfixturevalue(td)
-        td["1"] = Transform("", lambda _: StringTemplate("x"))
-        assert td == res
-
-    @mark.parametrize(
-        "td, res",
-        (
-            ("empty_td", TemplateDict({"1": StringTemplate("x")})),
-            (
-                "simple_td",
-                TemplateDict({"1": MultiStringTemplate("x", "a")}),
-            ),
-        ),
-    )
-    def test_setitem_notransform(self, td, res, request):
-        td = request.getfixturevalue(td)
-        td["1"] = Transform("x")
         assert td == res
 
     @mark.parametrize(
@@ -234,29 +204,6 @@ class TestTemplateDict:
         td["1"] = ["a", "x"]
         print(td["1"])
         print(res["1"])
-        assert td == res
-
-    @mark.parametrize(
-        "td, res",
-        (
-            ("empty_td", TemplateDict({"1": [StringTemplate("x")]})),
-            (
-                "sequence_td",
-                TemplateDict(
-                    {
-                        "1": [
-                            StringTemplate("a"),
-                            StringTemplate("b"),
-                            StringTemplate("x"),
-                        ]
-                    }
-                ),
-            ),
-        ),
-    )
-    def test_sequence_setitem_transform(self, td, res, request):
-        td = request.getfixturevalue(td)
-        td["1"] = [Transform("", lambda _: StringTemplate("x"))]
         assert td == res
 
     @mark.parametrize(

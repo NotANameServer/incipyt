@@ -5,7 +5,8 @@ import subprocess
 
 from incipyt import project
 
-from incipyt._internal.utils import EnvValue, formattable
+from incipyt._internal.templates import HasFormat
+from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def run(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    formatted = [arg.format() if formattable(arg) else arg for arg in args]
+    formatted = [arg.format() if isinstance(arg, HasFormat) else arg for arg in args]
     logger.info(" ".join(formatted))
     result = subprocess.run(formatted, capture_output=True, check=True, **kwargs)
     logger.info(result.stdout.decode())

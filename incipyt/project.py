@@ -10,7 +10,7 @@ import click
 
 from incipyt._internal import templates
 
-from incipyt._internal.utils import EnvValue, formattable, is_nonstring_sequence
+from incipyt._internal.utils import EnvValue, is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -187,16 +187,16 @@ class _Structure:
     def _visit(template):
         """Visit the `template` nested-dictionary structure.
 
-        All formattable values of the template dictionary will be evaluated and
-        replaced by their results. All nested structures will be recursively
+        All :class:`incipyt._internal.templates.HasFromat` values of the template dictionary will be
+        evaluated and replaced by their results. All nested structures will be recursively
         visited and processed too.
 
         :param template: The template dictionary or list to visit.
-        :type template: :class:`abc.MutableMapping` of :class:`abc.MutableSequence`
+        :type template: :class:`collections.abc.MutableMapping` of :class:`collections.abc.MutableSequence`
         """
         if is_nonstring_sequence(template):
             for index, value in enumerate(template):
-                if formattable(value):
+                if isinstance(value, templates.HasFormat):
                     template[index] = value.format()
                 else:
                     _Structure._visit(value)
@@ -210,7 +210,7 @@ class _Structure:
             for key, value in template.items():
                 logger.debug("Visit %s to process environ variables.", key)
 
-                if formattable(value):
+                if isinstance(value, templates.HasFormat):
                     template[key] = value.format()
                 else:
                     _Structure._visit(value)

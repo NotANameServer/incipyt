@@ -60,13 +60,3 @@ def attrs_eq(a, b, *args):
 
 def attrs_hash(a, *args, **kwargs):
     return hash(tuple(getattr(a, attr) for attr in args) + tuple(kwargs.items()))
-
-
-def formattable(obj):
-    """Know if an object is formattable.
-
-    :param obj: Object to know if :meth:`format` can be used.
-    :return: `True` :meth:`format` can be called.
-    :rtype: :class:`bool`
-    """
-    return hasattr(obj, "format") and callable(obj.format)

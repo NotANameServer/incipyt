@@ -65,40 +65,38 @@ class Setuptools(tools.Tool):
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
 
-        pyproject["build-system"] = templates.Transform(
-            {
-                "requires": ["setuptools", "wheel"],
-                "build-backend": "setuptools.build_meta",
-            }
-        )
+        pyproject["build-system"] = {
+            "requires": ["setuptools", "wheel"],
+            "build-backend": "setuptools.build_meta",
+        }
 
         setup["metadata"] = {
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
-            "long_description": templates.Transform("file: README.md"),
-            "long_description_content_type": templates.Transform("text/markdown"),
+            "long_description": "file: README.md",
+            "long_description_content_type": "text/markdown",
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.StringTemplate(
                 "{PROJECT_NAME}", sanitizer=sanitizers.project
             ),
         }
 
-        setup |= templates.Transform(
-            {
-                "metadata": {
-                    "version": "{PACKAGE_VERSION}",
-                },
-                "options": {
-                    "python_requires": ">={PYTHON_VERSION}",
-                },
+        setup |= {
+            "metadata": {
+                "version": templates.StringTemplate(
+                    "{PACKAGE_VERSION}",
+                    sanitizer=sanitizers.version,
+                    PACKAGE_VERSION="0.0.0",
+                )
             },
-            lambda template: templates.StringTemplate(
-                template,
-                sanitizer=sanitizers.version,
-                PACKAGE_VERSION="0.0.0",
-                PYTHON_VERSION="3.7",
-            ),
-        )
+            "options": {
+                "python_requires": templates.StringTemplate(
+                    ">={PYTHON_VERSION}",
+                    sanitizer=sanitizers.version,
+                    PYTHON_VERSION="3.7",
+                )
+            },
+        }
 
         setup["options", "packages"] = templates.StringTemplate(
             "{PROJECT_NAME}", sanitizer=sanitizers.package
@@ -143,17 +141,15 @@ class Setuptools(tools.Tool):
             )
         )
 
-        signals.build_dependency.emit(dep_name=templates.Transform("build"))
+        signals.build_dependency.emit(dep_name="build")
 
         signals.classifier.emit(
-            classifier=templates.Transform(
-                "Programming Language :: Python :: 3 :: Only"
-            )
+            classifier="Programming Language :: Python :: 3 :: Only"
         )
 
-        signals.vcs_ignore.emit(pattern=templates.Transform("build"))
-        signals.vcs_ignore.emit(pattern=templates.Transform("dist"))
-        signals.vcs_ignore.emit(pattern=templates.Transform("*.egg-info"))
+        signals.vcs_ignore.emit(pattern="build")
+        signals.vcs_ignore.emit(pattern="dist")
+        signals.vcs_ignore.emit(pattern="*.egg-info")
 
     def _slot_classifier(self, classifier, **kwargs):
         setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
