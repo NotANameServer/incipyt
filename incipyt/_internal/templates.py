@@ -315,8 +315,8 @@ class TemplateDict(abc.MutableMapping):
             assert not utils.is_nonstring_sequence(
                 self.data[keys]
             ), f"{self.data[keys]} is already a sequence, cannot set to a dict."
-            for key, value in value.items():
-                TemplateDict(self.data[keys])[key] = value
+            for k, v in value.items():
+                TemplateDict(self.data[keys])[k] = v
 
         elif utils.is_nonstring_sequence(value):
             if keys not in self.data:

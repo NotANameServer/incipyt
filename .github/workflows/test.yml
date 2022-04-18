@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.10
+        python-version: '3.10'
     - name: Cache python env
       uses: actions/cache@v2
       with:
@@ -39,7 +39,7 @@ jobs:
     - name: Check format with black
       run: python -m black -v --check .
     - name: Lint with flakeheaven
-      run: python -m flakeheaven lint -v
+      run: python -m flakeheaven lint -v incipyt
 
   test:
     name: Tests
@@ -47,7 +47,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9, 3.10]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       _OS: ${{ matrix.os }}
