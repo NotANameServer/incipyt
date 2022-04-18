@@ -30,7 +30,7 @@ def test_mkdir(dumper, reset_environ, tmp_path):
 def test_path_exists(dumper, reset_environ, tmp_path):
     (tmp_path / "file").touch()
     dmp = dumper("file")
-    with raises(RuntimeError):
+    with raises(FileExistsError):
         dmp.commit(tmp_path)
 
 
@@ -42,7 +42,7 @@ def test_path_exists(dumper, reset_environ, tmp_path):
             {
                 "section": {
                     "first": "1",
-                    "second": {"one": "1", "two": 2},
+                    "second": {"one": "1", "two": "2"},
                     "third": ["one", "two"],
                 }
             },
@@ -56,8 +56,37 @@ def test_path_exists(dumper, reset_environ, tmp_path):
         ),
         (
             Toml,
-            {"section": {"first": "1", "second": 2, "third": ["one", "two"]}},
-            ("[section]\n" 'first = "1"\n' "second = 2\n" 'third = [ "one", "two",]\n'),
+            {
+                "section": {
+                    "first": "1",
+                    "second": {"one": "1", "two": "2"},
+                    "third": ["one", "two"],
+                    "fourth": {"one": {"two": "2"}},
+                    "fifth": [
+                        {"one": "1.1", "two": "1.2"},
+                        {"one": "2.1", "two": "2.2"},
+                    ],
+                }
+            },
+            (
+                "[section]\n"
+                'first = "1"\n'
+                'third = [ "one", "two",]\n'
+                "[[section.fifth]]\n"
+                'one = "1.1"\n'
+                'two = "1.2"\n'
+                "\n"
+                "[[section.fifth]]\n"
+                'one = "2.1"\n'
+                'two = "2.2"\n'
+                "\n"
+                "[section.second]\n"
+                'one = "1"\n'
+                'two = "2"\n'
+                "\n"
+                "[section.fourth.one]\n"
+                'two = "2"\n'
+            ),
         ),
         (
             TextFile,

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pytest import fixture, mark, raises
@@ -55,7 +56,7 @@ class TestEnviron:
     )
     def test_push(self, env, request):
         request.getfixturevalue(env)
-        with raises(RuntimeError):
+        with raises(ValueError):
             project.environ["ONE"] = "11"
 
     @mark.parametrize(
@@ -121,7 +122,7 @@ class TestEnviron:
     def test_run(self, env, request):
         request.getfixturevalue(env)
         result = commands.run(["cmd", "arg"])
-        assert result.stdout.decode() == "lineA\nlineB\n"
+        assert result.stdout.decode() == f"lineA{os.linesep}lineB{os.linesep}"
 
 
 class TestStructure:

@@ -44,7 +44,7 @@ def main(folder, check_build):
         logger.info("Add %s to project structure.", tool)
         tool.add_to_structure()
 
-    logger.info("Mkdir folder for project structure on %s.", str(folder))
+    logger.info("Mkdir folder for project structure on %s.", os.fspath(folder))
     project.structure.mkdir(folder)
 
     for tool in tools_to_install:

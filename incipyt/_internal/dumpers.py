@@ -1,6 +1,5 @@
-import collections
-import collections.abc
 import configparser
+import os
 import pathlib
 
 from abc import ABC, abstractmethod
@@ -25,7 +24,7 @@ class BaseDumper(ABC):
 
         path = self.format_path()
         if path.exists():
-            raise RuntimeError(f"File {path} already exists.")
+            raise FileExistsError(f"File {path} already exists.")
 
     def mkdir(self):
         self.format_path().parent.mkdir(parents=True, exist_ok=True)
@@ -39,7 +38,7 @@ class BaseDumper(ABC):
 
         return pathlib.Path(
             templates.FormatterEnviron(sanitizer=self._sanitizer).format(
-                str(self._root / self._path)
+                os.fspath(self._root / self._path)
             )
         )
 
@@ -60,16 +59,8 @@ class BaseDumper(ABC):
 
 class CfgIni(BaseDumper):
     def dump_in(self, config):
-        for section in config.values():
-            for key, value in section.items():
-                if utils.is_nonstring_sequence(value):
-                    section[key] = "\n".join([""] + value)
-                elif isinstance(value, collections.abc.Mapping):
-                    section[key] = "\n".join(
-                        [""] + [f"{k} = {v}" for k, v in value.items()]
-                    )
         config_cfg = configparser.ConfigParser()
-        config_cfg.read_dict(config)
+        config_cfg.read_dict(utils.unfold_dict(utils.unfold_list(config)))
         with self.open() as file:
             config_cfg.write(file)
 
