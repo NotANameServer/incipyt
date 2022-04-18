@@ -187,7 +187,7 @@ class _Structure:
     def _visit(template):
         """Visit the `template` nested-dictionary structure.
 
-        All :class:`incipyt._internal.templates.HasFromat` values of the template dictionary will be
+        All :class:`incipyt._internal.templates.Formattable` values of the template dictionary will be
         evaluated and replaced by their results. All nested structures will be recursively
         visited and processed too.
 
@@ -196,7 +196,7 @@ class _Structure:
         """
         if is_nonstring_sequence(template):
             for index, value in enumerate(template):
-                if isinstance(value, templates.HasFormat):
+                if isinstance(value, templates.Formattable):
                     template[index] = value.format()
                 else:
                     _Structure._visit(value)
@@ -210,7 +210,7 @@ class _Structure:
             for key, value in template.items():
                 logger.debug("Visit %s to process environ variables.", key)
 
-                if isinstance(value, templates.HasFormat):
+                if isinstance(value, templates.Formattable):
                     template[key] = value.format()
                 else:
                     _Structure._visit(value)

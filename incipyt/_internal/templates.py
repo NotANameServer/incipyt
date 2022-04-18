@@ -20,13 +20,13 @@ from incipyt._internal import utils
 logger = logging.getLogger(__name__)
 
 
-class HasFormat(metaclass=ABCMeta):
+class Formattable(metaclass=ABCMeta):
     @abstractmethod
     def format(self):  # noqa: A003
         raise NotImplementedError
 
 
-class StringTemplate(HasFormat):
+class StringTemplate(Formattable):
     """This class acts like a wrapper around a format string.
 
     When an instance is called, it renders the underlying format string using
@@ -111,11 +111,11 @@ class StringTemplate(HasFormat):
         )
 
     @classmethod
-    def _get_string_template(cls, value):
-        return value if isinstance(value, HasFormat) else cls(value)
+    def wrap(cls, value):
+        return value if isinstance(value, Formattable) else cls(value)
 
 
-class MultiStringTemplate(HasFormat):
+class ChoiceTemplate(Formattable):
     """Class to hold multiple values for a single key.
 
     When an instance is called, the user will be asked to pick a value using
@@ -131,21 +131,21 @@ class MultiStringTemplate(HasFormat):
         :param head: Entry to put a the head of the stack.
         :type tail: :class:str
         :param tail: Tail of the stack.
-        :type tail: :class:`incipyt._intternal.templates.MultiStringTemplate` or any bare value
+        :type tail: :class:`incipyt._intternal.templates.ChoiceTemplate` or any bare value
         """
         self._values = (
-            {StringTemplate._get_string_template(head)} | tail._values
-            if isinstance(tail, MultiStringTemplate)
+            {StringTemplate.wrap(head)} | tail._values
+            if isinstance(tail, ChoiceTemplate)
             else {
-                StringTemplate._get_string_template(head),
-                StringTemplate._get_string_template(tail),
+                StringTemplate.wrap(head),
+                StringTemplate.wrap(tail),
             }
         )
 
     def format(self):  # noqa: A003
         """Ask the user to pick a value using the command line interface.
 
-        If it is :class:`incipyt._internal.templates.HasFormat`, it will be formatted.
+        If it is :class:`incipyt._internal.templates.Formattable`, it will be formatted.
 
         :return: The user-choosen value.
         """
@@ -153,7 +153,7 @@ class MultiStringTemplate(HasFormat):
             "Conflicting configuration, choose between",
             type=click.Choice(
                 [
-                    value.format() if isinstance(value, HasFormat) else value
+                    value.format() if isinstance(value, Formattable) else value
                     for value in self._values
                 ]
             ),
@@ -174,10 +174,10 @@ class MultiStringTemplate(HasFormat):
 
         :param \*args: Entries to wrap.
         :return: New class instance
-        :rtype: :class:`incipyt._intternal.templates.MultiStringTemplate`
+        :rtype: :class:`incipyt._intternal.templates.ChoiceTemplate`
         """
         instance = cls.__new__(cls)
-        instance._values = {StringTemplate._get_string_template(arg) for arg in args}
+        instance._values = {StringTemplate.wrap(arg) for arg in args}
         return instance
 
 
@@ -201,7 +201,7 @@ class TemplateDict(abc.MutableMapping):
     >>> print(cfg)
         TemplateDict(data={'key': StringTemplate(format_string={VARIABLE_NAME})})
 
-    :class:`incipyt._internal.templates.HasFromat` will be kept as-is:
+    :class:`incipyt._internal.templates.Formattable` will be kept as-is:
 
     >>> cfg["key"] = a_formattable
     >>> print(cfg)
@@ -227,14 +227,14 @@ class TemplateDict(abc.MutableMapping):
 
     :Multiple values:
 
-    Instances of :class:`incipyt._internal.templates.MultiStringTemplate` will be
+    Instances of :class:`incipyt._internal.templates.ChoiceTemplate` will be
     created in case of value overrides. For instance, if `previous_value` is a
-    :class:`incipyt._internal.templates.HasFormat`:
+    :class:`incipyt._internal.templates.Formattable`:
 
     >>> cfg = TemplateDict({"key": previous_value})
     >>> cfg["key"] = "{VARIABLE_NAME}"
     >>> print(cfg)
-        TemplateDict(data={'key': MultiStringTemplate({StringTemplate(format_string={VARIABLE_NAME}), previous_value})})
+        TemplateDict(data={'key': ChoiceTemplate({StringTemplate(format_string={VARIABLE_NAME}), previous_value})})
 
     If `previous_list` is a mutable sequence, any value not already present in
     it will be appended:
@@ -329,9 +329,9 @@ class TemplateDict(abc.MutableMapping):
 
         else:
             if keys in self.data:
-                self.data[keys] = MultiStringTemplate(value, self.data[keys])
+                self.data[keys] = ChoiceTemplate(value, self.data[keys])
             else:
-                self.data[keys] = StringTemplate._get_string_template(value)
+                self.data[keys] = StringTemplate.wrap(value)
 
     def __ior__(self, other):
         self.update(other)
@@ -391,7 +391,7 @@ class TemplateList(abc.MutableSequence):
             self.data.insert(index, {})
             TemplateDict(self.data[index]).update(value)
         else:
-            new_value = StringTemplate._get_string_template(value)
+            new_value = StringTemplate.wrap(value)
             if new_value not in self.data:
                 self.data.insert(index, new_value)
 

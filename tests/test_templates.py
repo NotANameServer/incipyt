@@ -2,7 +2,7 @@ import click
 from pytest import fixture, mark, raises
 
 from incipyt._internal.templates import (
-    MultiStringTemplate,
+    ChoiceTemplate,
     StringTemplate,
     TemplateDict,
 )
@@ -72,35 +72,34 @@ class TestStringTemplate:
         assert st.format() is None
 
 
-class TestMultiStringTemplate:
+class TestChoiceTemplate:
     @fixture
     def simple_mst(self):
-        return MultiStringTemplate("a", "b")
+        return ChoiceTemplate("a", "b")
 
     @fixture
-    def has_format_mst(self):
-        return MultiStringTemplate(StringTemplate("a"), StringTemplate("b"))
+    def formattable_mst(self):
+        return ChoiceTemplate(StringTemplate("a"), StringTemplate("b"))
 
     @fixture
     def reset_environ(self):
         project.environ.clear()
 
     def test_mst_tail(self, simple_mst):
-        mst = MultiStringTemplate("x", simple_mst)
-        print(mst)
+        mst = ChoiceTemplate("x", simple_mst)
         assert mst._values == {
             StringTemplate("x"),
             StringTemplate("a"),
             StringTemplate("b"),
         }
 
-    @mark.parametrize("mst", ("simple_mst", "has_format_mst"))
+    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
     def test_call(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "a")
         mst = request.getfixturevalue(mst)
         assert mst.format() == "a"
 
-    @mark.parametrize("mst", ("simple_mst", "has_format_mst"))
+    @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
     def test_call_invalid(self, mst, reset_environ, monkeypatch, request):
         mock_stdin(monkeypatch, "x")
         mst = request.getfixturevalue(mst)
@@ -108,7 +107,7 @@ class TestMultiStringTemplate:
             mst.format()
 
 
-class TestTemplateDict:
+class TestTemplateCollection:
     @fixture
     def empty_td(self):
         return TemplateDict({})
@@ -122,8 +121,8 @@ class TestTemplateDict:
         return TemplateDict({"1": {"2": {"3": StringTemplate("a")}}})
 
     @fixture
-    def multiple_td(self):
-        return TemplateDict({"1": MultiStringTemplate("a", "b")})
+    def choice_td(self):
+        return TemplateDict({"1": ChoiceTemplate("a", "b")})
 
     @fixture
     def sequence_td(self):
@@ -135,11 +134,11 @@ class TestTemplateDict:
             ("empty_td", TemplateDict({"1": StringTemplate("x")})),
             (
                 "simple_td",
-                TemplateDict({"1": MultiStringTemplate("x", "a")}),
+                TemplateDict({"1": ChoiceTemplate("x", "a")}),
             ),
             (
-                "multiple_td",
-                TemplateDict({"1": MultiStringTemplate.from_items("x", "a", "b")}),
+                "choice_td",
+                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
             ),
         ),
     )
@@ -154,7 +153,11 @@ class TestTemplateDict:
             ("empty_td", TemplateDict({"1": StringTemplate("x")})),
             (
                 "simple_td",
-                TemplateDict({"1": MultiStringTemplate("x", "a")}),
+                TemplateDict({"1": ChoiceTemplate("x", "a")}),
+            ),
+            (
+                "choice_td",
+                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
             ),
         ),
     )
@@ -169,7 +172,7 @@ class TestTemplateDict:
             ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
             (
                 "nested_td",
-                TemplateDict({"1": {"2": {"3": MultiStringTemplate("x", "a")}}}),
+                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
             ),
         ),
     )
@@ -202,8 +205,41 @@ class TestTemplateDict:
     def test_sequence_setitem(self, td, res, request):
         td = request.getfixturevalue(td)
         td["1"] = ["a", "x"]
-        print(td["1"])
-        print(res["1"])
+        assert td == res
+
+    @mark.parametrize(
+        "td, res",
+        (
+            (
+                "empty_td",
+                TemplateDict(
+                    {
+                        "1": [
+                            StringTemplate("a"),
+                            [StringTemplate("x"), StringTemplate("y")],
+                            {"2": StringTemplate("z")},
+                        ]
+                    }
+                ),
+            ),
+            (
+                "sequence_td",
+                TemplateDict(
+                    {
+                        "1": [
+                            StringTemplate("a"),
+                            StringTemplate("b"),
+                            [StringTemplate("x"), StringTemplate("y")],
+                            {"2": StringTemplate("z")},
+                        ]
+                    }
+                ),
+            ),
+        ),
+    )
+    def test_nested_sequence_setitem(self, td, res, request):
+        td = request.getfixturevalue(td)
+        td["1"] = ["a", ["x", "y"], {"2": "z"}]
         assert td == res
 
     @mark.parametrize(
@@ -212,7 +248,7 @@ class TestTemplateDict:
             ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
             (
                 "nested_td",
-                TemplateDict({"1": {"2": {"3": MultiStringTemplate("x", "a")}}}),
+                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
             ),
         ),
     )
@@ -240,8 +276,8 @@ class TestTemplateVisitor:
         return {"1": {"2": {"3": StringTemplate("{ONE}")}}}
 
     @fixture
-    def multiple_td(self):
-        return {"1": MultiStringTemplate("{ONE}", "b")}
+    def choice_td(self):
+        return {"1": ChoiceTemplate("{ONE}", "b")}
 
     @fixture
     def sequence_td(self):
@@ -263,7 +299,7 @@ class TestTemplateVisitor:
             ("sequence_td", {"1": [{2: "b"}]}, [""]),
             ("single_td", {"1": ["a"]}, ["a"]),
             ("single_td", {}, [""]),
-            ("multiple_td", {"1": "a"}, ["a", "a"]),
+            ("choice_td", {"1": "a"}, ["a", "a"]),
         ),
     )
     def test_call(self, td, res, reset_environ, input_values, monkeypatch, request):
