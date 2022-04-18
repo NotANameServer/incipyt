@@ -94,6 +94,10 @@ class _Environ(collections.UserDict):
             type=str,
         )
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
 
 environ = _Environ()
 
