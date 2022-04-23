@@ -1,3 +1,4 @@
+import os
 import textwrap
 
 from incipyt import commands, project, signals, tools
@@ -38,20 +39,21 @@ class Setuptools(tools.Tool):
             long_description_content_type = text/markdown
             maintainer_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             name = {PROJECT_NAME}
-            version = {PACKAGE_VERSION}
             classifiers =
                 Programming Language :: Python :: 3 :: Only
+            version = {PACKAGE_VERSION}
 
             [options]
-            python_requires = >={PYTHON_VERSION}
             packages = {PROJECT_NAME}
-
-            [options.package_data]
-            * = {PACKAGE_DATA}/*
+            python_requires = >={PYTHON_VERSION}
 
             [options.extras_require]
             dev =
                 build
+                pip
+
+            [options.package_data]
+            * = {PACKAGE_DATA}/*
 
         Here key-value association is appended, if a key already exists the
         value is appended to the current one(s), the user will be asked to
@@ -66,8 +68,8 @@ class Setuptools(tools.Tool):
             raise RuntimeError("Build system already registered.")
 
         pyproject["build-system"] = {
-            "requires": ["setuptools", "wheel"],
             "build-backend": "setuptools.build_meta",
+            "requires": ["setuptools", "wheel"],
         }
 
         setup["metadata"] = {
@@ -77,32 +79,29 @@ class Setuptools(tools.Tool):
             "long_description_content_type": "text/markdown",
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.StringTemplate(
-                "{PROJECT_NAME}", sanitizer=sanitizers.project
+                "{PROJECT_NAME}",
+                sanitizer=sanitizers.project,
+            ),
+            "version": templates.StringTemplate(
+                "{PACKAGE_VERSION}",
+                sanitizer=sanitizers.version,
+                PACKAGE_VERSION="0.0.0",
             ),
         }
 
-        setup |= {
-            "metadata": {
-                "version": templates.StringTemplate(
-                    "{PACKAGE_VERSION}",
-                    sanitizer=sanitizers.version,
-                    PACKAGE_VERSION="0.0.0",
-                )
-            },
-            "options": {
-                "python_requires": templates.StringTemplate(
-                    ">={PYTHON_VERSION}",
-                    sanitizer=sanitizers.version,
-                    PYTHON_VERSION="3.7",
-                )
-            },
+        setup["options"] = {
+            "packages": templates.StringTemplate(
+                "{PROJECT_NAME}",
+                sanitizer=sanitizers.package,
+            ),
+            "python_requires": templates.StringTemplate(
+                ">={PYTHON_VERSION}",
+                sanitizer=sanitizers.version,
+                PYTHON_VERSION="3.7",
+            ),
         }
 
-        setup["options", "packages"] = templates.StringTemplate(
-            "{PROJECT_NAME}", sanitizer=sanitizers.package
-        )
-
-        setup["options.package_data", "*"] = templates.StringTemplate(
+        setup["options", "package_data", "*"] = templates.StringTemplate(
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
@@ -142,6 +141,7 @@ class Setuptools(tools.Tool):
         )
 
         signals.build_dependency.emit(dep_name="build")
+        signals.build_dependency.emit(dep_name="pip")
 
         signals.classifier.emit(
             classifier="Programming Language :: Python :: 3 :: Only"
@@ -159,9 +159,9 @@ class Setuptools(tools.Tool):
 
     def _slot_dependency(self, dep_name, **kwargs):
         setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
-        if ("options.extras_require", "dev") not in setup:
-            setup["options.extras_require", "dev"] = []
-        setup["options.extras_require", "dev"].append(dep_name)
+        if ("options", "extras_require", "dev") not in setup:
+            setup["options", "extras_require", "dev"] = []
+        setup["options", "extras_require", "dev"].append(dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
         project.structure.get_config_dict(CfgIni("setup.cfg"))[
@@ -174,6 +174,6 @@ class Setuptools(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        commands.pip(["install", "--editable", f"{workon}[dev]"])
+        commands.pip_install(["--editable", f"{workon}[dev]"])
         if self.check_build:
-            commands.build([f"{workon}"])
+            commands.build([os.fspath(workon)])

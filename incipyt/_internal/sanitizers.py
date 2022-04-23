@@ -1,3 +1,4 @@
+import os
 import pathlib
 import urllib
 
@@ -12,7 +13,7 @@ def project(key, value):
 
 def url(key, value):
     parts = urllib.parse.urlparse(value)
-    parts._replace(path=str(pathlib.Path(parts.path)))
+    parts._replace(path=os.fspath(pathlib.Path(parts.path)))
     return parts.geturl()
 
 

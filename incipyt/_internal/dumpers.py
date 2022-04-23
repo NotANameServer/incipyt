@@ -1,6 +1,7 @@
 import collections
 import collections.abc
 import configparser
+import os
 import pathlib
 
 from abc import ABC, abstractmethod
@@ -39,7 +40,7 @@ class BaseDumper(ABC):
 
         return pathlib.Path(
             templates.FormatterEnviron(sanitizer=self._sanitizer).format(
-                str(self._root / self._path)
+                os.fspath(self._root / self._path)
             )
         )
 
@@ -60,14 +61,28 @@ class BaseDumper(ABC):
 
 class CfgIni(BaseDumper):
     def dump_in(self, config):
+        unfolded_dict = False
+        while not unfolded_dict:
+            unfolded_dict = True
+            for section_key in list(config.keys()):
+                for key in list(config[section_key].keys()):
+                    if not isinstance(
+                        config[section_key][key], collections.abc.Mapping
+                    ):
+                        continue
+                    new_section_key = f"{section_key}.{key}"
+                    if new_section_key in config:
+                        raise RuntimeError(
+                            f"Bad cfg formation for section {new_section_key} of {self._path}"
+                        )
+                    config[new_section_key] = config[section_key][key]
+                    del config[section_key][key]
+                    unfolded_dict = False
         for section in config.values():
             for key, value in section.items():
                 if utils.is_nonstring_sequence(value):
                     section[key] = "\n".join([""] + value)
-                elif isinstance(value, collections.abc.Mapping):
-                    section[key] = "\n".join(
-                        [""] + [f"{k} = {v}" for k, v in value.items()]
-                    )
+
         config_cfg = configparser.ConfigParser()
         config_cfg.read_dict(config)
         with self.open() as file:
