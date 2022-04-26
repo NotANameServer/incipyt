@@ -1,5 +1,3 @@
-import collections
-import collections.abc
 import configparser
 import os
 import pathlib
@@ -26,7 +24,7 @@ class BaseDumper(ABC):
 
         path = self.format_path()
         if path.exists():
-            raise RuntimeError(f"File {path} already exists.")
+            raise FileExistsError(f"File {path} already exists.")
 
     def mkdir(self):
         self.format_path().parent.mkdir(parents=True, exist_ok=True)
@@ -61,30 +59,8 @@ class BaseDumper(ABC):
 
 class CfgIni(BaseDumper):
     def dump_in(self, config):
-        unfolded_dict = False
-        while not unfolded_dict:
-            unfolded_dict = True
-            for section_key in list(config.keys()):
-                for key in list(config[section_key].keys()):
-                    if not isinstance(
-                        config[section_key][key], collections.abc.Mapping
-                    ):
-                        continue
-                    new_section_key = f"{section_key}.{key}"
-                    if new_section_key in config:
-                        raise RuntimeError(
-                            f"Bad cfg formation for section {new_section_key} of {self._path}"
-                        )
-                    config[new_section_key] = config[section_key][key]
-                    del config[section_key][key]
-                    unfolded_dict = False
-        for section in config.values():
-            for key, value in section.items():
-                if utils.is_nonstring_sequence(value):
-                    section[key] = "\n".join([""] + value)
-
         config_cfg = configparser.ConfigParser()
-        config_cfg.read_dict(config)
+        config_cfg.read_dict(utils.unfold_list(utils.unfold_dict(config)))
         with self.open() as file:
             config_cfg.write(file)
 

@@ -11,6 +11,26 @@ class EnvValue:
     confirmed: bool = False
 
 
+def attrs_eq(a, b, *args):
+    r"""Compare two objects according to their attributes.
+
+    :param a: First object to compare.
+    :param b: Second object to compare.
+    :param \*args: Attributes names to check for.
+    :type \*args: :class:`str`
+    :return: `True` if all provided attributes of objects `a` and `b` are equals.
+    :rtype: :class:`bool`
+    """
+    try:
+        return all(getattr(a, attr) == getattr(b, attr) for attr in args)
+    except AttributeError:
+        return False
+
+
+def attrs_hash(a, *args, **kwargs):
+    return hash(tuple(getattr(a, attr) for attr in args) + tuple(kwargs.items()))
+
+
 def is_nonstring_sequence(obj):
     """Check if a given object is a non-string sequence.
 
@@ -42,21 +62,34 @@ def make_repr(obj, *args, **kwargs):
     return f"""{type(obj).__name__}({params})"""
 
 
-def attrs_eq(a, b, *args):
-    r"""Compare two objects according to their attributes.
+def unfold_dict(config):
+    unfolded_config = {}
 
-    :param a: First object to compare.
-    :param b: Second object to compare.
-    :param \*args: Attributes names to check for.
-    :type \*args: :class:`str`
-    :return: `True` if all provided attributes of objects `a` and `b` are equals.
-    :rtype: :class:`bool`
-    """
-    try:
-        return all(getattr(a, attr) == getattr(b, attr) for attr in args)
-    except AttributeError:
-        return False
+    for key_section, value_section in config.items():
+        if isinstance(value_section, collections.abc.Mapping):
+            unfolded_value = unfold_dict(value_section)
+            for key, value in unfolded_value.items():
+                if isinstance(value, collections.abc.Mapping):
+                    unfolded_config[f"{key_section}.{key}"] = value
+                else:
+                    if key_section not in unfolded_config:
+                        unfolded_config[key_section] = {}
+                    unfolded_config[key_section][key] = value
+        else:
+            unfolded_config[key_section] = value_section
+
+    return unfolded_config
 
 
-def attrs_hash(a, *args, **kwargs):
-    return hash(tuple(getattr(a, attr) for attr in args) + tuple(kwargs.items()))
+def unfold_list(config):
+    unfolded_config = {}
+
+    for key, value in config.items():
+        if isinstance(value, collections.abc.Mapping):
+            unfolded_config[key] = unfold_list(value)
+        elif is_nonstring_sequence(value):
+            unfolded_config[key] = "\n".join([""] + value)
+        else:
+            unfolded_config[key] = value
+
+    return unfolded_config

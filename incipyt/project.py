@@ -77,7 +77,7 @@ class _Environ(collections.UserDict):
             env_value = EnvValue(env_value)
 
         if key in self.data and not env_value.update:
-            raise RuntimeError(f"Environ variable {key} already exists, use update.")
+            raise ValueError(f"Environ variable {key} already exists, use update.")
 
         logger.debug("Set environ variable %s=%s.", key, env_value.value)
         self.data[key] = env_value.value
@@ -136,9 +136,8 @@ class _Structure:
             )
             self._configurations[config_root] = {}
 
-        assert isinstance(
-            self._configurations[config_root], abc.MutableMapping
-        ), f"{config_root} is not a dict."
+        if not isinstance(self._configurations[config_root], abc.MutableMapping):
+            raise TypeError(f"{config_root} is not a dict.")
         return templates.TemplateDict(self._configurations[config_root])
 
     def get_config_list(self, config_root):
@@ -155,9 +154,8 @@ class _Structure:
             )
             self._configurations[config_root] = []
 
-        assert is_nonstring_sequence(
-            self._configurations[config_root]
-        ), f"{config_root} is not a list."
+        if not is_nonstring_sequence(self._configurations[config_root]):
+            raise TypeError(f"{config_root} is not a list.")
         return templates.TemplateList(self._configurations[config_root])
 
     def commit(self):
@@ -225,7 +223,7 @@ class _Structure:
                 del template[key]
 
         else:
-            raise TypeError(f"{type(template)} do not support visitation.")
+            raise AssertionError(f"{type(template)} do not support visitation.")
 
 
 structure = _Structure()

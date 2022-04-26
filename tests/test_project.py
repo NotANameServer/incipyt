@@ -56,7 +56,7 @@ class TestEnviron:
     )
     def test_push(self, env, request):
         request.getfixturevalue(env)
-        with raises(RuntimeError):
+        with raises(ValueError):
             project.environ["ONE"] = "11"
 
     @mark.parametrize(

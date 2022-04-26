@@ -43,7 +43,7 @@ def setenv_python_cmd(python_path):
     project.environ["PYTHON_CMD"] = EnvValue(os.fspath(python_path), update=True)
 
 
-def python_m(args, check=True, **kwargs):
+def python_m(args, **kwargs):
     r"""Run a python module after substitution using the environ.
 
     :param args: List of the command elements, excluding `python -m`.
@@ -53,14 +53,7 @@ def python_m(args, check=True, **kwargs):
     :rtype: :class:`subprocess.CompletedProcess`
     """
     # from incipyt._internal.templates import StringTemplate
-    result_import = run(
-        [project.environ["PYTHON_CMD"], "-c", f"import {args[0]}"],
-        check=False,
-        **kwargs,
-    )
-    if result_import.returncode:
-        pip_install([args[0]], check=check, **kwargs)
-    return run([project.environ["PYTHON_CMD"], "-m"] + args, check=check, **kwargs)
+    return run([project.environ["PYTHON_CMD"], "-m"] + args, **kwargs)
 
 
 def build(args, **kwargs):

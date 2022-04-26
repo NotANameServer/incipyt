@@ -30,7 +30,7 @@ def test_mkdir(dumper, reset_environ, tmp_path):
 def test_path_exists(dumper, reset_environ, tmp_path):
     (tmp_path / "file").touch()
     dmp = dumper("file")
-    with raises(RuntimeError):
+    with raises(FileExistsError):
         dmp.commit(tmp_path)
 
 
@@ -55,8 +55,6 @@ def test_path_exists(dumper, reset_environ, tmp_path):
                 "[section.second]\n"
                 "one = 1\n"
                 "two = 2\n"
-                "\n"
-                "[section.fourth]\n"
                 "\n"
                 "[section.fourth.one]\n"
                 "two = 2\n"

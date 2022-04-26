@@ -18,11 +18,11 @@ class Git(tools.Tool):
         - Issue: {REPOSITORY}/issues
         - Documentation: {REPOSITORY}/wiki
         """
-        signals.project_url.emit(url_kind="Repository", url_value="{REPOSITORY}")
-        signals.project_url.emit(url_kind="Issue", url_value="{REPOSITORY}/issues")
         signals.project_url.emit(
             url_kind="Documentation", url_value="{REPOSITORY}/wiki"
         )
+        signals.project_url.emit(url_kind="Issue", url_value="{REPOSITORY}/issues")
+        signals.project_url.emit(url_kind="Repository", url_value="{REPOSITORY}")
 
     def _slot(self, pattern, **kwargs):
         project.structure.get_config_list(TextFile(".gitignore")).append(pattern)
@@ -37,14 +37,14 @@ class Git(tools.Tool):
         """
         commands.run(["git", "init", os.fspath(workon)])
 
-        project.environ["AUTHOR_NAME"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.name"])
+        project.environ["AUTHOR_EMAIL"] = project.EnvValue(
+            commands.run(["git", "-C", os.fspath(workon), "config", "user.email"])
             .stdout.decode()
             .strip(),
             update=True,
         )
-        project.environ["AUTHOR_EMAIL"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.email"])
+        project.environ["AUTHOR_NAME"] = project.EnvValue(
+            commands.run(["git", "-C", os.fspath(workon), "config", "user.name"])
             .stdout.decode()
             .strip(),
             update=True,

@@ -147,7 +147,6 @@ class Setuptools(tools.Tool):
             classifier="Programming Language :: Python :: 3 :: Only"
         )
 
-        signals.vcs_ignore.emit(pattern="build")
         signals.vcs_ignore.emit(pattern="dist")
         signals.vcs_ignore.emit(pattern="*.egg-info")
 
@@ -164,9 +163,10 @@ class Setuptools(tools.Tool):
         setup["options", "extras_require", "dev"].append(dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
-        project.structure.get_config_dict(CfgIni("setup.cfg"))[
-            "metadata", "project_urls"
-        ] = {url_kind: url_value}
+        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
+        if ("metadata", "project_urls") not in setup:
+            setup["metadata", "project_urls"] = []
+        setup["metadata", "project_urls"].append(f"{url_kind} = {url_value}")
 
     def post(self, workon):
         """Editable install and build for test.
@@ -176,4 +176,5 @@ class Setuptools(tools.Tool):
         """
         commands.pip_install(["--editable", f"{workon}[dev]"])
         if self.check_build:
+            commands.pip_install(["build"])
             commands.build([os.fspath(workon)])

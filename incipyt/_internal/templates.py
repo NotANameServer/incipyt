@@ -312,9 +312,10 @@ class TemplateDict(abc.MutableMapping):
             if keys not in self.data:
                 self.data[keys] = {}
 
-            assert not utils.is_nonstring_sequence(
-                self.data[keys]
-            ), f"{self.data[keys]} is already a sequence, cannot set to a dict."
+            if utils.is_nonstring_sequence(self.data[keys]):
+                raise TypeError(
+                    f"{self.data[keys]}) is already a sequence, cannot set to a dict."
+                )
             for k, v in value.items():
                 TemplateDict(self.data[keys])[k] = v
 
@@ -322,9 +323,10 @@ class TemplateDict(abc.MutableMapping):
             if keys not in self.data:
                 self.data[keys] = []
 
-            assert not isinstance(
-                self.data[keys], abc.Mapping
-            ), f"{self.data[keys]} is already a mapping, cannot set to a list."
+            if isinstance(self.data[keys], abc.Mapping):
+                raise TypeError(
+                    f"{self.data[keys]} is already a mapping, cannot set to a list."
+                )
             TemplateList(self.data[keys]).extend(value)
 
         else:
