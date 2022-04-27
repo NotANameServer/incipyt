@@ -50,6 +50,13 @@ linters, formatters, etc.
 
 incipyt is released under the MIT license and is open to contributions
 
+    git clone https://github.com/NotANameServer/incipyt
+    cd incipyt
+    python3 -m venv .env
+    .env/bin/pip install flit
+    .env/bin/flit install --pth-file --deps develop
+    .env/bin/pytest
+
 [PyPA/packaging-projects]: https://packaging.python.org/tutorials/packaging-projects/
 [pyproject.toml]: https://www.python.org/dev/peps/pep-0518/
 [setuptools]: https://pypi.org/project/setuptools/
