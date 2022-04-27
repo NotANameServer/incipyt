@@ -13,10 +13,12 @@ class Git(tools.Tool):
     def add_to_structure(self):
         """Add git configuration to `project.structure`.
 
-        Register git related project URLs:
-        - Repository: {REPOSITORY}
-        - Issue: {REPOSITORY}/issues
-        - Documentation: {REPOSITORY}/wiki
+        Register git related project URLs.
+
+        URLs:
+            - Repository: {REPOSITORY}
+            - Issue: {REPOSITORY}/issues
+            - Documentation: {REPOSITORY}/wiki
         """
         signals.project_url.emit(
             url_kind="Documentation", url_value="{REPOSITORY}/wiki"

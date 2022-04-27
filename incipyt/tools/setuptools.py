@@ -23,8 +23,8 @@ class Setuptools(tools.Tool):
         .. code-block::
 
             [build-system]
-            requires = [ "setuptools", "wheel",]
             build-backend = "setuptools.build_meta"
+            requires = [ "setuptools", "wheel",]
 
         If this configuration cannot be populate like that, an error is raised.
 
@@ -39,21 +39,21 @@ class Setuptools(tools.Tool):
             long_description_content_type = text/markdown
             maintainer_email = {AUTHOR_NAME} <{AUTHOR_EMAIL}>
             name = {PROJECT_NAME}
+            version = {PACKAGE_VERSION}
             classifiers =
                 Programming Language :: Python :: 3 :: Only
-            version = {PACKAGE_VERSION}
 
             [options]
             packages = {PROJECT_NAME}
             python_requires = >={PYTHON_VERSION}
 
+            [options.package_data]
+            * = {PACKAGE_DATA}/*
+
             [options.extras_require]
             dev =
                 build
                 pip
-
-            [options.package_data]
-            * = {PACKAGE_DATA}/*
 
         Here key-value association is appended, if a key already exists the
         value is appended to the current one(s), the user will be asked to
@@ -101,17 +101,17 @@ class Setuptools(tools.Tool):
             ),
         }
 
-        setup["options", "package_data", "*"] = templates.StringTemplate(
+        setup["options.package_data", "*"] = templates.StringTemplate(
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
-        )
-
-        project.structure.get_config_list(TextFile("LICENSE", sep="\n\n")).append(
-            "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"
         )
 
         project.structure.get_config_list(
             TextFile("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
         ).append("")
+
+        project.structure.get_config_list(TextFile("LICENSE", sep="\n\n")).append(
+            "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"
+        )
 
         project.structure.get_config_list(TextFile("README.md", sep="\n\n")).append(
             templates.StringTemplate(
@@ -158,15 +158,14 @@ class Setuptools(tools.Tool):
 
     def _slot_dependency(self, dep_name, **kwargs):
         setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
-        if ("options", "extras_require", "dev") not in setup:
-            setup["options", "extras_require", "dev"] = []
-        setup["options", "extras_require", "dev"].append(dep_name)
+        if ("options.extras_require", "dev") not in setup:
+            setup["options.extras_require", "dev"] = []
+        setup["options.extras_require", "dev"].append(dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
-        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
-        if ("metadata", "project_urls") not in setup:
-            setup["metadata", "project_urls"] = []
-        setup["metadata", "project_urls"].append(f"{url_kind} = {url_value}")
+        project.structure.get_config_dict(CfgIni("setup.cfg"))[
+            "metadata", "project_urls"
+        ] = {url_kind: url_value}
 
     def post(self, workon):
         """Editable install and build for test.

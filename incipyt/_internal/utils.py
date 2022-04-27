@@ -67,13 +67,14 @@ def unfold_dict(config):
 
     for key_section, value_section in config.items():
         if isinstance(value_section, collections.abc.Mapping):
-            unfolded_value = unfold_dict(value_section)
-            for key, value in unfolded_value.items():
+            if key_section not in unfolded_config:
+                unfolded_config[key_section] = {}
+            for key, value in value_section.items():
                 if isinstance(value, collections.abc.Mapping):
-                    unfolded_config[f"{key_section}.{key}"] = value
+                    unfolded_config[key_section][key] = "\n" + "\n".join(
+                        f"{k} = {v}" for k, v in value.items()
+                    )
                 else:
-                    if key_section not in unfolded_config:
-                        unfolded_config[key_section] = {}
                     unfolded_config[key_section][key] = value
         else:
             unfolded_config[key_section] = value_section
@@ -88,7 +89,7 @@ def unfold_list(config):
         if isinstance(value, collections.abc.Mapping):
             unfolded_config[key] = unfold_list(value)
         elif is_nonstring_sequence(value):
-            unfolded_config[key] = "\n".join([""] + value)
+            unfolded_config[key] = "\n" + "\n".join(value)
         else:
             unfolded_config[key] = value
 

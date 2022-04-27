@@ -44,20 +44,13 @@ def test_path_exists(dumper, reset_environ, tmp_path):
                     "first": "1",
                     "second": {"one": "1", "two": "2"},
                     "third": ["one", "two"],
-                    "fourth": {"one": {"two": "2"}},
                 }
             },
             (
                 "[section]\n"
                 "first = 1\n"
+                "second = \n\tone = 1\n\ttwo = 2\n"
                 "third = \n\tone\n\ttwo\n"
-                "\n"
-                "[section.second]\n"
-                "one = 1\n"
-                "two = 2\n"
-                "\n"
-                "[section.fourth.one]\n"
-                "two = 2\n"
                 "\n"
             ),
         ),

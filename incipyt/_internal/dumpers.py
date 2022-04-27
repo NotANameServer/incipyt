@@ -60,7 +60,7 @@ class BaseDumper(ABC):
 class CfgIni(BaseDumper):
     def dump_in(self, config):
         config_cfg = configparser.ConfigParser()
-        config_cfg.read_dict(utils.unfold_list(utils.unfold_dict(config)))
+        config_cfg.read_dict(utils.unfold_dict(utils.unfold_list(config)))
         with self.open() as file:
             config_cfg.write(file)
 
