@@ -1,0 +1,30 @@
+
+
+## type(scope): title under 50 chars
+##
+## Mandatory paragraph explaining WHY the changes are needed.
+##
+## Optional paragraphs detailing the changes.
+##
+## Closes #x
+## Co-authored-by: John <john.doe@example.com>
+#
+# The commit type should be one of: chore, feat, fix, perf, ref, rev.
+# The scope is optional, it should be set when the changes are related
+# to a plugin e.g. "fix(sphinx): broken home page url".
+#
+# Remember that this commit message will be read on two occasions:
+#
+# * during the code review, tonight, "what am I reviewing again?"
+# * during a git blame, in 5 years, "why is this line needed again?"
+#
+# During a code review, we expect to understand the overall system and
+# all the implications of your changes. The commit message should
+# contain an abstract of the system being modified and recall the
+# purpose of the changes.
+#
+# During a git-blame, we expect to remember the purpose of a specific
+# line of code. Reading the commit diff and the commit message should
+# give all the necessary information. If you don't feel like all your
+# changes are correctly explained, maybe you should add a comment in
+# the source code or isolate some changes in a new commit.
