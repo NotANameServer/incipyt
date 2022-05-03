@@ -51,6 +51,7 @@ The complete setup instruction are found on the [dev-instructions]. Below is the
 
     $ git clone https://github.com/NotANameServer/incipyt
     $ cd incipyt
+    $ git config commit.template .gitmessage
     $ python -m venv --upgrade-deps .env
 	$ source .env/bin/activate
     $ python -m pip install --upgrade flit
