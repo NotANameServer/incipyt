@@ -47,13 +47,14 @@ linters, formatters, etc.
 
 incipyt is released under the MIT license and is open to contributions
 
-The complete setup instruction are found on the [dev-instructions]. Below is the minimum to get started:
+The complete setup instruction are found on the [dev-instructions]. Below is
+the minimum to get started:
 
     $ git clone https://github.com/NotANameServer/incipyt
     $ cd incipyt
     $ git config commit.template .gitmessage
     $ python -m venv --upgrade-deps .env
-	$ source .env/bin/activate
+    $ source .env/bin/activate
     $ python -m pip install --upgrade flit
     $ python -m flit install --pth-file --deps develop
     $ python -m pytest -vv tests
