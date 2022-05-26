@@ -17,7 +17,7 @@ class Venv(tools.Tool):
         :type workon: :class:`pathlib.Path`
         """
         env_path = workon / ".env"
-        commands.venv(["--upgrade-deps", os.fspath(env_path)])
+        commands.venv([os.fspath(env_path)])
         commands.setenv_python_cmd(
             env_path.resolve() / ("Scripts" if os.name == "nt" else "bin") / "python"
         )
