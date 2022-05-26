@@ -1,13 +1,23 @@
+import logging
 import os
+import shutil
+import sys
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal.dumpers import TextFile
+
+
+logger = logging.getLogger(__name__)
 
 
 class Git(tools.Tool):
     """Scripts to add Git to :class:`incipyt.project._Structure`."""
 
     def __init__(self):
+        if not shutil.which("git"):
+            logger.error("%r is missing from the PATH. Abort.", "git")
+            sys.exit(1)
+
         signals.vcs_ignore.connect(self._slot)
 
     def add_to_structure(self):
