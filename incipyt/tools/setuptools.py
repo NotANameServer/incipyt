@@ -45,7 +45,7 @@ class Setuptools(tools.Tool):
 
             [options]
             packages = {PROJECT_NAME}
-            python_requires = >={PYTHON_VERSION}
+            python_requires = >={AUDIENCE_PYTHON_VERSION}
 
             [options.package_data]
             * = {PACKAGE_DATA}/*
@@ -95,9 +95,9 @@ class Setuptools(tools.Tool):
                 sanitizer=sanitizers.package,
             ),
             "python_requires": templates.StringTemplate(
-                ">={PYTHON_VERSION}",
+                ">={AUDIENCE_PYTHON_VERSION}",
                 sanitizer=sanitizers.version,
-                PYTHON_VERSION="3.7",
+                AUDIENCE_PYTHON_VERSION="3.7",
             ),
         }
 
