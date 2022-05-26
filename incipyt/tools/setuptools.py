@@ -1,9 +1,14 @@
 import os
 import textwrap
+import sys
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import CfgIni, TextFile, Toml
+
+# as of may 2022, the latest stable release of most bsd/linux
+# distributions ship a python whoose verion is at least 3.9
+LINUX_MIN_PYTHON_VERSION = (3, 9)
 
 
 class Setuptools(tools.Tool):
@@ -97,7 +102,9 @@ class Setuptools(tools.Tool):
             "python_requires": templates.StringTemplate(
                 ">={AUDIENCE_PYTHON_VERSION}",
                 sanitizer=sanitizers.version,
-                AUDIENCE_PYTHON_VERSION="3.7",
+                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(  # noqa: FS002
+                    min(sys.version_info, LINUX_MIN_PYTHON_VERSION)
+                ),
             ),
         }
 
