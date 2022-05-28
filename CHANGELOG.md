@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://www.github.com/NotANameServer/incipyt/compare/v0.1.0...v0.2.0) (2022-05-28)
+
+
+### Features
+
+* advanced logging configuration ([3f5e470](https://www.github.com/NotANameServer/incipyt/commit/3f5e470fd1336cbb5ccc65f2a50d054d344b8af1)), closes [#22](https://www.github.com/NotANameServer/incipyt/issues/22)
+* crash when git is missing ([151f8a8](https://www.github.com/NotANameServer/incipyt/commit/151f8a8adca513556a4e21494e50379f561cef13))
+* **setuptools:** specific var for python_requires ([42ce7be](https://www.github.com/NotANameServer/incipyt/commit/42ce7be70d55c6a0f321c26acc1477f0c18639ce)), closes [#31](https://www.github.com/NotANameServer/incipyt/issues/31)
+
+
+### Bug Fixes
+
+* **venv:** --upgrade-deps option missing on mint ([80b0bcf](https://www.github.com/NotANameServer/incipyt/commit/80b0bcfbee653b0530ede035daad15ebb12b099e)), closes [#27](https://www.github.com/NotANameServer/incipyt/issues/27)
+
 ## 0.1.0 (2022-04-27)
 
 
