@@ -15,6 +15,10 @@ DEFAULT_FORMAT = "[%(levelname)s] %(message)s"
 DEBUG_FORMAT = "%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s"
 
 
+def choice_callback(_ctx, _param, _choice):
+    return getattr(tools, _choice) if _choice else (lambda *args: None)
+
+
 @click.command(help="incipyt is a command-line tool that bootstraps a Python project.")
 @click.argument(
     "folder",
@@ -27,11 +31,38 @@ DEBUG_FORMAT = "%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s"
 @click.option("-s", "--silent", count=True)
 @click.version_option()
 @click.option(
+    "--vcs",
+    required=True,
+    show_default=True,
+    default="Git",
+    type=click.Choice(["", "Git"], case_sensitive=False),
+    callback=choice_callback,
+    help="Version Control System, if any, to use.",
+)
+@click.option(
+    "--env",
+    required=True,
+    show_default=True,
+    default="Venv",
+    type=click.Choice(["", "Venv"], case_sensitive=False),
+    callback=choice_callback,
+    help="Wether to use a virtual environment and which one.",
+)
+@click.option(
+    "--build",
+    required=True,
+    show_default=True,
+    default="Setuptools",
+    type=click.Choice(["Setuptools"], case_sensitive=False),
+    callback=choice_callback,
+    help="Build system to use for building wheel and source distributions.",
+)
+@click.option(
     "--check-build",
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
-def main(folder, verbose, silent, check_build):
+def main(folder, verbose, silent, vcs, env, build, check_build):
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
 
@@ -46,7 +77,7 @@ def main(folder, verbose, silent, check_build):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         project.environ["PROJECT_NAME"] = folder.name
 
-    tools_to_install = [tools.Git(), tools.Venv(), tools.Setuptools(check_build)]
+    tools_to_install = [tool for tool in [vcs(), env(), build(check_build)] if tool]
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)
