@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://www.github.com/NotANameServer/incipyt/compare/v0.2.0...v0.3.0) (2022-06-02)
+
+
+### Features
+
+* command line options to select tools ([932e250](https://www.github.com/NotANameServer/incipyt/commit/932e250cc8608d2e8b22f5a6b82465cafc519e84))
+
 ## [0.2.0](https://www.github.com/NotANameServer/incipyt/compare/v0.1.0...v0.2.0) (2022-05-28)
 
 
