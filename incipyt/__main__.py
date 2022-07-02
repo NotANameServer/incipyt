@@ -62,7 +62,12 @@ def choice_callback(_ctx, _param, _choice):
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
-def main(folder, verbose, silent, vcs, env, build, check_build):
+@click.option(
+    "--force-vcs-config",
+    is_flag=True,
+    help="Don't ask confirmation before setting VCS user configuration.",
+)
+def main(folder, verbose, silent, vcs, env, build, check_build, force_vcs_config):
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
 
@@ -77,7 +82,9 @@ def main(folder, verbose, silent, vcs, env, build, check_build):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         project.environ["PROJECT_NAME"] = folder.name
 
-    tools_to_install = [tool for tool in [vcs(), env(), build(check_build)] if tool]
+    tools_to_install = [
+        tool for tool in [vcs(force_vcs_config), env(), build(check_build)] if tool
+    ]
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)
