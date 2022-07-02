@@ -19,13 +19,13 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Cache python env
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
         key: ${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
@@ -39,7 +39,7 @@ jobs:
     - name: Check format with black
       run: python -m black -v --check .
     - name: Lint with flakeheaven
-      run: python -m flakeheaven lint -v incipyt
+      run: python -m flakeheaven lint -v incipyt tests
 
   test:
     name: Tests
@@ -56,13 +56,13 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Cache python env
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
         key: ${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
@@ -76,7 +76,7 @@ jobs:
     - name: Run tests with pytest
       run: pytest -v --cov=incipyt --cov-report=xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
         fail_ci_if_error: true
         env_vars: _OS,_PY
