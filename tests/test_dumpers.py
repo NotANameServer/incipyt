@@ -7,6 +7,8 @@ from incipyt import project
 @fixture
 def reset_environ():
     project.environ.clear()
+    yield
+    project.environ.clear()
 
 
 @mark.parametrize("dumper", (CfgIni, Toml, TextFile))

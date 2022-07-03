@@ -14,6 +14,8 @@ class TestStringTemplate:
     @fixture
     def reset_environ(self):
         project.environ.clear()
+        yield
+        project.environ.clear()
 
     @fixture
     def simple_st(self):
@@ -83,6 +85,8 @@ class TestChoiceTemplate:
 
     @fixture
     def reset_environ(self):
+        project.environ.clear()
+        yield
         project.environ.clear()
 
     def test_mst_tail(self, simple_mst):
@@ -261,6 +265,8 @@ class TestTemplateCollection:
 class TestTemplateVisitor:
     @fixture
     def reset_environ(self):
+        project.environ.clear()
+        yield
         project.environ.clear()
 
     @fixture

@@ -15,16 +15,22 @@ class TestEnviron:
     def empty_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
+        yield
+        project.environ.clear()
 
     @fixture
     def simple_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
         project.environ["ONE"] = project.EnvValue("1", confirmed=True)
+        yield
+        project.environ.clear()
 
     @fixture
     def empty_auto_env(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
+        project.environ.clear()
+        yield
         project.environ.clear()
 
     @fixture
@@ -32,6 +38,8 @@ class TestEnviron:
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
         project.environ["ONE"] = project.EnvValue("1", confirmed=True)
+        yield
+        project.environ.clear()
 
     @mark.parametrize(
         "env, input_values",
@@ -136,6 +144,8 @@ class TestStructure:
         project.environ["NAME_B"] = project.EnvValue("testB", confirmed=True)
         project.environ["VALUE"] = project.EnvValue("1", confirmed=True)
         project.environ["CONTENT"] = project.EnvValue("text", confirmed=True)
+        yield
+        project.environ.clear()
 
     @fixture
     def reset_structure(self):
@@ -146,6 +156,8 @@ class TestStructure:
         project.structure.get_config_list(
             TextFile("{FOLDER_B}/{NAME_B}", sep="\n\n")
         ).append("{CONTENT}")
+        yield
+        project.structure.clear()
 
     def test_get_new_configuration(self, reset_structure):
         configuration = project.structure.get_config_dict(Toml("testC.toml"))
