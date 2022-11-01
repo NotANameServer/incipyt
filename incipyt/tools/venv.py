@@ -8,7 +8,7 @@ class Venv(tools.Tool):
 
     def add_to_structure(self):
         """Add venv configuration to `project.structure`, do nothing."""
-        signals.vcs_ignore.emit(pattern=".env")
+        signals.vcs_ignore.emit(pattern=".env/")
 
     def pre(self, workon):
         """Run `python -m venv .env`.
