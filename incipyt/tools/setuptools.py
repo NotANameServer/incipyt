@@ -1,3 +1,4 @@
+import bisect
 import os
 import sys
 
@@ -125,13 +126,13 @@ class Setuptools(tools.Tool):
         setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
         if ("metadata", "classifiers") not in setup:
             setup["metadata", "classifiers"] = []
-        setup["metadata", "classifiers"].append(classifier)
+        bisect.insort(setup["metadata", "classifiers"], classifier)
 
     def _slot_dependency(self, dep_name, **kwargs):
         setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
         if ("options.extras_require", "dev") not in setup:
             setup["options.extras_require", "dev"] = []
-        setup["options.extras_require", "dev"].append(dep_name)
+        bisect.insort(setup["options.extras_require", "dev"], dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
         project.structure.get_config_dict(CfgIni("setup.cfg"))["metadata", "project_urls"] = {

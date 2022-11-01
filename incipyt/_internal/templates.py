@@ -62,6 +62,8 @@ class StringTemplate(Formattable):
         self._kwargs = kwargs
 
     def __eq__(self, other):
+        if isinstance(other, str):
+            return self.format() == other
         return utils.attrs_eq(
             self,
             other,
@@ -71,6 +73,16 @@ class StringTemplate(Formattable):
             "_value_error",
             "_kwargs",
         )
+
+    def __lt__(self, other):
+        if isinstance(other, str):
+            return self.format() < other
+        return self.format() < other.format()
+
+    def __gt__(self, other):
+        if isinstance(other, str):
+           return self.format() > other
+        return self.format() > other.format()
 
     def __hash__(self):
         return utils.attrs_hash(
