@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import date
 
 from pytest import fixture, mark, raises
 
@@ -7,6 +8,8 @@ from incipyt import commands, project
 from incipyt._internal.dumpers import TextFile, Toml
 from incipyt._internal.templates import StringTemplate
 from tests.utils import mock_stdin
+
+YEAR = date.today().year
 
 
 class TestEnviron:
@@ -107,7 +110,7 @@ class TestEnviron:
         request.getfixturevalue(env)
         project.environ["TWO"] = project.EnvValue("2", confirmed=True)
         result = {key: project.environ[key] for key in project.environ}
-        assert result == {"PYTHON_CMD": sys.executable, "TWO": "2"}
+        assert result == {"PYTHON_CMD": sys.executable, "TWO": "2", "YEAR": YEAR}
 
     @mark.parametrize(
         "env",
