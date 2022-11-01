@@ -1,10 +1,9 @@
 import os
 import sys
-import textwrap
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
-from incipyt._internal.dumpers import CfgIni, TextFile, Toml
+from incipyt._internal.dumpers import CfgIni, Toml
 
 # as of may 2022, the latest stable release of most bsd/linux
 # distributions ship a python whoose verion is at least 3.9
@@ -67,16 +66,14 @@ class Setuptools(tools.Tool):
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
         pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
-        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
-
         if "build-system" in pyproject:
             raise RuntimeError("Build system already registered.")
-
         pyproject["build-system"] = {
             "build-backend": "setuptools.build_meta",
             "requires": ["setuptools", "wheel"],
         }
 
+        setup = project.structure.get_config_dict(CfgIni("setup.cfg"))
         setup["metadata"] = {
             "author_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "description": "{SUMMARY_DESCRIPTION}",
@@ -88,7 +85,6 @@ class Setuptools(tools.Tool):
                 "{PACKAGE_VERSION}", sanitizer=sanitizers.version, PACKAGE_VERSION="0.0.0"
             ),
         }
-
         setup["options"] = {
             "packages": templates.StringTemplate("{PROJECT_NAME}", sanitizer=sanitizers.package),
             "python_requires": templates.StringTemplate(
@@ -99,45 +95,13 @@ class Setuptools(tools.Tool):
                 ),
             ),
         }
-
         setup["options.package_data", "*"] = templates.StringTemplate(
             "{PACKAGE_DATA}/*", confirmed=True, PACKAGE_DATA="data"
         )
 
-        project.structure.get_config_list(
-            TextFile("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
-        ).append("")
-
-        project.structure.get_config_list(TextFile("LICENSE", sep="\n\n")).append(
-            "Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"
-        )
-
-        project.structure.get_config_list(TextFile("README.md", sep="\n\n")).append(
-            templates.StringTemplate(
-                textwrap.dedent(
-                    """\
-                # {PROJECT_NAME}
-
-                {SUMMARY_DESCRIPTION}
-
-                ## Usage
-
-                ## Contribute
-
-                Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>"""
-                ),
-                value_error=False,
-            )
-        )
-
-        project.structure.get_config_list(TextFile("setup.py")).append(
-            textwrap.dedent(
-                """\
-            import setuptools
-
-            setuptools.setup()"""
-            )
-        )
+        project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
+        project.structure.use_template("README.md")
+        project.structure.use_template("setup.py")
 
         signals.build_dependency.emit(dep_name="build")
         signals.build_dependency.emit(dep_name="pip")
