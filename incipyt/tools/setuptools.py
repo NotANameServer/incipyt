@@ -110,7 +110,7 @@ class Setuptools(tools.Tool):
 
         signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
 
-        signals.vcs_ignore.emit(pattern="dist")
+        signals.vcs_ignore.emit(pattern="dist/")
         signals.vcs_ignore.emit(pattern="*.egg-info")
 
     def _slot_classifier(self, classifier, **kwargs):

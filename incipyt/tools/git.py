@@ -29,6 +29,7 @@ class Git(tools.Tool):
             - Issue: {REPOSITORY}/issues
             - Documentation: {REPOSITORY}/wiki
         """
+        project.structure.use_template("python.gitignore", ".gitignore")
         signals.project_url.emit(url_kind="Documentation", url_value="{REPOSITORY}/wiki")
         signals.project_url.emit(url_kind="Issue", url_value="{REPOSITORY}/issues")
         signals.project_url.emit(url_kind="Repository", url_value="{REPOSITORY}")
