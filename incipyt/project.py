@@ -8,7 +8,7 @@ from collections import abc
 
 import click
 
-from incipyt._internal import templates
+from incipyt._internal import dumpers, templates
 from incipyt._internal.utils import EnvValue, is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
@@ -183,6 +183,11 @@ class _Structure:
         if not is_nonstring_sequence(self._configurations[config_root]):
             raise TypeError(f"{config_root} is not a list.")
         return templates.TemplateList(self._configurations[config_root])
+
+    def use_template(self, template_name, dest=None, sanitizer=None):
+        dest_file = dumpers.TextFile(dest or template_name, sanitizer=sanitizer)
+        source_tmpl = templates.StringTemplate.from_file(template_name)
+        self.get_config_list(dest_file).append(source_tmpl)
 
     def commit(self):
         """Commit current project structure on disk.
