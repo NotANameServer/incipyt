@@ -10,10 +10,12 @@ import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import abc
+from pathlib import Path
 from string import Formatter
 
 import click
 
+import incipyt
 from incipyt import project
 from incipyt._internal import utils
 
@@ -111,6 +113,11 @@ class StringTemplate(Formattable):
     @classmethod
     def wrap(cls, value):
         return value if isinstance(value, Formattable) else cls(value)
+
+    @classmethod
+    def from_file(cls, filename):
+        path = Path(incipyt.__file__).parent / "templates" / filename
+        return cls(path.read_text())
 
 
 class ChoiceTemplate(Formattable):
