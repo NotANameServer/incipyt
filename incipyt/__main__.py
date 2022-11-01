@@ -7,6 +7,7 @@ import warnings
 import click
 
 from incipyt import project, tools
+from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING
@@ -61,7 +62,15 @@ def choice_callback(_ctx, _param, _choice):
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
-def main(folder, verbose, silent, vcs, env, build, check_build):
+@click.option(
+    "--license",
+    required=True,
+    default="Copyright",
+    type=click.Choice(tools.license.classifiers, case_sensitive=False),
+    help="Software license",
+    prompt=True,
+)
+def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noqa: A002
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
 
@@ -76,7 +85,11 @@ def main(folder, verbose, silent, vcs, env, build, check_build):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         project.environ["PROJECT_NAME"] = folder.name
 
-    tools_to_install = [tool for tool in [vcs(), env(), build(check_build)] if tool]
+    project.environ["LICENSE"] = EnvValue(license, confirmed=True)
+
+    tools_to_install = [
+        tool for tool in [tools.License(), vcs(), env(), build(check_build)] if tool
+    ]
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)

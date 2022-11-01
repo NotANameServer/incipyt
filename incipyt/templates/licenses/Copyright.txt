@@ -1,0 +1,1 @@
+Copyright (c) {AUTHOR_NAME} <{AUTHOR_EMAIL}>

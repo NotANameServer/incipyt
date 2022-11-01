@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from collections import abc
+from datetime import date
 
 import click
 
@@ -51,14 +52,18 @@ class _Environ(collections.UserDict):
     """
 
     def clear(self):
-        self._confirmed = set()
-        self.data = os.environ.copy()
+        self._confirmed.clear()
+        self.data.clear()
+        self.data.update(os.environ.copy())
 
-        if "PYTHON_CMD" not in self.data:
-            self.data["PYTHON_CMD"] = sys.executable
+        self.data.setdefault("PYTHON_CMD", sys.executable)
         self._confirmed.add("PYTHON_CMD")
+        self.data.setdefault("YEAR", date.today().year)
+        self._confirmed.add("YEAR")
 
     def __init__(self):
+        self._confirmed = set()
+        self.data = {}
         self.clear()
 
     def __getitem__(self, key):

@@ -79,6 +79,8 @@ class Setuptools(tools.Tool):
             "description": "{SUMMARY_DESCRIPTION}",
             "long_description": "file: README.md",
             "long_description_content_type": "text/markdown",
+            "license": "{LICENSE}",
+            "license_files": ["LICENSE"],
             "maintainer_email": "{AUTHOR_NAME} <{AUTHOR_EMAIL}>",
             "name": templates.StringTemplate("{PROJECT_NAME}", sanitizer=sanitizers.project),
             "version": templates.StringTemplate(
