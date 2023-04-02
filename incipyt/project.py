@@ -86,6 +86,12 @@ class _Environ(collections.UserDict):
         if env_value.confirmed and key not in self._confirmed:
             self._confirmed.add(key)
 
+    def setdefault(self, key, value):
+        if key in self:
+            return self.data[key]
+        self[key] = value
+        return self.data[key]
+
     def __iter__(self):
         return iter(self._confirmed)
 
