@@ -21,3 +21,4 @@ class Venv(tools.Tool):
         commands.setenv_python_cmd(
             env_path.resolve() / ("Scripts" if os.name == "nt" else "bin") / "python"
         )
+        commands.pip_install(["pip"])
