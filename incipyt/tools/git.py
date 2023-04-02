@@ -48,13 +48,13 @@ class Git(tools.Tool):
         commands.run(["git", "init", os.fspath(workon)])
 
         project.environ["AUTHOR_EMAIL"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.email"])
+            commands.run(["git", "-C", os.fspath(workon), "config", "user.email"], check=False)
             .stdout.decode()
             .strip(),
             update=True,
         )
         project.environ["AUTHOR_NAME"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.name"])
+            commands.run(["git", "-C", os.fspath(workon), "config", "user.name"], check=False)
             .stdout.decode()
             .strip(),
             update=True,
