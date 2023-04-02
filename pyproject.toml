@@ -36,62 +36,42 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "black",
-  "build",
-  "flake8",
-  "flakeheaven",
-  "flake8-bandit",
-  "flake8-bugbear",
-  "flake8-builtins",
-  "flake8-comprehensions",
-  "flake8-docstrings",
-  "flake8-simplify",
-  "flake8-use-fstring",
-  "pep8-naming",
-  "pre-commit",
+  "flit==3.8.0",
+  "pre-commit==3.2.1",
 ]
 doc = [
-  "m2r2",
-  "sphinxcontrib-apidoc",
-  "sphinx_rtd_theme",
+  "m2r2==0.3.3.post2",
+  "sphinxcontrib-apidoc==0.3.0",
+  "sphinx_rtd_theme==1.2.0",
 ]
 test = [
-  "pytest-cov",
-  "pytest-subprocess",
+  "pytest-cov==4.0.0",
+  "pytest-subprocess==1.5.0",
 ]
 
 [project.scripts]
 incipyt = "incipyt.__main__:main"
 
-[tool.flakeheaven]
-exclude = [
-  ".env",
-  ".git",
+[tool.black]
+line-length = 98 # Compatibility with GitHub web editor
+
+[tool.ruff]
+fixable = [
+  "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
 ]
+format = "github"
+ignore = ["D105", "D107", "D203", "D211", "D213", "E501", "FBT002", "W505"]
+select = [
+  "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
+  "A", "BLE", "FBT", "ISC", "N", "PLW", "PTH", "S", "YTT",
+]
+show-fixes = true
+show-source = true
 
-[tool.flakeheaven.plugins]
-flake8-bandit = ["+*", "-S101", "-S404", "-S603", "-S607"]
-flake8-bugbear = ["+*"]
-flake8-builtins = ["+*"]
-flake8-comprehensions = ["+*"]
-flake8-docstrings = ["+*", "-D105", "-D107"]
-flake8-simplify = ["+*"]
-flake8-use-fstring = ["+*", "-FS003"]
-pep8-naming = ["+*"]
-pycodestyle = ["+*", "-W503", "-E501"]
-pyflakes = ["+*"]
-
-[tool.flakeheaven.exceptions."incipyt/*__init__.py"]
-pyflakes = ["-F401"]
-
-[tool.flakeheaven.exceptions."incipyt/_*/*.py"]
-flake8-docstrings = ["-*"]
-
-[tool.flakeheaven.exceptions."incipyt/__*__.py"]
-flake8-docstrings = ["-D100", "-D103", "-D104"]
-
-[tool.flakeheaven.exceptions."incipyt/tools/*.py"]
-flake8-docstrings = ["-D100"]
-
-[tool.flakeheaven.exceptions."tests/*.py"]
-flake8-docstrings = ["-*"]
+[tool.ruff.per-file-ignores]
+"incipyt/_*/*.py" = ["D"]
+"tests/**/*.py" = ["D"]
+"incipyt/__*__.py" = ["D100", "D103", "D104"]
+"incipyt/tools/*.py" = ["D100"]
+"incipyt/**/__init__.py" = ["F401"]
+"tests/**/test_*.py" = ["S101"]

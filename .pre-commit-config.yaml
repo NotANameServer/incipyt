@@ -1,34 +1,32 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 22.1.0
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v2.1.1
     hooks:
-      - id: black
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.260
+    hooks:
+      - id: ruff
+        args: [--exit-non-zero-on-fix, --fix]
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.4.0
     hooks:
-      - id: trailing-whitespace
-      - id: mixed-line-ending
-      - id: end-of-file-fixer
-      - id: check-merge-conflict
       - id: check-case-conflict
-      - id: detect-private-key
-      - id: destroyed-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-symlinks
-      - id: debug-statements
       - id: check-toml
       - id: check-yaml
-  - repo: https://github.com/flakeheaven/flakeheaven
-    rev: 0.11.0
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
     hooks:
-      - id: flakeheaven
-        additional_dependencies: [
-          flake8,
-          flake8-bandit,
-          flake8-bugbear,
-          flake8-builtins,
-          flake8-comprehensions,
-          flake8-docstrings,
-          flake8-simplify,
-          flake8-use-fstring,
-          pep8-naming,
-        ]
+      - id: black

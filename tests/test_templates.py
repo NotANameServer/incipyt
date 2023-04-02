@@ -1,12 +1,12 @@
 import click
 from pytest import fixture, mark, raises
 
+from incipyt import project
 from incipyt._internal.templates import (
     ChoiceTemplate,
     StringTemplate,
     TemplateDict,
 )
-from incipyt import project
 from tests.utils import mock_stdin
 
 
@@ -50,9 +50,7 @@ class TestStringTemplate:
             ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
     )
-    def test_format(
-        self, st, variables, stdin, res, reset_environ, request, monkeypatch
-    ):
+    def test_format(self, st, variables, stdin, res, reset_environ, request, monkeypatch):
         mock_stdin(monkeypatch, stdin)
         st = request.getfixturevalue(st)
         project.environ |= variables

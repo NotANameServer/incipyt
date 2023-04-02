@@ -1,7 +1,7 @@
 from pytest import fixture, mark, raises
 
-from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 from incipyt import project
+from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 
 
 @fixture
@@ -46,12 +46,14 @@ def test_path_exists(dumper, reset_environ, tmp_path):
                     "third": ["one", "two"],
                 }
             },
-            (
-                "[section]\n"
-                "first = 1\n"
-                "second = \n\tone = 1\n\ttwo = 2\n"
-                "third = \n\tone\n\ttwo\n"
-                "\n"
+            str().join(
+                (
+                    "[section]\n",
+                    "first = 1\n",
+                    "second = \n\tone = 1\n\ttwo = 2\n",
+                    "third = \n\tone\n\ttwo\n",
+                    "\n",
+                )
             ),
         ),
         (
@@ -68,24 +70,26 @@ def test_path_exists(dumper, reset_environ, tmp_path):
                     ],
                 }
             },
-            (
-                "[section]\n"
-                'first = "1"\n'
-                'third = [ "one", "two",]\n'
-                "[[section.fifth]]\n"
-                'one = "1.1"\n'
-                'two = "1.2"\n'
-                "\n"
-                "[[section.fifth]]\n"
-                'one = "2.1"\n'
-                'two = "2.2"\n'
-                "\n"
-                "[section.second]\n"
-                'one = "1"\n'
-                'two = "2"\n'
-                "\n"
-                "[section.fourth.one]\n"
-                'two = "2"\n'
+            str().join(
+                (
+                    "[section]\n",
+                    'first = "1"\n',
+                    'third = [ "one", "two",]\n',
+                    "[[section.fifth]]\n",
+                    'one = "1.1"\n',
+                    'two = "1.2"\n',
+                    "\n",
+                    "[[section.fifth]]\n",
+                    'one = "2.1"\n',
+                    'two = "2.2"\n',
+                    "\n",
+                    "[section.second]\n",
+                    'one = "1"\n',
+                    'two = "2"\n',
+                    "\n",
+                    "[section.fourth.one]\n",
+                    'two = "2"\n',
+                )
             ),
         ),
         (

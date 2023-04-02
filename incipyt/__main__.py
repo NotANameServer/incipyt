@@ -6,8 +6,7 @@ import warnings
 
 import click
 
-from incipyt import tools, project
-
+from incipyt import project, tools
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING
@@ -139,14 +138,14 @@ def setup_logging(verbosity):
     root_logger.level = max(verbosity, logging.DEBUG)
     logger.level = root_logger.level - 10
     if verbosity < logging.DEBUG:
-        logging.captureWarnings(True)
+        logging.captureWarnings(capture=True)
         warnings.filterwarnings("default")
 
 
 # Remove '' and current working directory from the first entry of sys.path, if
 # present to avoid using current directory in incipyt commands, when invoked as
 # python -m incipyt <command>
-if sys.path[0] in ("", os.getcwd()):
+if sys.path[0] in ("", os.getcwd()):  # noqa: PTH109
     sys.path.pop(0)
 
 if __name__ == "__main__":

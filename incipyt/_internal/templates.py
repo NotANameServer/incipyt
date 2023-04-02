@@ -86,9 +86,7 @@ class StringTemplate(Formattable):
         :return: The formatted string.
         :rtype: :class:`str`
         """
-        return FormatterEnviron(
-            sanitizer=self._sanitizer, value_error=self._value_error
-        ).format(
+        return FormatterEnviron(sanitizer=self._sanitizer, value_error=self._value_error).format(
             self._format_string,
             **{
                 key: (
@@ -292,9 +290,7 @@ class TemplateDict(abc.MutableMapping):
         return utils.make_repr(self, "data")
 
     def __delitem__(self, key):
-        raise NotImplementedError(
-            f"{type(self)} do not support __delitem__, add-only dict-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support __delitem__, add-only dict-like.")
 
     def __setitem__(self, keys, value):
         if utils.is_nonstring_sequence(keys):
@@ -324,9 +320,7 @@ class TemplateDict(abc.MutableMapping):
                 self.data[keys] = []
 
             if isinstance(self.data[keys], abc.Mapping):
-                raise TypeError(
-                    f"{self.data[keys]} is already a mapping, cannot set to a list."
-                )
+                raise TypeError(f"{self.data[keys]} is already a mapping, cannot set to a list.")
             TemplateList(self.data[keys]).extend(value)
 
         else:
@@ -376,14 +370,10 @@ class TemplateList(abc.MutableSequence):
         return utils.attrs_eq(self, other, "data")
 
     def __setitem__(self, index, value):
-        raise NotImplementedError(
-            f"{type(self)} do not support __setitem__, add-only list-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support __setitem__, add-only list-like.")
 
     def __delitem__(self, value):
-        raise NotImplementedError(
-            f"{type(self)} do not support del, add-only list-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support del, add-only list-like.")
 
     def insert(self, index, value):
         if utils.is_nonstring_sequence(value):
@@ -463,7 +453,6 @@ class FormatterEnviron(abc.Mapping):
         :return: The rendered template or `None` if a context variable is empty.
         :rtype: :class:`str` or `None`
         """
-
         self._keys = {item[1] for item in Formatter().parse(format_string) if item[1]}
         for key in self:
             if key in kwargs:

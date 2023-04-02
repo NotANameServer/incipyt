@@ -3,10 +3,9 @@ import sys
 
 from pytest import fixture, mark, raises
 
-from incipyt import project, commands
+from incipyt import commands, project
 from incipyt._internal.dumpers import TextFile, Toml
 from incipyt._internal.templates import StringTemplate
-
 from tests.utils import mock_stdin
 
 
@@ -140,21 +139,19 @@ class TestStructure:
     @fixture
     def reset_structure(self):
         project.structure.clear()
-        project.structure.get_config_dict(Toml("{FOLDER_A}/{NAME_A}.toml"))[
-            "section"
-        ] = {"first": "{VALUE}"}
-        project.structure.get_config_list(
-            TextFile("{FOLDER_B}/{NAME_B}", sep="\n\n")
-        ).append("{CONTENT}")
+        project.structure.get_config_dict(Toml("{FOLDER_A}/{NAME_A}.toml"))["section"] = {
+            "first": "{VALUE}"
+        }
+        project.structure.get_config_list(TextFile("{FOLDER_B}/{NAME_B}", sep="\n\n")).append(
+            "{CONTENT}"
+        )
 
     def test_get_new_configuration(self, reset_structure):
         configuration = project.structure.get_config_dict(Toml("testC.toml"))
         assert configuration == {}
 
     def test_get_old_configuration(self, reset_structure):
-        configuration = project.structure.get_config_dict(
-            Toml("{FOLDER_A}/{NAME_A}.toml")
-        )
+        configuration = project.structure.get_config_dict(Toml("{FOLDER_A}/{NAME_A}.toml"))
         assert configuration == {"section": {"first": StringTemplate("{VALUE}")}}
 
     def test_mkdir(self, reset_structure, reset_environ, tmp_path):
@@ -165,7 +162,5 @@ class TestStructure:
     def test_commit(self, reset_structure, reset_environ, tmp_path):
         project.structure.mkdir(tmp_path)
         project.structure.commit()
-        assert (
-            tmp_path / "folderA" / "testA.toml"
-        ).read_text() == '[section]\nfirst = "1"\n'
+        assert (tmp_path / "folderA" / "testA.toml").read_text() == '[section]\nfirst = "1"\n'
         assert (tmp_path / "folderB" / "testB").read_text() == "text\n\n"

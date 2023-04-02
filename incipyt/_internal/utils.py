@@ -1,6 +1,5 @@
 import collections.abc
 import dataclasses
-
 from typing import Any
 
 

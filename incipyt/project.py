@@ -9,7 +9,6 @@ from collections import abc
 import click
 
 from incipyt._internal import templates
-
 from incipyt._internal.utils import EnvValue, is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
@@ -90,13 +89,13 @@ class _Environ(collections.UserDict):
     def __contains__(self, key):
         return key in self._confirmed
 
-    def keys(self):  # noqa: D102
+    def keys(self):
         return self._confirmed
 
-    def values(self):  # noqa: D102
+    def values(self):
         return [self.data[key] for key in self._confirmed]
 
-    def items(self):  # noqa: D102
+    def items(self):
         return [(key, self.data[key]) for key in self._confirmed]
 
     def getitems_sanitized(self, keys, sanitizer=None):
@@ -162,9 +161,7 @@ class _Structure:
         :rtype: :class:`incipyt._internal.templates.TempateDict`
         """
         if config_root not in self._configurations:
-            logger.debug(
-                "Register configuration %s in project structure.", str(config_root)
-            )
+            logger.debug("Register configuration %s in project structure.", str(config_root))
             self._configurations[config_root] = {}
 
         if not isinstance(self._configurations[config_root], abc.MutableMapping):
@@ -180,9 +177,7 @@ class _Structure:
         :rtype: :class:`incipyt._internal.templates.TempateList`
         """
         if config_root not in self._configurations:
-            logger.debug(
-                "Register configuration %s in project structure.", str(config_root)
-            )
+            logger.debug("Register configuration %s in project structure.", str(config_root))
             self._configurations[config_root] = []
 
         if not is_nonstring_sequence(self._configurations[config_root]):
@@ -239,7 +234,7 @@ class _Structure:
             while None in template:
                 template.remove(None)
 
-        elif isinstance(template, abc.MutableMapping):  # noqa: SIM106
+        elif isinstance(template, abc.MutableMapping):
             for key, value in template.items():
                 logger.debug("Visit %s to process environ variables.", key)
 
