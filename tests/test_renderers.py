@@ -11,6 +11,8 @@ class _Context:
         project.environ.clear()
         project.environ["VARIABLE_NAME"] = project.EnvValue("value", confirmed=True)
         project.environ["EMPTY_VARIABLE"] = project.EnvValue("", confirmed=True)
+        yield
+        project.environ.clear()
 
     @fixture
     def simple_ctx(self, reset_environ):
