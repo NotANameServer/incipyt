@@ -5,7 +5,6 @@ import os
 import subprocess
 
 from incipyt import project
-
 from incipyt._internal.templates import Formattable
 from incipyt._internal.utils import EnvValue
 
@@ -39,7 +38,8 @@ def setenv_python_cmd(python_path):
     :param python_path: List of the command elements.
     :type python_path: :class:`pathlib.Path`
     """
-    assert python_path.is_absolute(), f"{python_path} is not absolute."
+    if not python_path.is_absolute():
+        raise AssertionError(f"{python_path} is not absolute.")
     project.environ["PYTHON_CMD"] = EnvValue(os.fspath(python_path), update=True)
 
 
@@ -52,8 +52,7 @@ def python_m(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    # from incipyt._internal.templates import StringTemplate
-    return run([project.environ["PYTHON_CMD"], "-m"] + args, **kwargs)
+    return run([project.environ["PYTHON_CMD"], "-m", *args], **kwargs)
 
 
 def build(args, **kwargs):
@@ -65,7 +64,7 @@ def build(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    return python_m(["build"] + args, **kwargs)
+    return python_m(["build", *args], **kwargs)
 
 
 def pip(args, **kwargs):
@@ -77,7 +76,7 @@ def pip(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    return python_m(["pip", "--verbose"] + args, **kwargs)
+    return python_m(["pip", "--verbose", *args], **kwargs)
 
 
 def pip_install(args, **kwargs):
@@ -89,7 +88,7 @@ def pip_install(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    return pip(["install", "--upgrade", "--upgrade-strategy", "eager"] + args, **kwargs)
+    return pip(["install", "--upgrade", "--upgrade-strategy", "eager", *args], **kwargs)
 
 
 def venv(args, **kwargs):
@@ -101,4 +100,4 @@ def venv(args, **kwargs):
     :return: Represents a process that has finished
     :rtype: :class:`subprocess.CompletedProcess`
     """
-    return python_m(["venv"] + args, **kwargs)
+    return python_m(["venv", *args], **kwargs)

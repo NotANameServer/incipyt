@@ -1,7 +1,6 @@
 import configparser
 import os
 import pathlib
-
 from abc import ABC, abstractmethod
 
 import toml

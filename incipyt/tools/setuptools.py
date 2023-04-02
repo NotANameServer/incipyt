@@ -1,6 +1,6 @@
 import os
-import textwrap
 import sys
+import textwrap
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
@@ -102,7 +102,7 @@ class Setuptools(tools.Tool):
             "python_requires": templates.StringTemplate(
                 ">={AUDIENCE_PYTHON_VERSION}",
                 sanitizer=sanitizers.version,
-                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(  # noqa: FS002
+                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(
                     min(sys.version_info, LINUX_MIN_PYTHON_VERSION)
                 ),
             ),
@@ -150,9 +150,7 @@ class Setuptools(tools.Tool):
         signals.build_dependency.emit(dep_name="build")
         signals.build_dependency.emit(dep_name="pip")
 
-        signals.classifier.emit(
-            classifier="Programming Language :: Python :: 3 :: Only"
-        )
+        signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
 
         signals.vcs_ignore.emit(pattern="dist")
         signals.vcs_ignore.emit(pattern="*.egg-info")
@@ -170,9 +168,9 @@ class Setuptools(tools.Tool):
         setup["options.extras_require", "dev"].append(dep_name)
 
     def _slot_url(self, url_kind, url_value, **kwargs):
-        project.structure.get_config_dict(CfgIni("setup.cfg"))[
-            "metadata", "project_urls"
-        ] = {url_kind: url_value}
+        project.structure.get_config_dict(CfgIni("setup.cfg"))["metadata", "project_urls"] = {
+            url_kind: url_value
+        }
 
     def post(self, workon):
         """Editable install and build for test.
