@@ -53,7 +53,7 @@ def choice_callback(_ctx, _param, _choice):
     required=True,
     show_default=True,
     default="Setuptools",
-    type=click.Choice(["Setuptools", "Flit", "PDM"], case_sensitive=False),
+    type=click.Choice(["Setuptools", "Flit", "PDM", "Poetry"], case_sensitive=False),
     callback=choice_callback,
     help="Build system to use for building wheel and source distributions.",
 )
