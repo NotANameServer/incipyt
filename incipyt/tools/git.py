@@ -3,8 +3,11 @@ import os
 import shutil
 import sys
 
-from incipyt import commands, project, signals, tools
+import click
+
+from incipyt import project, signals, tools
 from incipyt._internal.dumpers import TextFile
+from incipyt.commands import git, git_get_config
 
 logger = logging.getLogger(__name__)
 
@@ -45,25 +48,26 @@ class Git(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        commands.run(["git", "init", os.fspath(workon)])
-
-        project.environ["AUTHOR_EMAIL"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.email"], check=False)
-            .stdout.decode()
-            .strip(),
-            update=True,
-        )
-        project.environ["AUTHOR_NAME"] = project.EnvValue(
-            commands.run(["git", "-C", os.fspath(workon), "config", "user.name"], check=False)
-            .stdout.decode()
-            .strip(),
-            update=True,
-        )
+        git(["init", os.fspath(workon)])
+        project.environ.setdefault("AUTHOR_EMAIL", git_get_config("user.email", workon=workon))
+        project.environ.setdefault("AUTHOR_NAME", git_get_config("user.name", workon=workon))
 
     def post(self, workon):
-        """Run `git add --all`.
+        """Check config name+email and then run `git add --all`.
 
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        commands.run(["git", "-C", os.fspath(workon), "add", "--all"])
+        env_name = project.environ["AUTHOR_NAME"]
+        git_name = git_get_config("user.name", workon=workon)
+        prompt = f"Git user name is {git_name!r}, use {env_name!r} instead?"
+        if env_name != git_name and click.confirm(prompt, default=None):
+            git(["config", "user.name", env_name], workon=workon)
+
+        env_email = project.environ["AUTHOR_EMAIL"]
+        git_email = git_get_config("user.email", workon=workon)
+        prompt = f"Git user email is {git_email!r}, use {env_email!r} instead?"
+        if env_email != git_email and click.confirm(prompt, default=None):
+            git(["config", "user.email", env_email], workon=workon)
+
+        git(["add", "--all"], workon=workon)

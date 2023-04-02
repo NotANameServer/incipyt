@@ -101,3 +101,33 @@ def venv(args, **kwargs):
     :rtype: :class:`subprocess.CompletedProcess`
     """
     return python_m(["venv", *args], **kwargs)
+
+
+def git(args, workon=None, **kwargs):
+    r"""Run a git command inside of the ``workon`` dir.
+
+    :param args: List of the command elements, excluding `git`.
+    :type args: :class:`list`
+    :param workon: Directory where to run the command, instead of .
+    :type workon: :class:`pathlib.Path`
+    :param \**kwargs: Other options forwarded to `subprocess.run`
+    :return: Represents a process that has finished
+    :rtype: :class:`subprocess.CompletedProcess`
+    """
+    return run(["git", "-C", os.fspath(workon), *args] if workon else ["git", *args], **kwargs)
+
+
+def git_get_config(config, workon=None):
+    r"""Retrieve the value of ``git config <config>``.
+
+    :param config: The config name to retrieve
+    :type args: :class:`str`
+    :param workon: Directory where to run the command, instead of .
+    :type workon: :class:`pathlib.Path`
+    :return: The
+    :rtype: :class:`str` | None
+    """
+    cmd = git(["config", config], workon=workon, check=False)
+    if cmd.returncode == 0:
+        return cmd.stdout.decode().strip() or None
+    return None
