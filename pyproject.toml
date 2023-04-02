@@ -60,7 +60,7 @@ fixable = [
   "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
 ]
 format = "github"
-ignore = ["D105", "D107", "D203", "D211", "D213", "E501", "FBT002", "W505"]
+ignore = ["B024", "B027", "D105", "D107", "D203", "D211", "D213", "E501", "FBT002", "W505"]
 select = [
   "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
   "A", "BLE", "FBT", "ISC", "N", "PLW", "PTH", "S", "YTT",

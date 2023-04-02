@@ -81,7 +81,7 @@ class StringTemplate(Formattable):
 
     def __gt__(self, other):
         if isinstance(other, str):
-           return self.format() > other
+            return self.format() > other
         return self.format() > other.format()
 
     def __hash__(self):
