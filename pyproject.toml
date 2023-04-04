@@ -51,3 +51,6 @@ test = [
 
 [project.scripts]
 incipyt = "incipyt.__main__:main"
+
+[tool.black]
+line-length = 98 # Compatibility with GitHub web editor

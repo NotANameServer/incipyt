@@ -6,8 +6,7 @@ import warnings
 
 import click
 
-from incipyt import tools, project
-
+from incipyt import project, tools
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING

@@ -1,12 +1,12 @@
 import click
 from pytest import fixture, mark, raises
 
+from incipyt import project
 from incipyt._internal.templates import (
     ChoiceTemplate,
     StringTemplate,
     TemplateDict,
 )
-from incipyt import project
 from tests.utils import mock_stdin
 
 
@@ -50,21 +50,13 @@ class TestStringTemplate:
             ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
     )
-    def test_format(
-        self, st, variables, stdin, res, reset_environ, request, monkeypatch
-    ):
+    def test_format(self, st, variables, stdin, res, reset_environ, request, monkeypatch):
         mock_stdin(monkeypatch, stdin)
         st = request.getfixturevalue(st)
         project.environ |= variables
         assert st.format() == res
 
-    @mark.parametrize(
-        "st, stdin",
-        (
-            ("simple_st", ""),
-            ("multiple_st", "\n\n"),
-        ),
-    )
+    @mark.parametrize("st, stdin", (("simple_st", ""), ("multiple_st", "\n\n")))
     def test_format_null(self, st, stdin, reset_environ, request, monkeypatch):
         mock_stdin(monkeypatch, stdin)
         st = request.getfixturevalue(st)
@@ -87,11 +79,7 @@ class TestChoiceTemplate:
 
     def test_mst_tail(self, simple_mst):
         mst = ChoiceTemplate("x", simple_mst)
-        assert mst._values == {
-            StringTemplate("x"),
-            StringTemplate("a"),
-            StringTemplate("b"),
-        }
+        assert mst._values == {StringTemplate("x"), StringTemplate("a"), StringTemplate("b")}
 
     @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
     def test_call(self, mst, reset_environ, monkeypatch, request):
@@ -132,14 +120,8 @@ class TestTemplateCollection:
         "td, res",
         (
             ("empty_td", TemplateDict({"1": StringTemplate("x")})),
-            (
-                "simple_td",
-                TemplateDict({"1": ChoiceTemplate("x", "a")}),
-            ),
-            (
-                "choice_td",
-                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
-            ),
+            ("simple_td", TemplateDict({"1": ChoiceTemplate("x", "a")})),
+            ("choice_td", TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")})),
         ),
     )
     def test_setitem(self, td, res, request):
@@ -151,14 +133,8 @@ class TestTemplateCollection:
         "td, res",
         (
             ("empty_td", TemplateDict({"1": StringTemplate("x")})),
-            (
-                "simple_td",
-                TemplateDict({"1": ChoiceTemplate("x", "a")}),
-            ),
-            (
-                "choice_td",
-                TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")}),
-            ),
+            ("simple_td", TemplateDict({"1": ChoiceTemplate("x", "a")})),
+            ("choice_td", TemplateDict({"1": ChoiceTemplate.from_items("x", "a", "b")})),
         ),
     )
     def test_setitem_callable(self, td, res, request):
@@ -170,10 +146,7 @@ class TestTemplateCollection:
         "td, res",
         (
             ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
-            (
-                "nested_td",
-                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
-            ),
+            ("nested_td", TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}})),
         ),
     )
     def test_chained_setitem(self, td, res, request):
@@ -184,20 +157,11 @@ class TestTemplateCollection:
     @mark.parametrize(
         "td, res",
         (
-            (
-                "empty_td",
-                TemplateDict({"1": [StringTemplate("a"), StringTemplate("x")]}),
-            ),
+            ("empty_td", TemplateDict({"1": [StringTemplate("a"), StringTemplate("x")]})),
             (
                 "sequence_td",
                 TemplateDict(
-                    {
-                        "1": [
-                            StringTemplate("a"),
-                            StringTemplate("b"),
-                            StringTemplate("x"),
-                        ]
-                    }
+                    {"1": [StringTemplate("a"), StringTemplate("b"), StringTemplate("x")]}
                 ),
             ),
         ),
@@ -246,10 +210,7 @@ class TestTemplateCollection:
         "td, res",
         (
             ("empty_td", TemplateDict({"1": {"2": {"3": StringTemplate("x")}}})),
-            (
-                "nested_td",
-                TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}}),
-            ),
+            ("nested_td", TemplateDict({"1": {"2": {"3": ChoiceTemplate("x", "a")}}})),
         ),
     )
     def test_ior(self, td, res, request):

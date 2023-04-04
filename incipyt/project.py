@@ -9,7 +9,6 @@ from collections import abc
 import click
 
 from incipyt._internal import templates
-
 from incipyt._internal.utils import EnvValue, is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
@@ -162,9 +161,7 @@ class _Structure:
         :rtype: :class:`incipyt._internal.templates.TempateDict`
         """
         if config_root not in self._configurations:
-            logger.debug(
-                "Register configuration %s in project structure.", str(config_root)
-            )
+            logger.debug("Register configuration %s in project structure.", str(config_root))
             self._configurations[config_root] = {}
 
         if not isinstance(self._configurations[config_root], abc.MutableMapping):
@@ -180,9 +177,7 @@ class _Structure:
         :rtype: :class:`incipyt._internal.templates.TempateList`
         """
         if config_root not in self._configurations:
-            logger.debug(
-                "Register configuration %s in project structure.", str(config_root)
-            )
+            logger.debug("Register configuration %s in project structure.", str(config_root))
             self._configurations[config_root] = []
 
         if not is_nonstring_sequence(self._configurations[config_root]):

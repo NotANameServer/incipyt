@@ -6,7 +6,6 @@ import sys
 from incipyt import commands, project, signals, tools
 from incipyt._internal.dumpers import TextFile
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,9 +29,7 @@ class Git(tools.Tool):
             - Issue: {REPOSITORY}/issues
             - Documentation: {REPOSITORY}/wiki
         """
-        signals.project_url.emit(
-            url_kind="Documentation", url_value="{REPOSITORY}/wiki"
-        )
+        signals.project_url.emit(url_kind="Documentation", url_value="{REPOSITORY}/wiki")
         signals.project_url.emit(url_kind="Issue", url_value="{REPOSITORY}/issues")
         signals.project_url.emit(url_kind="Repository", url_value="{REPOSITORY}")
 
