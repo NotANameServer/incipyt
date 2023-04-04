@@ -7,13 +7,13 @@ on:
 
   pull_request:
     branches: [main]
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, unlocked]
     paths: [pyproject.toml, incipyt/**, tests/**, .github/workflows/test.yml]
 
 
 jobs:
   lint:
-    name: Lint
+    name: Pre-commit (include linter)
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
 
@@ -33,11 +33,14 @@ jobs:
       env:
         PIP_UPGRADE: True
         PIP_UPGRADE_STRATEGY: eager
-      run: |
-        python -m pip install pip flit
-        python -m flit install --pth-file --deps develop
-    - name: Check format with black
-      run: python -m black -v --check .
+      run: python -m pip install -e ".[dev]"
+    - name: Pre-commit cache
+      uses: actions/cache@v3.3.1
+      with:
+        key: ${{ hashFiles('.pre-commit-config.yaml') }}
+        path: ~/.cache/pre-commit
+    - name: Run pre-commit on all files
+      run: pre-commit run --all-files
 
   test:
     name: Tests
