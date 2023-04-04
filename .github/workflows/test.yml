@@ -38,8 +38,6 @@ jobs:
         python -m flit install --pth-file --deps develop
     - name: Check format with black
       run: python -m black -v --check .
-    - name: Lint with flakeheaven
-      run: python -m flakeheaven lint -v incipyt
 
   test:
     name: Tests
