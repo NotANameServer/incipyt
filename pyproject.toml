@@ -54,3 +54,32 @@ incipyt = "incipyt.__main__:main"
 
 [tool.black]
 line-length = 98 # Compatibility with GitHub web editor
+
+[tool.ruff]
+fixable = [
+  "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
+]
+format = "github"
+ignore = [
+  "B024", "B027", # Disable rules about missing abstract decorators
+  "D100", "D104", "D105", "D107", "D203", "D211", "D213",
+  # Ease rules for pydocstyle (module/package/magic method/empty lines)
+  "E501", "W505", # Disable rules about line-too-long, black does that
+  "FBT002", #Disable "Boolean default value in function definition" rule
+]
+select = [
+  "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
+  "A", "BLE", "FBT", "ISC", "N", "PLW", "PTH", "S", "YTT",
+]
+show-fixes = true
+show-source = true
+
+[tool.ruff.per-file-ignores]
+# Disable pydocstyle for internal modules
+"incipyt/**/__*__.py" = ["D"]
+"incipyt/**/_*/**/*.py" = ["D"]
+# Disable pydocstyle for template files
+"incipyt/templates/**/*.py" = ["D", "N999"]
+"tests/**/*.py" = ["D"] # Disable pydocstyle for python test files
+"incipyt/**/__init__.py" = ["F401"] # Disable "unused-import" in __init__ files
+"tests/**/test_*.py" = ["S101"] # Disable detection of assert usage in python test files
