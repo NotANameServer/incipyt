@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    commit-message:
+      prefix: "chore(deps)"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: "increase"
