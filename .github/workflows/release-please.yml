@@ -1,5 +1,9 @@
 name: CD - Release Please
 
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+
 on:
   push:
     branches: [main]
