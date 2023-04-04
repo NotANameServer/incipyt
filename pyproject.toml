@@ -36,7 +36,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "black",
   "build",
   "pre-commit==3.2.1",
 ]
