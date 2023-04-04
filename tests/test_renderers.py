@@ -2,7 +2,6 @@ from pytest import fixture, mark, raises
 
 from incipyt import project
 from incipyt._internal.templates import FormatterEnviron
-
 from tests.utils import mock_stdin
 
 
@@ -53,11 +52,7 @@ class TestFormatterEnviron(_Context):
 
     @mark.parametrize(
         "ctx, res",
-        (
-            ("simple_ctx", set()),
-            ("no_error_ctx", set()),
-            ("populated_ctx", {"VARIABLE_NAME"}),
-        ),
+        (("simple_ctx", set()), ("no_error_ctx", set()), ("populated_ctx", {"VARIABLE_NAME"})),
     )
     def test_iteration(self, ctx, res, request):
         ctx = request.getfixturevalue(ctx)
@@ -97,13 +92,7 @@ class TestRenderString(_Context):
         ctx = request.getfixturevalue(ctx)
         assert ctx.format("{OTHER_NAME}") == "value"
 
-    @mark.parametrize(
-        "ctx, res",
-        (
-            ("simple_ctx", None),
-            ("no_error_ctx", "value"),
-        ),
-    )
+    @mark.parametrize("ctx, res", (("simple_ctx", None), ("no_error_ctx", "value")))
     def test_interp_empty(self, ctx, res, request):
         ctx = request.getfixturevalue(ctx)
         assert ctx.format("{VARIABLE_NAME}{EMPTY_VARIABLE}") == res

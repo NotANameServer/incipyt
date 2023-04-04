@@ -1,7 +1,7 @@
 from pytest import fixture, mark, raises
 
-from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 from incipyt import project
+from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 
 
 @fixture
@@ -62,10 +62,7 @@ def test_path_exists(dumper, reset_environ, tmp_path):
                     "second": {"one": "1", "two": "2"},
                     "third": ["one", "two"],
                     "fourth": {"one": {"two": "2"}},
-                    "fifth": [
-                        {"one": "1.1", "two": "1.2"},
-                        {"one": "2.1", "two": "2.2"},
-                    ],
+                    "fifth": [{"one": "1.1", "two": "1.2"}, {"one": "2.1", "two": "2.2"}],
                 }
             },
             (

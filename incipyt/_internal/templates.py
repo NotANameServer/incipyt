@@ -61,23 +61,12 @@ class StringTemplate(Formattable):
 
     def __eq__(self, other):
         return utils.attrs_eq(
-            self,
-            other,
-            "_format_string",
-            "_confirmed",
-            "_sanitizer",
-            "_value_error",
-            "_kwargs",
+            self, other, "_format_string", "_confirmed", "_sanitizer", "_value_error", "_kwargs"
         )
 
     def __hash__(self):
         return utils.attrs_hash(
-            self,
-            "_format_string",
-            "_confirmed",
-            "_sanitizer",
-            "_value_error",
-            **self._kwargs,
+            self, "_format_string", "_confirmed", "_sanitizer", "_value_error", **self._kwargs
         )
 
     def format(self):  # noqa: A003
@@ -86,9 +75,7 @@ class StringTemplate(Formattable):
         :return: The formatted string.
         :rtype: :class:`str`
         """
-        return FormatterEnviron(
-            sanitizer=self._sanitizer, value_error=self._value_error
-        ).format(
+        return FormatterEnviron(sanitizer=self._sanitizer, value_error=self._value_error).format(
             self._format_string,
             **{
                 key: (
@@ -136,10 +123,7 @@ class ChoiceTemplate(Formattable):
         self._values = (
             {StringTemplate.wrap(head)} | tail._values
             if isinstance(tail, ChoiceTemplate)
-            else {
-                StringTemplate.wrap(head),
-                StringTemplate.wrap(tail),
-            }
+            else {StringTemplate.wrap(head), StringTemplate.wrap(tail)}
         )
 
     def format(self):  # noqa: A003
@@ -292,9 +276,7 @@ class TemplateDict(abc.MutableMapping):
         return utils.make_repr(self, "data")
 
     def __delitem__(self, key):
-        raise NotImplementedError(
-            f"{type(self)} do not support __delitem__, add-only dict-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support __delitem__, add-only dict-like.")
 
     def __setitem__(self, keys, value):
         if utils.is_nonstring_sequence(keys):
@@ -324,9 +306,7 @@ class TemplateDict(abc.MutableMapping):
                 self.data[keys] = []
 
             if isinstance(self.data[keys], abc.Mapping):
-                raise TypeError(
-                    f"{self.data[keys]} is already a mapping, cannot set to a list."
-                )
+                raise TypeError(f"{self.data[keys]} is already a mapping, cannot set to a list.")
             TemplateList(self.data[keys]).extend(value)
 
         else:
@@ -376,14 +356,10 @@ class TemplateList(abc.MutableSequence):
         return utils.attrs_eq(self, other, "data")
 
     def __setitem__(self, index, value):
-        raise NotImplementedError(
-            f"{type(self)} do not support __setitem__, add-only list-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support __setitem__, add-only list-like.")
 
     def __delitem__(self, value):
-        raise NotImplementedError(
-            f"{type(self)} do not support del, add-only list-like."
-        )
+        raise NotImplementedError(f"{type(self)} do not support del, add-only list-like.")
 
     def insert(self, index, value):
         if utils.is_nonstring_sequence(value):
