@@ -104,7 +104,7 @@ class ColoredFormatter(logging.Formatter):
 
     colors = {10: (34, 49), 20: (32, 49), 30: (33, 49), 40: (31, 49), 50: (37, 41)}
 
-    def format(self, record):  # noqa: A003, D102
+    def format(self, record):  # noqa: A003
         fg, bg = type(self).colors.get(record.levelno, (32, 49))
         record.levelname = f"\033[1;{fg}m\033[1;{bg}m{record.levelname}\033[0m"
         return super().format(record)
@@ -138,14 +138,14 @@ def setup_logging(verbosity):
     root_logger.level = max(verbosity, logging.DEBUG)
     logger.level = root_logger.level - 10
     if verbosity < logging.DEBUG:
-        logging.captureWarnings(True)
+        logging.captureWarnings(capture=True)
         warnings.filterwarnings("default")
 
 
 # Remove '' and current working directory from the first entry of sys.path, if
 # present to avoid using current directory in incipyt commands, when invoked as
 # python -m incipyt <command>
-if sys.path[0] in ("", os.getcwd()):
+if sys.path[0] in ("", os.getcwd()):  # noqa: PTH109
     sys.path.pop(0)
 
 if __name__ == "__main__":

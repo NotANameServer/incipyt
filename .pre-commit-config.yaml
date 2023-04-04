@@ -1,4 +1,9 @@
 repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.260
+    hooks:
+      - id: ruff
+        args: [--exit-non-zero-on-fix, --fix]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

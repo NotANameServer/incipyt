@@ -94,7 +94,7 @@ class Setuptools(tools.Tool):
             "python_requires": templates.StringTemplate(
                 ">={AUDIENCE_PYTHON_VERSION}",
                 sanitizer=sanitizers.version,
-                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(  # noqa: FS002
+                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(
                     min(sys.version_info, LINUX_MIN_PYTHON_VERSION)
                 ),
             ),

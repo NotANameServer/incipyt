@@ -1,5 +1,3 @@
-"""TO-DO."""
-
 import collections
 import logging
 import os
@@ -89,13 +87,13 @@ class _Environ(collections.UserDict):
     def __contains__(self, key):
         return key in self._confirmed
 
-    def keys(self):  # noqa: D102
+    def keys(self):
         return self._confirmed
 
-    def values(self):  # noqa: D102
+    def values(self):
         return [self.data[key] for key in self._confirmed]
 
-    def items(self):  # noqa: D102
+    def items(self):
         return [(key, self.data[key]) for key in self._confirmed]
 
     def getitems_sanitized(self, keys, sanitizer=None):
@@ -234,7 +232,7 @@ class _Structure:
             while None in template:
                 template.remove(None)
 
-        elif isinstance(template, abc.MutableMapping):  # noqa: SIM106
+        elif isinstance(template, abc.MutableMapping):
             for key, value in template.items():
                 logger.debug("Visit %s to process environ variables.", key)
 

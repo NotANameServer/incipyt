@@ -42,7 +42,7 @@ class TestFormatterEnviron(_Context):
             simple_ctx["EMPTY_VARIABLE"]
 
     def test_getitem_empty_no_error(self, no_error_ctx):
-        assert no_error_ctx["EMPTY_VARIABLE"] == ""
+        assert not no_error_ctx["EMPTY_VARIABLE"]
 
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
     def test_getitem_sanitized(self, ctx, request):
