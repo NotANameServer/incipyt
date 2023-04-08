@@ -12,8 +12,8 @@ def reset_environ():
 @mark.parametrize("dumper", (CfgIni, Toml, TextFile))
 def test_format_path(dumper, reset_environ, tmp_path):
     dmp = dumper("{first}/{second}.ext")
-    project.environ["first"] = project.EnvValue("folder", confirmed=True)
-    project.environ["second"] = project.EnvValue("file", confirmed=True)
+    project.environ["first"] = "folder"
+    project.environ["second"] = "file"
     dmp.commit(tmp_path)
     assert dmp.format_path() == tmp_path / "folder" / "file.ext"
 

@@ -5,7 +5,7 @@ import sys
 
 import click
 
-from incipyt import project, signals, tools
+from incipyt import project, signals, tools, variables
 from incipyt._internal.dumpers import TextFile
 from incipyt.commands import git, git_get_config
 
@@ -49,8 +49,12 @@ class Git(tools.Tool):
         :type workon: :class:`pathlib.Path`
         """
         git(["init", os.fspath(workon)])
-        project.environ.setdefault("AUTHOR_EMAIL", git_get_config("user.email", workon=workon))
-        project.environ.setdefault("AUTHOR_NAME", git_get_config("user.name", workon=workon))
+        git_name = git_get_config("user.name", workon=workon)
+        if git_name:
+            variables.metadata["AUTHOR_NAME"].default = git_name
+        git_email = git_get_config("user.email", workon=workon)
+        if git_email:
+            variables.metadata["AUTHOR_EMAIL"].default = git_email
 
     def post(self, workon):
         """Check config name+email and then run `git add --all`.

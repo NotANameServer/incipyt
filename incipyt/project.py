@@ -1,14 +1,15 @@
 import collections
+import importlib
 import logging
-import os
 import sys
 from collections import abc
 from datetime import date
 
 import click
 
+from incipyt import variables
 from incipyt._internal import dumpers, templates
-from incipyt._internal.utils import EnvValue, is_nonstring_sequence
+from incipyt._internal.utils import is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -16,126 +17,49 @@ logger = logging.getLogger(__name__)
 class _Environ(collections.UserDict):
     """Manage environ variables using for substitutions in patterns.
 
-    A :class:`Environ` object `environ` is a dictionnary initialized with
-    system environ variables `os.environ`, a variable can be add like that:
+    A :class:`Environ` object `environ` is a dictionnary.
 
     .. code-block::
 
         environ["VARIABLE_NAME"] = "something"
 
-    However such a variable will not be considered in `environ` before being
-    `confirmed`. Such confirmation will happen the first it is asked for:
-
-    .. code-block::
-
-        var_first = environ["VARIABLE_NAME"]
-        # Prompt a message for confirmation of the value for `VARIABLE_NAME`
-        var_second = environ["VARIABLE_NAME"]
-        # As `VARIABLE_NAME` as been confirmed, don't ask anything
-
-    Moreover, even if a specific variable hasn't been set, it can be asked for
-    it anyway and it will be confirmed immediately. A variable can also be set
-    and confirmed at the same time:
-
-    .. code-block::
-
-        environ["VARIABLE_NAME"] = EnvValue("something", confirmed=True)
-
-    Note that if a variable has been set, it cannot be set again, except if
-    explicitly specified:
-
-    .. code-block::
-
-        environ["VARIABLE_NAME"] = EnvValue("new_value", update=True)
-
-    All iterative methods and in operator consider only `confirmed` variables.
+    If a specific variable hasn't been set, it can be asked for it anyway and
+    it will be add to the `environ` immediately.
     """
 
     def clear(self):
-        self._confirmed.clear()
         self.data.clear()
-        self.data.update(os.environ.copy())
 
-        self.data.setdefault("PYTHON_CMD", sys.executable)
-        self._confirmed.add("PYTHON_CMD")
-        self.data.setdefault("YEAR", date.today().year)
-        self._confirmed.add("YEAR")
+        importlib.reload(variables)
+
+        self.data["PYTHON_CMD"] = sys.executable
+        self.data["YEAR"] = date.today().year
 
     def __init__(self):
-        self._confirmed = set()
         self.data = {}
         self.clear()
 
     def __getitem__(self, key):
-        if key not in self._confirmed:
+        if key not in self.data:
             logger.debug("Missing environ variable %s, request it.", key)
             self.data[key] = self._prompt(key)
-            self._confirmed.add(key)
 
         return self.data[key]
 
-    def __setitem__(self, key, env_value):
-        if not isinstance(env_value, EnvValue):
-            env_value = EnvValue(env_value)
+    def __setitem__(self, key, value):
+        if key in self.data:
+            raise ValueError(f"Environ variable {key} already exists, delete it before.")
 
-        if key in self.data and not env_value.update:
-            raise ValueError(f"Environ variable {key} already exists, use update.")
-
-        logger.debug("Set environ variable %s=%s.", key, env_value.value)
-        self.data[key] = env_value.value
-        if env_value.confirmed and key not in self._confirmed:
-            self._confirmed.add(key)
-
-    def setdefault(self, key, value):
-        if key in self:
-            return self.data[key]
-        self[key] = value
-        return self.data[key]
-
-    def __iter__(self):
-        return iter(self._confirmed)
-
-    def __contains__(self, key):
-        return key in self._confirmed
-
-    def keys(self):
-        return self._confirmed
-
-    def values(self):
-        return [self.data[key] for key in self._confirmed]
-
-    def items(self):
-        return [(key, self.data[key]) for key in self._confirmed]
-
-    def getitems_sanitized(self, keys, sanitizer=None):
-        """Get multiple items at once and sanitize them.
-
-        See also :func:`incipyt.system.Environment.__getitem__`, which will be
-        used to pull each key from the environment.
-
-        :param keys: Required environment keys. If a key is `None`, it will be ignored.
-        :type keys: :class:`collections.abc.Sequence`
-        :param sanitizer: Will be called on key-value pairs to sanitize values.
-        :type sanitizer: :class:`function`
-        :return: Sanitized environment key-value pairs.
-        :rtype: :class:`dict`
-        """
-        return {
-            key: sanitizer(key, self[key]) if sanitizer else self[key]
-            for key in keys
-            if key is not None
-        }
+        logger.debug("Set environ variable %s=%s.", key, value)
+        self.data[key] = value
 
     def _prompt(self, key):
-        return click.prompt(
+        user_input = click.prompt(
             key.replace("_", " ").lower().capitalize(),
-            default=self.data[key] if key in self.data else "",
+            default=variables.metadata[key].default if key in variables.metadata else "",
             type=str,
         )
-
-    def __ior__(self, other):
-        self.update(other)
-        return self
+        return user_input if user_input else None
 
 
 environ = _Environ()
