@@ -1,13 +1,4 @@
 import collections.abc
-import dataclasses
-from typing import Any
-
-
-@dataclasses.dataclass
-class EnvValue:
-    value: Any
-    update: bool = False
-    confirmed: bool = False
 
 
 def attrs_eq(a, b, *args):

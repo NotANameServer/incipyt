@@ -1,13 +1,8 @@
 import os
-import sys
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import Toml
-
-# as of may 2022, the latest stable release of most bsd/linux
-# distributions ship a python whoose verion is at least 3.9
-LINUX_MIN_PYTHON_VERSION = (3, 9)
 
 
 class BuildSystem(tools.Tool):
@@ -56,10 +51,7 @@ class BuildSystem(tools.Tool):
 
         pyproject["project"] = {
             "authors": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
-            "description": templates.StringTemplate(
-                "{SUMMARY_DESCRIPTION}",
-                SUMMARY_DESCRIPTION="\t",
-            ),
+            "description": "{SUMMARY_DESCRIPTION}",
             "license": {"file": "LICENSE"},
             "maintainers": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
             "name": templates.StringTemplate(
@@ -68,16 +60,10 @@ class BuildSystem(tools.Tool):
             ),
             "readme": "README.md",
             "requires-python": templates.StringTemplate(
-                ">={AUDIENCE_PYTHON_VERSION}",
-                sanitizer=sanitizers.version,
-                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(
-                    min(sys.version_info, LINUX_MIN_PYTHON_VERSION)
-                ),
+                ">={AUDIENCE_PYTHON_VERSION}", sanitizer=sanitizers.version
             ),
             "version": templates.StringTemplate(
-                "{PACKAGE_VERSION}",
-                sanitizer=sanitizers.version,
-                PACKAGE_VERSION="0.0.0",
+                "{PACKAGE_VERSION}", sanitizer=sanitizers.version
             ),
         }
 

@@ -6,8 +6,7 @@ import warnings
 
 import click
 
-from incipyt import project, tools
-from incipyt._internal.utils import EnvValue
+from incipyt import project, tools, variables
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING
@@ -77,15 +76,15 @@ def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noq
     if folder == pathlib.Path():
         if any(folder.resolve().iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder.resolve()} is not empty.")
-        project.environ["PROJECT_NAME"] = folder.resolve().name
+        variables.metadata["PROJECT_NAME"].default = folder.resolve().name
     else:
         if (folder.is_absolute() and folder.is_dir() and any(folder.iterdir())) or (
             ("." / folder).is_dir() and any(("." / folder).resolve().iterdir())
         ):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
-        project.environ["PROJECT_NAME"] = folder.name
+        variables.metadata["PROJECT_NAME"].default = folder.name
 
-    project.environ["LICENSE"] = EnvValue(license, confirmed=True)
+    project.environ["LICENSE"] = license
 
     tools_to_install = [
         tool for tool in [tools.License(), vcs(), env(), build(check_build=check_build)] if tool

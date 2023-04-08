@@ -1,6 +1,6 @@
 from pytest import fixture, mark, raises
 
-from incipyt import project
+from incipyt import project, variables
 from incipyt._internal.templates import FormatterEnviron
 from tests.utils import mock_stdin
 
@@ -9,8 +9,8 @@ class _Context:
     @fixture
     def reset_environ(self):
         project.environ.clear()
-        project.environ["VARIABLE_NAME"] = project.EnvValue("value", confirmed=True)
-        project.environ["EMPTY_VARIABLE"] = project.EnvValue("", confirmed=True)
+        project.environ["VARIABLE_NAME"] = "value"
+        project.environ["EMPTY_VARIABLE"] = ""
 
     @fixture
     def simple_ctx(self, reset_environ):
@@ -84,7 +84,8 @@ class TestRenderString(_Context):
     def test_interp_kwarg(self, ctx, monkeypatch, request):
         mock_stdin(monkeypatch, "")
         ctx = request.getfixturevalue(ctx)
-        assert ctx.format("{OTHER_NAME}", OTHER_NAME="value") == "value"
+        variables._EnvMetadata("OTHER_NAME", default="value")
+        assert ctx.format("{OTHER_NAME}") == "value"
 
     @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
     def test_interp_undefined(self, ctx, monkeypatch, request):
