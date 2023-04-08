@@ -35,38 +35,27 @@ class StringTemplate(Formattable):
     environ values and overrides.
     """
 
-    def __init__(
-        self, format_string, confirmed=False, sanitizer=None, value_error=True, **kwargs
-    ):
-        r"""This class acts like a wrapper around a format string.
+    def __init__(self, format_string, sanitizer=None, value_error=True):
+        """This class acts like a wrapper around a format string.
 
         When an instance is called, it renders the underlying format string
         using environ values and overrides.
 
         :param format_string: A format string whose keyword argument will be substituted.
         :type format_string: :class:`str`
-        :param confirmed: Confirmed status for new variables from keyword args.
-        :type confirmed: :class:`bool`, optionnal
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
         :param value_error: Empty values generate errors.
         :type value_error: :class:`bool`
-        :param \**kwargs: Variables overrides that will be used for rendering and pushed to the environ.
-            Automatically wrapped in :class:`incipyt._internal.utils.EnvValue` if needed.
-        :type \**kwargs: :class:`str`, optionnal
         """
-        self._confirmed = confirmed
         self._sanitizer = sanitizer
         self._value_error = value_error
         self._format_string = format_string
-        self._kwargs = kwargs
 
     def __eq__(self, other):
         if isinstance(other, str):
             return self.format() == other
-        return utils.attrs_eq(
-            self, other, "_format_string", "_confirmed", "_sanitizer", "_value_error", "_kwargs"
-        )
+        return utils.attrs_eq(self, other, "_format_string", "_sanitizer", "_value_error")
 
     def __lt__(self, other):
         if isinstance(other, str):
@@ -79,9 +68,7 @@ class StringTemplate(Formattable):
         return self.format() > other.format()
 
     def __hash__(self):
-        return utils.attrs_hash(
-            self, "_format_string", "_confirmed", "_sanitizer", "_value_error", **self._kwargs
-        )
+        return utils.attrs_hash(self, "_format_string", "_sanitizer", "_value_error")
 
     def format(self):  # noqa: A003
         """Format the underlying format string using variables from the environ.
@@ -90,25 +77,15 @@ class StringTemplate(Formattable):
         :rtype: :class:`str`
         """
         return FormatterEnviron(sanitizer=self._sanitizer, value_error=self._value_error).format(
-            self._format_string,
-            **{
-                key: (
-                    value
-                    if isinstance(value, utils.EnvValue)
-                    else utils.EnvValue(value, confirmed=self._confirmed)
-                )
-                for key, value in self._kwargs.items()
-            },
+            self._format_string
         )
 
     def __repr__(self):
         return utils.make_repr(
             self,
             format_string=self._format_string,
-            confirmed=self._confirmed,
             sanitizer=self._sanitizer,
             value_error=self._value_error,
-            kwargs=self._kwargs,
         )
 
     @classmethod
@@ -441,8 +418,8 @@ class FormatterEnviron(abc.Mapping):
     def items(self):
         return zip(self.keys(), self.values())
 
-    def format(self, format_string, **kwargs):  # noqa: A003
-        r"""Render a format string.
+    def format(self, format_string):  # noqa: A003
+        """Render a format string.
 
         Variables will be request from the underlying environ, and undefined
         variables will be created. If `self._value_error` is `True` and an
@@ -453,16 +430,11 @@ class FormatterEnviron(abc.Mapping):
 
         :param template: A format string whose keyword argument will be substituted.
         :type template: :class:`str`
-        :param \**kwargs: Additional variables that will override environ variables.
-        :type \**kwargs: :class:`str`, optionnal
         :return: The rendered template or `None` if a context variable is empty.
         :rtype: :class:`str` or `None`
         """
 
         self._keys = [item[1] for item in Formatter().parse(format_string) if item[1]]
-        for key in self:
-            if key in kwargs:
-                self.data[key] = kwargs[key]
 
         with contextlib.suppress(ValueError):
             return format_string.format(**self)

@@ -1,10 +1,8 @@
 import os
-import sys
 
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import Toml
-from incipyt.tools.pep517.base import LINUX_MIN_PYTHON_VERSION
 
 
 class Poetry(tools.Tool):
@@ -71,10 +69,7 @@ class Poetry(tools.Tool):
 
         pyproject["tool", "poetry"] = {
             "authors": ["{AUTHOR_NAME} <{AUTHOR_EMAIL}>"],
-            "description": templates.StringTemplate(
-                "{SUMMARY_DESCRIPTION}",
-                SUMMARY_DESCRIPTION="\t",
-            ),
+            "description": "{SUMMARY_DESCRIPTION}",
             "license": "{LICENSE}",
             "maintainers": ["{AUTHOR_NAME} <{AUTHOR_EMAIL}>"],
             "name": templates.StringTemplate(
@@ -83,20 +78,14 @@ class Poetry(tools.Tool):
             ),
             "readme": "README.md",
             "version": templates.StringTemplate(
-                "{PACKAGE_VERSION}",
-                sanitizer=sanitizers.version,
-                PACKAGE_VERSION="0.0.0",
+                "{PACKAGE_VERSION}", sanitizer=sanitizers.version
             ),
         }
 
         pyproject["tool", "poetry", "dependencies"] = {
             "python": templates.StringTemplate(
-                ">={AUDIENCE_PYTHON_VERSION}",
-                sanitizer=sanitizers.version,
-                AUDIENCE_PYTHON_VERSION="{0[0]}.{0[1]}".format(
-                    min(sys.version_info, LINUX_MIN_PYTHON_VERSION)
-                ),
-            ),
+                ">={AUDIENCE_PYTHON_VERSION}", sanitizer=sanitizers.version
+            )
         }
 
         project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)

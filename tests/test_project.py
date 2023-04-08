@@ -22,69 +22,41 @@ class TestEnviron:
     def simple_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
-        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
+        project.environ["ONE"] = "1"
 
-    @fixture
-    def empty_auto_env(self, fake_process):
-        fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        project.environ.clear()
-
-    @fixture
-    def simple_auto_env(self, fake_process):
-        fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        project.environ.clear()
-        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
-
-    @mark.parametrize(
-        "env, input_values",
-        (
-            ("empty_environ", ["1"]),
-            ("simple_environ", [""]),
-            ("empty_auto_env", ["1"]),
-            ("simple_auto_env", []),
-        ),
-    )
+    @mark.parametrize("env, input_values", (("empty_environ", ["1"]), ("simple_environ", [""])))
     def test_pull(self, env, input_values, monkeypatch, request):
         request.getfixturevalue(env)
         mock_stdin(monkeypatch, input_values)
         assert project.environ["ONE"] == "1"
 
-    @mark.parametrize("env", ("simple_environ", "simple_auto_env"))
+    @mark.parametrize("env", ("simple_environ",))
     def test_push(self, env, request):
         request.getfixturevalue(env)
         with raises(ValueError):
             project.environ["ONE"] = "11"
 
-    @mark.parametrize("env, input_values", (("simple_environ", [""]), ("simple_auto_env", [])))
-    def test_update(self, env, input_values, monkeypatch, request):
+    @mark.parametrize("env, input_values", (("simple_environ", [""]),))
+    def test_del_and_push(self, env, input_values, monkeypatch, request):
         request.getfixturevalue(env)
-        project.environ["ONE"] = project.EnvValue("11", update=True)
+        del project.environ["ONE"]
+        project.environ["ONE"] = "11"
         mock_stdin(monkeypatch, input_values)
         assert project.environ["ONE"] == "11"
 
-    @mark.parametrize("env", ("empty_environ", "empty_auto_env"))
-    def test_confirmed(self, env, request):
-        request.getfixturevalue(env)
-        project.environ["ONE"] = project.EnvValue("1", confirmed=True)
-        assert project.environ["ONE"] == "1"
-
-    @mark.parametrize(
-        "env", ("empty_environ", "simple_environ", "empty_auto_env", "simple_auto_env")
-    )
+    @mark.parametrize("env", ("empty_environ", "simple_environ"))
     def test_python_cmd(self, env, request):
         request.getfixturevalue(env)
         assert project.environ["PYTHON_CMD"] == sys.executable
 
-    @mark.parametrize("env", ("empty_environ", "empty_auto_env"))
+    @mark.parametrize("env", ("empty_environ",))
     def test_iter(self, env, request):
         request.getfixturevalue(env)
-        project.environ["TWO"] = project.EnvValue("2", confirmed=True)
+        project.environ["TWO"] = "2"
         result = {key: project.environ[key] for key in project.environ}
         assert result == {"PYTHON_CMD": sys.executable, "TWO": "2", "YEAR": YEAR}
 
-    @mark.parametrize(
-        "env", ("empty_environ", "simple_environ", "empty_auto_env", "simple_auto_env")
-    )
+    @mark.parametrize("env", ("empty_environ", "simple_environ"))
     def test_run(self, env, request):
         request.getfixturevalue(env)
         result = commands.run(["cmd", "arg"])
@@ -96,12 +68,12 @@ class TestStructure:
     def reset_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ.clear()
-        project.environ["FOLDER_A"] = project.EnvValue("folderA", confirmed=True)
-        project.environ["FOLDER_B"] = project.EnvValue("folderB", confirmed=True)
-        project.environ["NAME_A"] = project.EnvValue("testA", confirmed=True)
-        project.environ["NAME_B"] = project.EnvValue("testB", confirmed=True)
-        project.environ["VALUE"] = project.EnvValue("1", confirmed=True)
-        project.environ["CONTENT"] = project.EnvValue("text", confirmed=True)
+        project.environ["FOLDER_A"] = "folderA"
+        project.environ["FOLDER_B"] = "folderB"
+        project.environ["NAME_A"] = "testA"
+        project.environ["NAME_B"] = "testB"
+        project.environ["VALUE"] = "1"
+        project.environ["CONTENT"] = "text"
 
     @fixture
     def reset_structure(self):

@@ -6,7 +6,6 @@ import subprocess
 
 from incipyt import project
 from incipyt._internal.templates import Formattable
-from incipyt._internal.utils import EnvValue
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,8 @@ def setenv_python_cmd(python_path):
     """
     if not python_path.is_absolute():
         raise AssertionError(f"{python_path} is not absolute.")
-    project.environ["PYTHON_CMD"] = EnvValue(os.fspath(python_path), update=True)
+    del project.environ["PYTHON_CMD"]
+    project.environ["PYTHON_CMD"] = os.fspath(python_path)
 
 
 def python_m(args, **kwargs):

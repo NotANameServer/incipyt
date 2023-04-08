@@ -1,7 +1,7 @@
 import click
 from pytest import fixture, mark, raises
 
-from incipyt import project
+from incipyt import project, variables
 from incipyt._internal.templates import (
     ChoiceTemplate,
     StringTemplate,
@@ -20,10 +20,6 @@ class TestStringTemplate:
         return StringTemplate("{ONE}")
 
     @fixture
-    def kwarg_st(self):
-        return StringTemplate("{ONE}", ONE="1-kwarg")
-
-    @fixture
     def sanitizer_st(self):
         return StringTemplate("{ONE}", sanitizer=lambda k, v: f"{v}-sanitizer")
 
@@ -31,9 +27,10 @@ class TestStringTemplate:
     def multiple_st(self):
         return StringTemplate("{ONE}-{TWO}-{THREE}")
 
-    def test_env_key_push(self, kwarg_st, reset_environ, monkeypatch):
+    def test_env_key_push(self, simple_st, reset_environ, monkeypatch):
         mock_stdin(monkeypatch, "")
-        kwarg_st.format()
+        variables._EnvMetadata("ONE", default="1-kwarg")
+        simple_st.format()
         assert project.environ["ONE"] == "1-kwarg"
 
     def test_env_key_push_prompt(self, simple_st, reset_environ, monkeypatch):
@@ -45,7 +42,6 @@ class TestStringTemplate:
         "st, variables, stdin, res",
         (
             ("simple_st", {"ONE": "1"}, "", "1"),
-            ("kwarg_st", {}, "", "1-kwarg"),
             ("sanitizer_st", {"ONE": "1"}, "", "1-sanitizer"),
             ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
@@ -55,6 +51,11 @@ class TestStringTemplate:
         st = request.getfixturevalue(st)
         project.environ |= variables
         assert st.format() == res
+
+    def test_format_metadata(self, simple_st, reset_environ, monkeypatch):
+        mock_stdin(monkeypatch, "")
+        variables._EnvMetadata("ONE", default="1-kwarg")
+        assert simple_st.format() == "1-kwarg"
 
     @mark.parametrize("st, stdin", (("simple_st", ""), ("multiple_st", "\n\n")))
     def test_format_null(self, st, stdin, reset_environ, request, monkeypatch):
