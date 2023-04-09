@@ -68,14 +68,14 @@ def test_path_exists(dumper, reset_environ, tmp_path):
             (
                 "[section]\n"
                 'first = "1"\n'
-                'third = [ "one", "two",]\n'
-                "[[section.fifth]]\n"
-                'one = "1.1"\n'
-                'two = "1.2"\n'
-                "\n"
-                "[[section.fifth]]\n"
-                'one = "2.1"\n'
-                'two = "2.2"\n'
+                "third = [\n"
+                '    "one",\n'
+                '    "two",\n'
+                "]\n"
+                "fifth = [\n"
+                '    { one = "1.1", two = "1.2" },\n'
+                '    { one = "2.1", two = "2.2" },\n'
+                "]\n"
                 "\n"
                 "[section.second]\n"
                 'one = "1"\n'
