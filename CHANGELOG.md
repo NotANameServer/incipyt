@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0](https://github.com/NotANameServer/incipyt/compare/v0.2.0...v0.3.0) (2023-04-09)
+
+
+### Features
+
+* **build:** flit supports ([3eccc8d](https://github.com/NotANameServer/incipyt/commit/3eccc8d976af066285a6892ed2abb384544e8988))
+* **build:** hatch support ([c44647f](https://github.com/NotANameServer/incipyt/commit/c44647f5727cbdadba667563fd86f97f7c6537e9))
+* **build:** new generic abstract class for PEP 517 builder ([93a01f5](https://github.com/NotANameServer/incipyt/commit/93a01f5131afc2e600a5a04d8ebf34a4f9f1d671))
+* **build:** pdm supports ([a6c0d7b](https://github.com/NotANameServer/incipyt/commit/a6c0d7b21b6c3c2a782f3719828b000c9181cb59))
+* **build:** poetry supports ([3292381](https://github.com/NotANameServer/incipyt/commit/3292381ca3ef7a0c67f9859f5ea5b9811433eed2))
+* command line options to select tools ([932e250](https://github.com/NotANameServer/incipyt/commit/932e250cc8608d2e8b22f5a6b82465cafc519e84))
+* copy template files to project ([7aa68e6](https://github.com/NotANameServer/incipyt/commit/7aa68e6f6df4d986c849501cf95b74132a405aaf))
+* **git:** include a generic gitignore ([ec80c7d](https://github.com/NotANameServer/incipyt/commit/ec80c7d6eb2fe95a0ae9e86269d13852ed6d0a63))
+* **git:** prompt user to set git config user.name ([975eb17](https://github.com/NotANameServer/incipyt/commit/975eb1761ab907db8ff4de5dcbae94d1aa3f918a))
+* **license:** choose a license from the CLI ([df1a0fd](https://github.com/NotANameServer/incipyt/commit/df1a0fd23d93cae3ebcb94705bc8e801e89b2511))
+* **setuptools:** keep classifiers and deps sorted ([d6b99e6](https://github.com/NotANameServer/incipyt/commit/d6b99e6e35cfd540f5c42a4bbdee5deacc7dc244))
+
+
+### Bug Fixes
+
+* **build:** make legacy Setuptools tool compliant with PEPs specification ([6a816e7](https://github.com/NotANameServer/incipyt/commit/6a816e7fccbe8ace7998186d722ec7cec5321518))
+* **git:** use empty author when git config fail ([c32ebf3](https://github.com/NotANameServer/incipyt/commit/c32ebf3c7b0814f1ecb2b084bdbcfa5d1df54e7e))
+* **venv:** upgrade pip to last version after venv creation ([537622b](https://github.com/NotANameServer/incipyt/commit/537622b11c9ea52fda9d52ede1138a54e147b877))
+
 ## [0.2.0](https://www.github.com/NotANameServer/incipyt/compare/v0.1.0...v0.2.0) (2022-05-28)
 
 
