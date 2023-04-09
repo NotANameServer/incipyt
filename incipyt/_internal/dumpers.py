@@ -3,7 +3,7 @@ import os
 import pathlib
 from abc import ABC, abstractmethod
 
-import toml
+import tomli_w
 
 from incipyt._internal import templates, utils
 
@@ -76,5 +76,5 @@ class TextFile(BaseDumper):
 
 class Toml(BaseDumper):
     def dump_in(self, config):
-        with self.open() as file:
-            toml.dump(config, file)
+        with self.open(mode="wb+") as file:
+            tomli_w.dump(config, file)
