@@ -33,4 +33,4 @@ class Hatch(pep517.BuildSystem):
             "requires": ["hatchling>=1.3.0"],
         }
 
-        signals.build_dependency.emit(dep_name="hatch>=1.2.0")
+        signals.build_dependency.emit(dep_name="hatch", min_version="1.2.0")
