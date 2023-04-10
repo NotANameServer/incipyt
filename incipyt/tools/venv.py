@@ -1,6 +1,7 @@
 import os
 
 from incipyt import commands, signals, tools
+from incipyt._internal.templates import FormatterEnviron
 
 
 class Venv(tools.Tool):
@@ -8,7 +9,7 @@ class Venv(tools.Tool):
 
     def add_to_structure(self):
         """Add venv configuration to `project.structure`, do nothing."""
-        signals.vcs_ignore.emit(pattern=".env/")
+        signals.vcs_ignore.emit(pattern="{VENV_FOLDER}/")
 
     def pre(self, workon):
         """Run `python -m venv .env`.
@@ -16,7 +17,7 @@ class Venv(tools.Tool):
         :param workon: Work-on folder.
         :type workon: :class:`pathlib.Path`
         """
-        env_path = workon / ".env"
+        env_path = workon / FormatterEnviron().format("{VENV_FOLDER}")
         commands.venv([os.fspath(env_path)])
         commands.setenv_python_cmd(
             env_path.resolve() / ("Scripts" if os.name == "nt" else "bin") / "python"
