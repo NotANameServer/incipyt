@@ -54,7 +54,7 @@ class TestEnviron:
         request.getfixturevalue(env)
         project.environ["TWO"] = "2"
         result = {key: project.environ[key] for key in project.environ}
-        assert result == {"PYTHON_CMD": sys.executable, "TWO": "2", "YEAR": YEAR}
+        assert result == {"TWO": "2"}
 
     @mark.parametrize("env", ("empty_environ", "simple_environ"))
     def test_run(self, env, request):
