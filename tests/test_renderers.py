@@ -1,4 +1,4 @@
-from pytest import fixture, mark, raises
+from pytest import fixture, mark
 
 from incipyt import project, variables
 from incipyt._internal.templates import FormatterEnviron
@@ -9,91 +9,136 @@ class _Context:
     @fixture
     def reset_environ(self):
         project.environ.clear()
-        project.environ["VARIABLE_NAME"] = "value"
-        project.environ["EMPTY_VARIABLE"] = ""
 
     @fixture
-    def simple_ctx(self, reset_environ):
+    def environ_ctx(self, reset_environ):
+        project.environ["VARIABLE_NAME"] = "value"
         return FormatterEnviron()
 
     @fixture
-    def no_error_ctx(self, reset_environ):
-        return FormatterEnviron(value_error=False)
+    def empty_ctx(self, reset_environ):
+        return FormatterEnviron()
 
     @fixture
-    def populated_ctx(self, simple_ctx):
-        simple_ctx.format("{VARIABLE_NAME}")
-        return simple_ctx
+    def default_ctx(self, reset_environ):
+        variables._EnvMetadata("VARIABLE_NAME", default="value")
+        return FormatterEnviron()
+
+    @fixture
+    def required_ctx(self, reset_environ):
+        variables._EnvMetadata("VARIABLE_NAME", required=True)
+        return FormatterEnviron()
 
 
 class TestFormatterEnviron(_Context):
-    def test_contains(self, simple_ctx):
-        assert "VARIABLE_NAME" in simple_ctx
-
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_contains_undefined(self, ctx, monkeypatch, request):
-        mock_stdin(monkeypatch, "value")
+    @mark.parametrize(
+        "ctx, input_values",
+        (
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
+        ),
+    )
+    def test_contains(self, ctx, input_values, monkeypatch, request):
         ctx = request.getfixturevalue(ctx)
-        assert "OTHER_NAME" in ctx
-        assert ctx["OTHER_NAME"] == "value"
+        mock_stdin(monkeypatch, input_values)
+        ctx.format("{VARIABLE_NAME}")
+        assert "VARIABLE_NAME" in ctx
 
-    def test_getitem_empty_simple(self, simple_ctx):
-        with raises(ValueError):
-            simple_ctx["EMPTY_VARIABLE"]
-
-    def test_getitem_empty_no_error(self, no_error_ctx):
-        assert not no_error_ctx["EMPTY_VARIABLE"]
-
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_getitem_sanitized(self, ctx, request):
+    @mark.parametrize(
+        "ctx, input_values",
+        (
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
+        ),
+    )
+    def test_getitem(self, ctx, input_values, monkeypatch, request):
         ctx = request.getfixturevalue(ctx)
+        mock_stdin(monkeypatch, input_values)
+        ctx.format("{VARIABLE_NAME}")
+        assert ctx["VARIABLE_NAME"] == "value"
+
+    @mark.parametrize(
+        "ctx, res", (("empty_ctx", None), ("default_ctx", "value"), ("required_ctx", ""))
+    )
+    def test_getitem_empty(self, ctx, res, monkeypatch, request):
+        ctx = request.getfixturevalue(ctx)
+        mock_stdin(monkeypatch, "")
+        ctx.format("{VARIABLE_NAME}")
+        assert ctx["VARIABLE_NAME"] == res
+
+    @mark.parametrize(
+        "ctx, input_values",
+        (
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
+        ),
+    )
+    def test_getitem_sanitized(self, ctx, input_values, monkeypatch, request):
+        ctx = request.getfixturevalue(ctx)
+        mock_stdin(monkeypatch, input_values)
         ctx._sanitizer = lambda k, v: v.upper()
+        ctx.format("{VARIABLE_NAME}")
         assert ctx["VARIABLE_NAME"] == "VALUE"
 
     @mark.parametrize(
-        "ctx, res",
-        (("simple_ctx", set()), ("no_error_ctx", set()), ("populated_ctx", {"VARIABLE_NAME"})),
-    )
-    def test_iteration(self, ctx, res, request):
-        ctx = request.getfixturevalue(ctx)
-        assert set(ctx) == res
-        assert len(ctx) == len(res)
-
-    @mark.parametrize(
-        "ctx, keys, values",
+        "ctx, input_values",
         (
-            ("simple_ctx", [], []),
-            ("no_error_ctx", [], []),
-            ("populated_ctx", ["VARIABLE_NAME"], ["value"]),
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
         ),
     )
-    def test_key_values(self, ctx, keys, values, request):
+    def test_iteration(self, ctx, input_values, monkeypatch, request):
         ctx = request.getfixturevalue(ctx)
-        assert list(ctx.keys()) == keys
-        assert list(ctx.values()) == values
-        assert list(ctx.items()) == list(zip(keys, values))
+        mock_stdin(monkeypatch, input_values)
+        ctx.format("{VARIABLE_NAME}")
+        assert set(ctx) == {"VARIABLE_NAME"}
+        assert len(ctx) == 1
+
+    @mark.parametrize(
+        "ctx, input_values",
+        (
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
+        ),
+    )
+    def test_key_values(self, ctx, input_values, monkeypatch, request):
+        ctx = request.getfixturevalue(ctx)
+        mock_stdin(monkeypatch, input_values)
+        ctx.format("{VARIABLE_NAME}")
+        assert list(ctx.keys()) == ["VARIABLE_NAME"]
+        assert list(ctx.values()) == ["value"]
+        assert list(ctx.items()) == [("VARIABLE_NAME", "value")]
 
 
 class TestRenderString(_Context):
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_interp(self, ctx, request):
+    @mark.parametrize(
+        "ctx, input_values",
+        (
+            ("environ_ctx", []),
+            ("empty_ctx", ["value"]),
+            ("default_ctx", [""]),
+            ("required_ctx", ["value"]),
+        ),
+    )
+    def test_interp(self, ctx, input_values, monkeypatch, request):
         ctx = request.getfixturevalue(ctx)
+        mock_stdin(monkeypatch, input_values)
         assert ctx.format("{VARIABLE_NAME}") == "value"
 
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_interp_kwarg(self, ctx, monkeypatch, request):
+    def test_interp_concat(self, environ_ctx, monkeypatch):
+        mock_stdin(monkeypatch, "other")
+        assert environ_ctx.format("{VARIABLE_NAME}_{OTHER_VARIABLE}") == "value_other"
+
+    def test_interp_empty(self, environ_ctx, monkeypatch):
         mock_stdin(monkeypatch, "")
-        ctx = request.getfixturevalue(ctx)
-        variables._EnvMetadata("OTHER_NAME", default="value")
-        assert ctx.format("{OTHER_NAME}") == "value"
-
-    @mark.parametrize("ctx", ("simple_ctx", "no_error_ctx"))
-    def test_interp_undefined(self, ctx, monkeypatch, request):
-        mock_stdin(monkeypatch, "value")
-        ctx = request.getfixturevalue(ctx)
-        assert ctx.format("{OTHER_NAME}") == "value"
-
-    @mark.parametrize("ctx, res", (("simple_ctx", None), ("no_error_ctx", "value")))
-    def test_interp_empty(self, ctx, res, request):
-        ctx = request.getfixturevalue(ctx)
-        assert ctx.format("{VARIABLE_NAME}{EMPTY_VARIABLE}") == res
+        assert environ_ctx.format("{VARIABLE_NAME}_{EMPTY_VARIABLE}") is None

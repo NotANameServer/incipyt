@@ -6,7 +6,6 @@ allow easier templating of collections data structures, such as dict-like
 template objects.
 """
 
-import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import abc
@@ -35,7 +34,7 @@ class StringTemplate(Formattable):
     environ values and overrides.
     """
 
-    def __init__(self, format_string, sanitizer=None, value_error=True):
+    def __init__(self, format_string, sanitizer=None):
         """This class acts like a wrapper around a format string.
 
         When an instance is called, it renders the underlying format string
@@ -45,17 +44,14 @@ class StringTemplate(Formattable):
         :type format_string: :class:`str`
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
         :type sanitizer: :class:`function` or `None`, optionnal
-        :param value_error: Empty values generate errors.
-        :type value_error: :class:`bool`
         """
         self._sanitizer = sanitizer
-        self._value_error = value_error
         self._format_string = format_string
 
     def __eq__(self, other):
         if isinstance(other, str):
             return self.format() == other
-        return utils.attrs_eq(self, other, "_format_string", "_sanitizer", "_value_error")
+        return utils.attrs_eq(self, other, "_format_string", "_sanitizer")
 
     def __lt__(self, other):
         if isinstance(other, str):
@@ -68,7 +64,7 @@ class StringTemplate(Formattable):
         return self.format() > other.format()
 
     def __hash__(self):
-        return utils.attrs_hash(self, "_format_string", "_sanitizer", "_value_error")
+        return utils.attrs_hash(self, "_format_string", "_sanitizer")
 
     def format(self):  # noqa: A003
         """Format the underlying format string using variables from the environ.
@@ -76,17 +72,10 @@ class StringTemplate(Formattable):
         :return: The formatted string.
         :rtype: :class:`str`
         """
-        return FormatterEnviron(sanitizer=self._sanitizer, value_error=self._value_error).format(
-            self._format_string
-        )
+        return FormatterEnviron(sanitizer=self._sanitizer).format(self._format_string)
 
     def __repr__(self):
-        return utils.make_repr(
-            self,
-            format_string=self._format_string,
-            sanitizer=self._sanitizer,
-            value_error=self._value_error,
-        )
+        return utils.make_repr(self, format_string=self._format_string, sanitizer=self._sanitizer)
 
     @classmethod
     def wrap(cls, value):
@@ -376,7 +365,7 @@ class FormatterEnviron(abc.Mapping):
     It can be used to render template strings.
     """
 
-    def __init__(self, sanitizer=None, value_error=True):
+    def __init__(self, sanitizer=None):
         """Class wrapping an environ and providing an interface to render templates.
 
         :param sanitizer: An optionnal callable to sanitize the values given (key, value) pairs.
@@ -387,7 +376,6 @@ class FormatterEnviron(abc.Mapping):
         self.data = project.environ
         self._keys = set()
         self._sanitizer = sanitizer
-        self._value_error = value_error
 
     def __contains__(self, key):
         if key not in self.data:
@@ -398,10 +386,7 @@ class FormatterEnviron(abc.Mapping):
     def __getitem__(self, key):
         # Call to inner dict __getitem__ will create missing keys
         value = self.data[key]
-        if self._value_error and not value:
-            raise ValueError
-
-        return self._sanitizer(key, value) if self._sanitizer else value
+        return self._sanitizer(key, value) if value is not None and self._sanitizer else value
 
     def __iter__(self):
         return iter(self._keys)
@@ -422,8 +407,7 @@ class FormatterEnviron(abc.Mapping):
         """Render a format string.
 
         Variables will be request from the underlying environ, and undefined
-        variables will be created. If `self._value_error` is `True` and an
-        empty variable will cause the whole render result to be `None`.
+        variables will be created.
 
         Additional variables can be specified using keyword arguments. They
         will be added to the environ, hence they will override environ values.
@@ -435,6 +419,5 @@ class FormatterEnviron(abc.Mapping):
         """
 
         self._keys = [item[1] for item in Formatter().parse(format_string) if item[1]]
-
-        with contextlib.suppress(ValueError):
-            return format_string.format(**self)
+        formatted_string = format_string.format(**self)
+        return formatted_string if None not in self.values() else None
