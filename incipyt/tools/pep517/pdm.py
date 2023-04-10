@@ -33,4 +33,4 @@ class PDM(pep517.BuildSystem):
             "requires": ["pdm-pep517>=1.0.0"],
         }
 
-        signals.build_dependency.emit(dep_name="pdm>=2.0.0")
+        signals.build_dependency.emit(dep_name="pdm", min_version="2.0.0")
