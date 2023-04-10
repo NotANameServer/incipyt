@@ -1,9 +1,7 @@
 import collections
 import importlib
 import logging
-import sys
 from collections import abc
-from datetime import date
 
 import click
 
@@ -32,9 +30,6 @@ class _Environ(collections.UserDict):
 
         importlib.reload(variables)
 
-        self.data["PYTHON_CMD"] = sys.executable
-        self.data["YEAR"] = date.today().year
-
     def __init__(self):
         self.data = {}
         self.clear()
@@ -54,11 +49,14 @@ class _Environ(collections.UserDict):
         self.data[key] = value
 
     def _prompt(self, key):
-        user_input = click.prompt(
-            key.replace("_", " ").lower().capitalize(),
-            default=variables.metadata[key].default if key in variables.metadata else "",
-            type=str,
-        )
+        if key in variables.metadata and variables.metadata[key].do_not_prompt:
+            user_input = variables.metadata[key].default
+        else:
+            user_input = click.prompt(
+                key.replace("_", " ").lower().capitalize(),
+                default=variables.metadata[key].default if key in variables.metadata else "",
+                type=str,
+            )
         return user_input if user_input else None
 
 

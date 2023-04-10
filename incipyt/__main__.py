@@ -84,7 +84,7 @@ def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noq
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         variables.metadata["PROJECT_NAME"].default = folder.name
 
-    project.environ["LICENSE"] = license
+    variables.metadata["LICENSE"].default = license
 
     tools_to_install = [
         tool for tool in [tools.License(), vcs(), env(), build(check_build=check_build)] if tool
