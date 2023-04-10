@@ -30,6 +30,14 @@ def choice_callback(_ctx, _param, _choice):
 @click.option("-s", "--silent", count=True)
 @click.version_option()
 @click.option(
+    "--license",
+    required=True,
+    default="Copyright",
+    type=click.Choice(tools.license.classifiers, case_sensitive=False),
+    help="Software license",
+    prompt=True,
+)
+@click.option(
     "--vcs",
     required=True,
     show_default=True,
@@ -56,22 +64,18 @@ def choice_callback(_ctx, _param, _choice):
     callback=choice_callback,
     help="Build system to use for building wheel and source distributions.",
 )
+# Other options:
 @click.option(
     "--check-build",
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
-@click.option(
-    "--license",
-    required=True,
-    default="Copyright",
-    type=click.Choice(tools.license.classifiers, case_sensitive=False),
-    help="Software license",
-    prompt=True,
-)
-def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noqa: A002
+def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: A002
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
+
+    # Populate metadata from other options
+    variables._update_from_dict(**kwargs)
 
     if folder == pathlib.Path():
         if any(folder.resolve().iterdir()):
@@ -84,11 +88,9 @@ def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noq
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
         variables.metadata["PROJECT_NAME"].default = folder.name
 
-    variables.metadata["LICENSE"].default = license
+    project.environ["LICENSE"] = license
 
-    tools_to_install = [
-        tool for tool in [tools.License(), vcs(), env(), build(check_build=check_build)] if tool
-    ]
+    tools_to_install = [tool for tool in [vcs(), tools.License(), env(), build()] if tool]
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)

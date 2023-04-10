@@ -8,8 +8,7 @@ from incipyt._internal.dumpers import Toml
 class Poetry(tools.Tool):
     """Scripts to add Poetry to :class:`incipyt.project._Structure`."""
 
-    def __init__(self, check_build=False):
-        self.check_build = check_build
+    def __init__(self):
         signals.build_dependency.connect(self._slot_dependency)
         signals.classifier.connect(self._slot_classifier)
         signals.project_url.connect(self._slot_url)
@@ -130,6 +129,6 @@ class Poetry(tools.Tool):
             ["poetry", "install"],
             cwd=os.fspath(workon),
         )
-        if self.check_build:
+        if project.environ["CHECK_BUILD"]:
             commands.pip_install(["build"])
             commands.build([os.fspath(workon)])
