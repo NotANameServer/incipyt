@@ -87,7 +87,7 @@ def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noq
     variables.metadata["LICENSE"].default = license
 
     tools_to_install = [
-        tool for tool in [tools.License(), vcs(), env(), build(check_build)] if tool
+        tool for tool in [tools.License(), vcs(), env(), build(check_build=check_build)] if tool
     ]
 
     for tool in tools_to_install:
