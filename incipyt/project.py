@@ -57,7 +57,14 @@ class _Environ(collections.UserDict):
                 default=variables.metadata[key].default if key in variables.metadata else "",
                 type=str,
             )
-        return user_input if user_input else None
+        if user_input:
+            return user_input
+        else:
+            return (
+                user_input
+                if key in variables.metadata and variables.metadata[key].required
+                else None
+            )
 
 
 environ = _Environ()
@@ -173,7 +180,7 @@ class _Structure:
                     template[index] = value.format()
                 else:
                     _Structure._visit(value)
-                if not template[index]:
+                if template[index] == [] or template[index] == {}:
                     template[index] = None
 
             while None in template:
@@ -187,7 +194,7 @@ class _Structure:
                     template[key] = value.format()
                 else:
                     _Structure._visit(value)
-                if not template[key]:
+                if template[key] == [] or template[key] == {}:
                     template[key] = None
 
             for key in [key for key, value in template.items() if value is None]:
