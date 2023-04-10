@@ -100,6 +100,7 @@ _EnvMetadata("SUMMARY_DESCRIPTION", required=True)
 _EnvMetadata("YEAR", default=date.today().year, do_not_prompt=True)
 
 _EnvMetadata("CHECK_BUILD", default=False, do_not_prompt=True)
+_EnvMetadata("VENV_FOLDER", default=".venv", do_not_prompt=True)
 
 # Populate metadata from system environment variables
 _update_from_dict(**os.environ)

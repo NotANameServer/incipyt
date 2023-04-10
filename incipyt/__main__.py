@@ -70,6 +70,11 @@ def choice_callback(_ctx, _param, _choice):
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
 )
+@click.option(
+    "--venv-folder",
+    default=".venv",
+    hidden=True,
+)
 def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: A002
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
