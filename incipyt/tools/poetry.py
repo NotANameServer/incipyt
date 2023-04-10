@@ -10,7 +10,7 @@ from incipyt.tools.pep517.base import LINUX_MIN_PYTHON_VERSION
 class Poetry(tools.Tool):
     """Scripts to add Poetry to :class:`incipyt.project._Structure`."""
 
-    def __init__(self, check_build=False, **kwargs):
+    def __init__(self, check_build=False):
         self.check_build = check_build
         signals.build_dependency.connect(self._slot_dependency)
         signals.classifier.connect(self._slot_classifier)
