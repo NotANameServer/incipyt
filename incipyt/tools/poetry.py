@@ -1,6 +1,6 @@
 import os
 
-from incipyt import commands, project, signals, tools
+from incipyt import commands, project, signals, tools, variables
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import Toml
 
@@ -13,6 +13,9 @@ class Poetry(tools.Tool):
         signals.build_dependency.connect(self._slot_dependency)
         signals.classifier.connect(self._slot_classifier)
         signals.project_url.connect(self._slot_url)
+
+        variables.metadata["AUTHOR_NAME"].required = True
+        variables.metadata["AUTHOR_EMAIL"].required = True
 
     def add_to_structure(self):
         """Add poetry configuration to `project.structure`.
@@ -43,11 +46,9 @@ class Poetry(tools.Tool):
             [tool.poetry.dependencies]
             python = ">={PYTHON_VERSION}"
 
-            [tool.poetry.extras]
-            dev = [
-                "build",
-                "poetry",
-            ]
+            [tool.poetry.dev-dependencies]
+            build = "*"
+            poetry = "*"
 
         If this configuration cannot be populate like that, an error is raised.
 
