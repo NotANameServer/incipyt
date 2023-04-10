@@ -16,82 +16,149 @@ class TestStringTemplate:
         project.environ.clear()
 
     @fixture
-    def simple_st(self):
+    def simple_st(self, reset_environ):
         return StringTemplate("{ONE}")
 
     @fixture
-    def sanitizer_st(self):
+    def sanitizer_st(self, reset_environ):
         return StringTemplate("{ONE}", sanitizer=lambda k, v: f"{v}-sanitizer")
 
     @fixture
-    def multiple_st(self):
+    def multiple_st(self, reset_environ):
         return StringTemplate("{ONE}-{TWO}-{THREE}")
 
-    def test_env_key_push(self, simple_st, reset_environ, monkeypatch):
-        mock_stdin(monkeypatch, "")
-        variables._EnvMetadata("ONE", default="1-kwarg")
-        simple_st.format()
-        assert project.environ["ONE"] == "1-kwarg"
-
-    def test_env_key_push_prompt(self, simple_st, reset_environ, monkeypatch):
-        mock_stdin(monkeypatch, "1")
-        simple_st.format()
-        assert project.environ["ONE"] == "1"
+    @mark.parametrize(
+        "st, env_vars, stdin, res",
+        (
+            ("simple_st", {"ONE": "1"}, "", "1"),
+            ("sanitizer_st", {"ONE": "1"}, "", "1"),
+            ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1"),
+        ),
+    )
+    def test_env_key_push_default(self, st, env_vars, stdin, res, request, monkeypatch):
+        st = request.getfixturevalue(st)
+        mock_stdin(monkeypatch, stdin)
+        for key, value in env_vars.items():
+            variables._EnvMetadata(key, default=value)
+        st.format()
+        assert project.environ["ONE"] == res
 
     @mark.parametrize(
-        "st, variables, stdin, res",
+        "st, env_vars, res",
+        (
+            ("simple_st", {"ONE": "1"}, "1"),
+            ("sanitizer_st", {"ONE": "1"}, "1"),
+            ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1"),
+        ),
+    )
+    def test_env_key_push_environ(self, st, env_vars, res, request):
+        st = request.getfixturevalue(st)
+        project.environ |= env_vars
+        st.format()
+        assert project.environ["ONE"] == res
+
+    @mark.parametrize(
+        "st, env_vars, stdin",
+        (
+            ("simple_st", ["ONE"], ""),
+            ("sanitizer_st", ["ONE"], ""),
+            ("multiple_st", ["ONE", "TWO", "THREE"], "\n\n"),
+        ),
+    )
+    def test_env_key_push_required(self, st, env_vars, stdin, request, monkeypatch):
+        st = request.getfixturevalue(st)
+        mock_stdin(monkeypatch, stdin)
+        for key in env_vars:
+            variables._EnvMetadata(key, required=True)
+        st.format()
+        assert not project.environ["ONE"]
+
+    @mark.parametrize(
+        "st, env_vars, stdin, res",
         (
             ("simple_st", {"ONE": "1"}, "", "1"),
             ("sanitizer_st", {"ONE": "1"}, "", "1-sanitizer"),
             ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "\n\n", "1-2-3"),
         ),
     )
-    def test_format(self, st, variables, stdin, res, reset_environ, request, monkeypatch):
-        mock_stdin(monkeypatch, stdin)
+    def test_format_default(self, st, env_vars, stdin, res, request, monkeypatch):
         st = request.getfixturevalue(st)
-        project.environ |= variables
+        mock_stdin(monkeypatch, stdin)
+        for key, value in env_vars.items():
+            variables._EnvMetadata(key, default=value)
         assert st.format() == res
 
-    def test_format_metadata(self, simple_st, reset_environ, monkeypatch):
-        mock_stdin(monkeypatch, "")
-        variables._EnvMetadata("ONE", default="1-kwarg")
-        assert simple_st.format() == "1-kwarg"
-
-    @mark.parametrize("st, stdin", (("simple_st", ""), ("multiple_st", "\n\n")))
-    def test_format_null(self, st, stdin, reset_environ, request, monkeypatch):
-        mock_stdin(monkeypatch, stdin)
+    @mark.parametrize(
+        "st, env_vars, res",
+        (
+            ("simple_st", {"ONE": "1"}, "1"),
+            ("sanitizer_st", {"ONE": "1"}, "1-sanitizer"),
+            ("multiple_st", {"ONE": "1", "TWO": "2", "THREE": "3"}, "1-2-3"),
+        ),
+    )
+    def test_format_environ(self, st, env_vars, res, request):
         st = request.getfixturevalue(st)
-        project.environ |= {"ONE": "", "TWO": "2", "THREE": "3"}
+        project.environ |= env_vars
+        assert st.format() == res
+
+    @mark.parametrize(
+        "st, env_vars, stdin",
+        (
+            ("simple_st", {}, ""),
+            ("sanitizer_st", {}, ""),
+            ("multiple_st", {"TWO": "2", "THREE": "3"}, "\n\n"),
+        ),
+    )
+    def test_format_none(self, st, env_vars, stdin, request, monkeypatch):
+        st = request.getfixturevalue(st)
+        mock_stdin(monkeypatch, stdin)
+        for key, value in env_vars.items():
+            variables._EnvMetadata(key, default=value)
         assert st.format() is None
+
+    @mark.parametrize(
+        "st, env_vars, stdin, res",
+        (
+            ("simple_st", ["ONE"], "", ""),
+            ("sanitizer_st", ["ONE"], "", "-sanitizer"),
+            ("multiple_st", ["ONE", "TWO", "THREE"], "\n\n", "--"),
+        ),
+    )
+    def test_format_required(self, st, env_vars, stdin, res, request, monkeypatch):
+        st = request.getfixturevalue(st)
+        mock_stdin(monkeypatch, stdin)
+        for key in env_vars:
+            variables._EnvMetadata(key, required=True)
+        assert st.format() == res
 
 
 class TestChoiceTemplate:
     @fixture
-    def simple_mst(self):
+    def reset_environ(self):
+        project.environ.clear()
+
+    @fixture
+    def simple_mst(self, reset_environ):
         return ChoiceTemplate("a", "b")
 
     @fixture
-    def formattable_mst(self):
+    def formattable_mst(self, reset_environ):
         return ChoiceTemplate(StringTemplate("a"), StringTemplate("b"))
-
-    @fixture
-    def reset_environ(self):
-        project.environ.clear()
 
     def test_mst_tail(self, simple_mst):
         mst = ChoiceTemplate("x", simple_mst)
         assert mst._values == {StringTemplate("x"), StringTemplate("a"), StringTemplate("b")}
 
     @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
-    def test_call(self, mst, reset_environ, monkeypatch, request):
-        mock_stdin(monkeypatch, "a")
+    def test_call(self, mst, monkeypatch, request):
         mst = request.getfixturevalue(mst)
+        mock_stdin(monkeypatch, "a")
         assert mst.format() == "a"
 
     @mark.parametrize("mst", ("simple_mst", "formattable_mst"))
-    def test_call_invalid(self, mst, reset_environ, monkeypatch, request):
-        mock_stdin(monkeypatch, "x")
+    def test_call_invalid(self, mst, monkeypatch, request):
         mst = request.getfixturevalue(mst)
+        mock_stdin(monkeypatch, "x")
         with raises(click.exceptions.Abort):
             mst.format()
 
@@ -226,27 +293,27 @@ class TestTemplateVisitor:
         project.environ.clear()
 
     @fixture
-    def empty_td(self):
+    def empty_td(self, reset_environ):
         return {}
 
     @fixture
-    def simple_td(self):
+    def simple_td(self, reset_environ):
         return {"1": StringTemplate("{ONE}")}
 
     @fixture
-    def nested_td(self):
+    def nested_td(self, reset_environ):
         return {"1": {"2": {"3": StringTemplate("{ONE}")}}}
 
     @fixture
-    def choice_td(self):
+    def choice_td(self, reset_environ):
         return {"1": ChoiceTemplate("{ONE}", "b")}
 
     @fixture
-    def sequence_td(self):
+    def sequence_td(self, reset_environ):
         return {"1": [StringTemplate("{ONE}"), {2: StringTemplate("b")}]}
 
     @fixture
-    def single_td(self):
+    def single_td(self, reset_environ):
         return {"1": [StringTemplate("{ONE}")]}
 
     @mark.parametrize(
@@ -264,8 +331,8 @@ class TestTemplateVisitor:
             ("choice_td", {"1": "a"}, ["a", "a"]),
         ),
     )
-    def test_call(self, td, res, reset_environ, input_values, monkeypatch, request):
-        mock_stdin(monkeypatch, input_values)
+    def test_call(self, td, res, input_values, monkeypatch, request):
         td = request.getfixturevalue(td)
+        mock_stdin(monkeypatch, input_values)
         project._Structure._visit(td)
         assert td == res

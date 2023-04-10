@@ -38,11 +38,24 @@ class _EnvMetadata:
         _EnvMetadata("VARIABLE_NAME", do_not_prompt=True)
 
     If True, the prompt is bypassed and the `default` value is used.
+
+    Field `required: bool = False`:
+
+    .. code-block::
+
+        EnvMetadata("VARIABLE_NAME", required=True)
+
+    When there is no `default` suggestion, if no value is given when prompt asks for it
+    `None` is saved in `environ` and all :class:`incipyt._internal.templates.Formattable`
+    values will be purge from template dictionary before commiting. When `True`, an empty
+    string is saved in `environ`. Note that if the `default` suggestion is not empty,
+    `required` has no effect as the prompt result will never be an empty string.
     """
 
     name: str
     default: Any = ""
     do_not_prompt: bool = False
+    required: bool = False
 
     def __post_init__(self):
         if self.name in metadata:
@@ -62,6 +75,7 @@ _EnvMetadata("LICENSE", default="Copyright", do_not_prompt=True)
 _EnvMetadata("PACKAGE_VERSION", default="0.0.0")
 _EnvMetadata("PROJECT_NAME")
 _EnvMetadata("PYTHON_CMD", default=sys.executable, do_not_prompt=True)
+_EnvMetadata("SUMMARY_DESCRIPTION", required=True)
 _EnvMetadata("YEAR", default=date.today().year, do_not_prompt=True)
 
 # Populate metadata from system environment variables
