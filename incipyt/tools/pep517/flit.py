@@ -33,4 +33,4 @@ class Flit(pep517.BuildSystem):
             "requires": ["flit_core>=3.4.0"],
         }
 
-        signals.build_dependency.emit(dep_name="flit>=3.4.0")
+        signals.build_dependency.emit(dep_name="flit", min_version="3.4.0")

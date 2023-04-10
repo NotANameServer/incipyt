@@ -46,7 +46,7 @@ class Poetry(tools.Tool):
             python = ">={PYTHON_VERSION}"
 
             [tool.poetry.dev-dependencies]
-            build = "*"
+            build = ">=0.2.0"
             poetry = "*"
 
         If this configuration cannot be populate like that, an error is raised.
@@ -91,7 +91,7 @@ class Poetry(tools.Tool):
         project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
         project.structure.use_template("README.md")
 
-        signals.build_dependency.emit(dep_name="build")
+        signals.build_dependency.emit(dep_name="build", min_version="0.2.0")
         signals.build_dependency.emit(dep_name="poetry")
 
         signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
@@ -104,10 +104,10 @@ class Poetry(tools.Tool):
             pyproject["tool", "poetry", "classifiers"] = []
         pyproject["tool", "poetry", "classifiers"].append(classifier)
 
-    def _slot_dependency(self, dep_name, **kwargs):
+    def _slot_dependency(self, dep_name, min_version=None, **kwargs):
         project.structure.get_config_dict(Toml("pyproject.toml"))[
             "tool", "poetry", "dev-dependencies"
-        ] = {dep_name: "*"}
+        ] = {dep_name: "*" if min_version is None else f">={min_version}"}
 
     def _slot_url(self, url_kind, url_value, **kwargs):
         project.structure.get_config_dict(Toml("pyproject.toml"))["tool", "poetry"] = {

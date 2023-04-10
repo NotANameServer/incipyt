@@ -69,7 +69,7 @@ class BuildSystem(tools.Tool):
         project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
         project.structure.use_template("README.md")
 
-        signals.build_dependency.emit(dep_name="build>=0.2.0")
+        signals.build_dependency.emit(dep_name="build", min_version="0.2.0")
 
         signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
 
@@ -82,11 +82,13 @@ class BuildSystem(tools.Tool):
             pyproject["project", "classifiers"] = []
         pyproject["project", "classifiers"].append(classifier)
 
-    def _slot_dependency(self, dep_name, **kwargs):
+    def _slot_dependency(self, dep_name, min_version=None, **kwargs):
         pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
         if ("project", "optional-dependencies", "dev") not in pyproject:
             pyproject["project", "optional-dependencies", "dev"] = []
-        pyproject["project", "optional-dependencies", "dev"].append(dep_name)
+        pyproject["project", "optional-dependencies", "dev"].append(
+            dep_name if min_version is None else f"{dep_name}>={min_version}"
+        )
 
     def _slot_url(self, url_kind, url_value, **kwargs):
         project.structure.get_config_dict(Toml("pyproject.toml"))["project", "urls"] = {
