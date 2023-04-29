@@ -4,8 +4,9 @@ import logging
 import os
 import subprocess
 
-from incipyt import project, variables
+from incipyt import project
 from incipyt._internal.templates import Formattable
+from incipyt.variables import metadata_setter
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def setenv_python_cmd(python_path):
     if not python_path.is_absolute():
         raise AssertionError(f"{python_path} is not absolute.")
     del project.environ["PYTHON_CMD"]
-    variables.metadata["PYTHON_CMD"].default = os.fspath(python_path)
+    metadata_setter.default("PYTHON_CMD", os.fspath(python_path))
 
 
 def python_m(args, **kwargs):
