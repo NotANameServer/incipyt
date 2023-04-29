@@ -5,9 +5,10 @@ import sys
 
 import click
 
-from incipyt import project, signals, tools, variables
+from incipyt import project, signals, tools
 from incipyt._internal.dumpers import TextFile
 from incipyt.commands import git, git_get_config
+from incipyt.variables import metadata_setter
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +52,10 @@ class Git(tools.Tool):
         git(["init", os.fspath(workon)])
         git_name = git_get_config("user.name", workon=workon)
         if git_name:
-            variables.metadata["AUTHOR_NAME"].default = git_name
+            metadata_setter.default("AUTHOR_NAME", git_name)
         git_email = git_get_config("user.email", workon=workon)
         if git_email:
-            variables.metadata["AUTHOR_EMAIL"].default = git_email
+            metadata_setter.default("AUTHOR_NAME", git_email)
 
     def post(self, workon):
         """Check config name+email and then run `git add --all`.
