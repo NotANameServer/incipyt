@@ -7,6 +7,7 @@ import warnings
 import click
 
 from incipyt import project, tools, variables
+from incipyt.variables import metadata_setter
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING
@@ -82,24 +83,26 @@ def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: 
     # Populate metadata from other options
     variables._update_from_dict(**kwargs)
 
+    tools_to_install = [tool for tool in [vcs(), tools.License(), env(), build()] if tool]
+    metadata_setter._stage = "add_to_structure"
+
     if folder == pathlib.Path():
         if any(folder.resolve().iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder.resolve()} is not empty.")
-        variables.metadata["PROJECT_NAME"].default = folder.resolve().name
+        metadata_setter.default("PROJECT_NAME", folder.resolve().name)
     else:
         if (folder.is_absolute() and folder.is_dir() and any(folder.iterdir())) or (
             ("." / folder).is_dir() and any(("." / folder).resolve().iterdir())
         ):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
-        variables.metadata["PROJECT_NAME"].default = folder.name
+        metadata_setter.default("PROJECT_NAME", folder.name)
 
     project.environ["LICENSE"] = license
-
-    tools_to_install = [tool for tool in [vcs(), tools.License(), env(), build()] if tool]
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)
         tool.add_to_structure()
+    metadata_setter._stage = "pre"
 
     logger.info("The project will be created at %s", folder.resolve())
     project.structure.mkdir(folder)
@@ -107,6 +110,7 @@ def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: 
     for tool in tools_to_install:
         logger.info("Running pre-script for %s...", tool)
         tool.pre(folder)
+    metadata_setter._stage = "post"
 
     logger.info("Commit project structure.")
     project.structure.commit()
