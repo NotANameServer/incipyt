@@ -41,7 +41,7 @@ incipyt provides a rich command line interface so you can choose various build
 systems, version control system, virtual environments, documentation software,
 linters, formatters, etc.
 
-	$ python -m incipyt --help
+    $ python -m incipyt --help
 
 ## Contribute
 
