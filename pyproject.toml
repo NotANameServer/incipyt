@@ -32,6 +32,7 @@ dependencies = [
   "click",
   "signalslot",
   "tomli_w",
+  "tomli; python_version<'3.11'"
 ]
 
 [project.optional-dependencies]
