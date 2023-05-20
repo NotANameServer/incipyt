@@ -7,6 +7,7 @@ from incipyt._internal.templates import (
     StringTemplate,
     TemplateDict,
 )
+from incipyt.project.structure import visit as structure_visit
 from tests.utils import mock_stdin
 
 
@@ -334,5 +335,5 @@ class TestTemplateVisitor:
     def test_call(self, td, res, input_values, monkeypatch, request):
         td = request.getfixturevalue(td)
         mock_stdin(monkeypatch, input_values)
-        project._Structure._visit(td)
+        structure_visit(td)
         assert td == res

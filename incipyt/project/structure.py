@@ -1,76 +1,53 @@
-import collections
-import importlib
 import logging
 from collections import abc
 
-import click
-
-from incipyt import variables
 from incipyt._internal import dumpers, templates
 from incipyt._internal.utils import is_nonstring_sequence
 
 logger = logging.getLogger(__name__)
 
 
-class _Environ(collections.UserDict):
-    """Manage environ variables using for substitutions in patterns.
+def visit(template):
+    """Visit the `template` nested-dictionary structure.
 
-    A :class:`Environ` object `environ` is a dictionnary.
+    All :class:`incipyt._internal.templates.Formattable` values of the template dictionary will be
+    evaluated and replaced by their results. All nested structures will be recursively
+    visited and processed too.
 
-    .. code-block::
-
-        environ["VARIABLE_NAME"] = "something"
-
-    If a specific variable hasn't been set, it can be asked for it anyway and
-    it will be add to the `environ` immediately.
+    :param template: The template dictionary or list to visit.
+    :type template: :class:`collections.abc.MutableMapping` of :class:`collections.abc.MutableSequence`
     """
+    if is_nonstring_sequence(template):
+        for index, value in enumerate(template):
+            if isinstance(value, templates.Formattable):
+                template[index] = value.format()
+            else:
+                visit(value)
+            if template[index] == [] or template[index] == {}:
+                template[index] = None
 
-    def clear(self):
-        self.data.clear()
+        while None in template:
+            template.remove(None)
 
-        importlib.reload(variables)
+    elif isinstance(template, abc.MutableMapping):
+        for key, value in template.items():
+            logger.debug("Visit %s to process environ variables.", key)
 
-    def __init__(self):
-        self.data = {}
-        self.clear()
+            if isinstance(value, templates.Formattable):
+                template[key] = value.format()
+            else:
+                visit(value)
+            if template[key] == [] or template[key] == {}:
+                template[key] = None
 
-    def __getitem__(self, key):
-        if key not in self.data:
-            logger.debug("Missing environ variable %s, request it.", key)
-            self.data[key] = self._prompt(key)
+        for key in [key for key, value in template.items() if value is None]:
+            del template[key]
 
-        return self.data[key]
-
-    def __setitem__(self, key, value):
-        if key in self.data:
-            raise ValueError(f"Environ variable {key} already exists, delete it before.")
-
-        logger.debug("Set environ variable %s=%s.", key, value)
-        self.data[key] = value
-
-    def _prompt(self, key):
-        if key in variables.metadata and variables.metadata[key].do_not_prompt:
-            user_input = variables.metadata[key].default
-        else:
-            user_input = click.prompt(
-                key.replace("_", " ").lower().capitalize(),
-                default=variables.metadata[key].default if key in variables.metadata else "",
-                type=str,
-            )
-        if user_input:
-            return user_input
-        else:
-            return (
-                user_input
-                if key in variables.metadata and variables.metadata[key].required
-                else None
-            )
+    else:
+        raise AssertionError(f"{type(template)} do not support visitation.")
 
 
-environ = _Environ()
-
-
-class _Structure:
+class _Structure:  # singleton
     """Represents all configuration and template files to commit for the new project.
 
     An instance internally stores mappables between path objects and template
@@ -85,6 +62,7 @@ class _Structure:
     """
 
     def clear(self):
+        """Reset the structure."""
         self._configurations = {}
 
     def __init__(self):
@@ -143,7 +121,7 @@ class _Structure:
         """
         for config_root, config in self._configurations.items():
             logger.info("Process environ variables for %s.", str(config_root))
-            _Structure._visit(config)
+            visit(config)
 
         for config_root, config in self._configurations.items():
             logger.info("Write configuration file %s.", str(config_root))
@@ -163,45 +141,5 @@ class _Structure:
             logger.info("Mkdir folders for %s.", str(config_root))
             config_root.mkdir()
 
-    @staticmethod
-    def _visit(template):
-        """Visit the `template` nested-dictionary structure.
 
-        All :class:`incipyt._internal.templates.Formattable` values of the template dictionary will be
-        evaluated and replaced by their results. All nested structures will be recursively
-        visited and processed too.
-
-        :param template: The template dictionary or list to visit.
-        :type template: :class:`collections.abc.MutableMapping` of :class:`collections.abc.MutableSequence`
-        """
-        if is_nonstring_sequence(template):
-            for index, value in enumerate(template):
-                if isinstance(value, templates.Formattable):
-                    template[index] = value.format()
-                else:
-                    _Structure._visit(value)
-                if template[index] == [] or template[index] == {}:
-                    template[index] = None
-
-            while None in template:
-                template.remove(None)
-
-        elif isinstance(template, abc.MutableMapping):
-            for key, value in template.items():
-                logger.debug("Visit %s to process environ variables.", key)
-
-                if isinstance(value, templates.Formattable):
-                    template[key] = value.format()
-                else:
-                    _Structure._visit(value)
-                if template[key] == [] or template[key] == {}:
-                    template[key] = None
-
-            for key in [key for key, value in template.items() if value is None]:
-                del template[key]
-
-        else:
-            raise AssertionError(f"{type(template)} do not support visitation.")
-
-
-structure = _Structure()
+structure = _Structure()  # singleton
