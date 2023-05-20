@@ -15,7 +15,7 @@ DEFAULT_FORMAT = "[%(levelname)s] %(message)s"
 DEBUG_FORMAT = "%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s"
 
 
-def choice_callback(_ctx, _param, _choice):
+def choice_tool(_ctx, _param, _choice):
     return getattr(tools, _choice) if _choice else (lambda *args: None)
 
 
@@ -44,7 +44,7 @@ def choice_callback(_ctx, _param, _choice):
     show_default=True,
     default="Git",
     type=click.Choice(["", "Git"], case_sensitive=False),
-    callback=choice_callback,
+    callback=choice_tool,
     help="Version Control System, if any, to use.",
 )
 @click.option(
@@ -53,7 +53,7 @@ def choice_callback(_ctx, _param, _choice):
     show_default=True,
     default="Venv",
     type=click.Choice(["", "Venv"], case_sensitive=False),
-    callback=choice_callback,
+    callback=choice_tool,
     help="Wether to use a virtual environment and which one.",
 )
 @click.option(
@@ -62,7 +62,7 @@ def choice_callback(_ctx, _param, _choice):
     show_default=True,
     default="Setuptools",
     type=click.Choice(["Setuptools", "Flit", "Hatch", "PDM", "Poetry"], case_sensitive=False),
-    callback=choice_callback,
+    callback=choice_tool,
     help="Build system to use for building wheel and source distributions.",
 )
 @click.option(
