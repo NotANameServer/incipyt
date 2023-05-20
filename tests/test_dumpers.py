@@ -1,12 +1,13 @@
 from pytest import fixture, mark, raises
 
 from incipyt import project
+from incipyt.__main__ import feed_environ
 from incipyt._internal.dumpers import CfgIni, TextFile, Toml
 
 
 @fixture
 def reset_environ():
-    project.environ.clear()
+    feed_environ()
 
 
 @mark.parametrize("dumper", (CfgIni, Toml, TextFile))

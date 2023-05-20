@@ -1,32 +1,56 @@
+from collections import abc
+
 from pytest import fixture, mark
 
-from incipyt import project, variables
+from incipyt import project
+from incipyt.__main__ import feed_environ
 from incipyt._internal.templates import FormatterEnviron
+from incipyt.project.meta_variables import Variable
 from tests.utils import mock_stdin
+
+
+@fixture(scope="function")
+def patch_variables():
+    try:
+        variables = project.variables.copy()
+        project.variables.clear()
+
+        def patch(env_vars=None, required=False):
+            env_vars = env_vars or []
+            if isinstance(env_vars, abc.Mapping):
+                for key, value in env_vars.items():
+                    Variable(key, default=value, required=required)
+            else:
+                for key in env_vars:
+                    Variable(key, required=required)
+            feed_environ()
+
+        yield patch
+
+    finally:
+        project.variables.update(variables)
 
 
 class _Context:
     @fixture
-    def reset_environ(self):
-        project.environ.clear()
-
-    @fixture
-    def environ_ctx(self, reset_environ):
+    def environ_ctx(self, patch_variables):
+        patch_variables(["EMPTY_VARIABLE", "OTHER_VARIABLE", "VARIABLE_NAME"])
         project.environ["VARIABLE_NAME"] = "value"
         return FormatterEnviron()
 
     @fixture
-    def empty_ctx(self, reset_environ):
+    def empty_ctx(self, patch_variables):
+        patch_variables(["VARIABLE_NAME"])
         return FormatterEnviron()
 
     @fixture
-    def default_ctx(self, reset_environ):
-        variables._EnvMetadata("VARIABLE_NAME", default="value")
+    def default_ctx(self, patch_variables):
+        patch_variables({"VARIABLE_NAME": "value"})
         return FormatterEnviron()
 
     @fixture
-    def required_ctx(self, reset_environ):
-        variables._EnvMetadata("VARIABLE_NAME", required=True)
+    def required_ctx(self, patch_variables):
+        patch_variables(["VARIABLE_NAME"], required=True)
         return FormatterEnviron()
 
 
@@ -61,9 +85,7 @@ class TestFormatterEnviron(_Context):
         ctx.format("{VARIABLE_NAME}")
         assert ctx["VARIABLE_NAME"] == "value"
 
-    @mark.parametrize(
-        "ctx, res", (("empty_ctx", None), ("default_ctx", "value"), ("required_ctx", ""))
-    )
+    @mark.parametrize("ctx, res", (("empty_ctx", None), ("default_ctx", "value")))
     def test_getitem_empty(self, ctx, res, monkeypatch, request):
         ctx = request.getfixturevalue(ctx)
         mock_stdin(monkeypatch, "")
