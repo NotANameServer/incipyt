@@ -73,6 +73,7 @@ class _Environment(collections.UserDict):  # singleton
         self._source_osenviron_confirmed = {}  #: os.environ w/ INCIPYT_
         self._source_tool_confirmed = {}  #: self.inject()
         self._source_default_confirmed = {}  #: Variable(prompt=False)
+        self._source_config = PromptDict()  #: incipyt/config.toml
         self._source_tool_prompt = PromptDict()  #: self.suggest()
         self._source_osenviron_prompt = PromptDict()  #: os.environ w/o INCIPYT_
         self._source_default_prompt = PromptDict()  #: Variable(prompt=True)
@@ -82,6 +83,7 @@ class _Environment(collections.UserDict):  # singleton
             self._source_osenviron_confirmed,
             self._source_tool_confirmed,
             self._source_default_confirmed,
+            self._source_config,
             self._source_tool_prompt,
             self._source_osenviron_prompt,
             self._source_default_prompt,
@@ -141,6 +143,7 @@ class _Environment(collections.UserDict):  # singleton
         self._feed(f"{source_name}_{'prompt' if prompt else 'confirmed'}", options)
 
     feed_cli = partialmethod(_feed, "_source_cli")
+    feed_config = partialmethod(_feed, "_source_config")
     feed_tool = partialmethod(_feed_pair, "_source_tool")
     feed_osenviron = partialmethod(_feed_pair, "_source_osenviron")
     feed_default = partialmethod(_feed_pair, "_source_default")

@@ -7,6 +7,11 @@ import warnings
 import click
 import click.core
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 from incipyt import project, tools
 
 logger = logging.getLogger(__name__)
@@ -14,6 +19,7 @@ DEFAULT_LOGGING_LEVEL = logging.WARNING
 DEFAULT_FORMAT = "[%(levelname)s] %(message)s"
 DEBUG_FORMAT = "%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s"
 OS_ENVIRON_PREFIX = "INCIPYT_"
+APP_DIR = pathlib.Path(click.get_app_dir("incipyt"))
 
 
 class IncipytCommand(click.Command):
@@ -46,11 +52,19 @@ def choice_tool(_ctx, _param, _choice):
     "folder",
     required=True,
     default=pathlib.Path(),
-    type=click.Path(file_okay=False),
+    type=click.Path(file_okay=False, path_type=pathlib.Path),
     callback=lambda _ctx, _param, _path: pathlib.Path(_path),
 )
 @click.option("-v", "--verbose", count=True)
 @click.option("-s", "--silent", count=True)
+@click.option(
+    "-c",
+    "--config",
+    default=APP_DIR / "config.toml",
+    type=click.Path(exists=False, dir_okay=False, path_type=pathlib.Path),
+    help="Path of the configuration file.",
+    show_default=True,
+)
 @click.version_option()
 @click.option(
     "--license",
@@ -101,12 +115,20 @@ def choice_tool(_ctx, _param, _choice):
     metavar="KEY=VALUE",
     help="Additionnal key=value pair for the environment, see variables below.",
 )
-def main(folder, verbose, silent, vcs, env, build, check_build, options, **kwargs):
+@click.pass_context
+def main(ctx, folder, verbose, silent, config, vcs, env, build, check_build, options, **kwargs):
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
 
+    if not config.exists():
+        if ctx.get_parameter_source("config") == click.core.ParameterSource.DEFAULT:
+            config.parent.mkdir(exist_ok=True)
+            config.touch()
+        else:
+            raise click.BadArgumentUsage(f"CONFIG {config.resolve()} does not exists.")
     try:
-        feed_environ(options, kwargs)
+        with config.open("rb") as config_file:
+            feed_environ(tomllib.load(config_file), options, os.environ, **kwargs)
     except ValueError as exc:
         raise click.BadArgumentUsage(exc.args[0]) from exc
 
@@ -144,14 +166,22 @@ def main(folder, verbose, silent, vcs, env, build, check_build, options, **kwarg
     logger.info("All done.")
 
 
-def feed_environ(options, kwargs):
-    project.environ.feed_cli(dict([option.partition("=")[::2] for option in options]))
+def feed_environ(config_options=None, cli_options=None, osenviron=None, **kwargs):
+    project.environ.clear()
+
+    config_options = config_options or {}
+    cli_options = cli_options or {}
+    osenviron = osenviron or {}
+
+    project.environ.feed_cli(dict([option.split("=", 1) for option in cli_options]))
     project.environ.feed_cli({key.upper(): value for key, value in kwargs.items()})
+
+    project.environ.feed_config(config_options)
 
     project.environ.feed_osenviron(
         {
             key[len(OS_ENVIRON_PREFIX) :]: value
-            for key, value in os.environ.items()
+            for key, value in osenviron.items()
             if key.startswith(OS_ENVIRON_PREFIX)
         },
         prompt=False,
@@ -159,7 +189,7 @@ def feed_environ(options, kwargs):
     project.environ.feed_osenviron(
         {
             key: value
-            for key, value in os.environ.items()
+            for key, value in osenviron.items()
             if not key.startswith(OS_ENVIRON_PREFIX) and key in project.variables
         },
         prompt=True,
