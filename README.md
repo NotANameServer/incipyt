@@ -58,6 +58,7 @@ the minimum to get started:
     $ python -m pip install --upgrade flit
     $ python -m flit install --pth-file --deps develop
     $ python -m pytest -vv tests
+    $ pre-commit & pre-commit install
 
 [PyPA/packaging-projects]: https://packaging.python.org/tutorials/packaging-projects/
 [pyproject.toml]: https://www.python.org/dev/peps/pep-0518/
