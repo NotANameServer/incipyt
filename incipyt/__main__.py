@@ -5,21 +5,43 @@ import sys
 import warnings
 
 import click
+import click.core
 
-from incipyt import project, tools, variables
-from incipyt.variables import metadata_setter
+from incipyt import project, tools
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOGGING_LEVEL = logging.WARNING
 DEFAULT_FORMAT = "[%(levelname)s] %(message)s"
 DEBUG_FORMAT = "%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s"
+OS_ENVIRON_PREFIX = "INCIPYT_"
+
+
+class IncipytCommand(click.Command):
+    def format_help(self, ctx, formatter):
+        self.format_usage(ctx, formatter)
+        self.format_help_text(ctx, formatter)
+        self.format_options(ctx, formatter)
+        self.format_variables(ctx, formatter)  # incipyt custom
+        self.format_epilog(ctx, formatter)
+
+    def format_variables(self, ctx, formatter) -> None:
+        with formatter.section("Variables"):
+            formatter.write_dl(
+                [
+                    (f"-o {var.name}={var.default!r}", var.help)
+                    for var in project.variables.values()
+                    if var.prompt
+                ]
+            )
 
 
 def choice_tool(_ctx, _param, _choice):
     return getattr(tools, _choice) if _choice else (lambda *args: None)
 
 
-@click.command(help="incipyt is a command-line tool that bootstraps a Python project.")
+@click.command(
+    cls=IncipytCommand, help="incipyt is a command-line tool that bootstraps a Python project."
+)
 @click.argument(
     "folder",
     required=True,
@@ -72,37 +94,38 @@ def choice_tool(_ctx, _param, _choice):
     help="Build the package after initialization of all files and folders.",
 )
 @click.option(
-    "--venv-folder",
-    default=".venv",
-    hidden=True,
+    "--option",
+    "-o",
+    "options",
+    multiple=True,
+    metavar="KEY=VALUE",
+    help="Additionnal key=value pair for the environment, see variables below.",
 )
-def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: A002
+def main(folder, verbose, silent, vcs, env, build, check_build, options, **kwargs):
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
     setup_logging(max(logging.NOTSET, min(log_level, logging.CRITICAL)))
 
-    # Populate metadata from other options
-    variables._update_from_dict(**kwargs)
+    try:
+        feed_environ(options, kwargs)
+    except ValueError as exc:
+        raise click.BadArgumentUsage(exc.args[0]) from exc
 
     tools_to_install = [tool for tool in [vcs(), tools.License(), env(), build()] if tool]
-    metadata_setter._stage = "add_to_structure"
 
     if folder == pathlib.Path():
         if any(folder.resolve().iterdir()):
             raise click.BadArgumentUsage(f"FOLDER {folder.resolve()} is not empty.")
-        metadata_setter.default("PROJECT_NAME", folder.resolve().name)
+        project.environ.suggest("PROJECT_NAME", folder.resolve().name)
     else:
         if (folder.is_absolute() and folder.is_dir() and any(folder.iterdir())) or (
             ("." / folder).is_dir() and any(("." / folder).resolve().iterdir())
         ):
             raise click.BadArgumentUsage(f"FOLDER {folder} is not empty.")
-        metadata_setter.default("PROJECT_NAME", folder.name)
-
-    project.environ["LICENSE"] = license
+        project.environ.suggest("PROJECT_NAME", folder.name)
 
     for tool in tools_to_install:
         logger.info("Using %s", tool)
         tool.add_to_structure()
-    metadata_setter._stage = "pre"
 
     logger.info("The project will be created at %s", folder.resolve())
     project.structure.mkdir(folder)
@@ -110,7 +133,6 @@ def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: 
     for tool in tools_to_install:
         logger.info("Running pre-script for %s...", tool)
         tool.pre(folder)
-    metadata_setter._stage = "post"
 
     logger.info("Commit project structure.")
     project.structure.commit()
@@ -120,6 +142,41 @@ def main(folder, verbose, silent, vcs, env, build, license, **kwargs):  # noqa: 
         tool.post(folder)
 
     logger.info("All done.")
+
+
+def feed_environ(options, kwargs):
+    project.environ.feed_cli(dict([option.partition("=")[::2] for option in options]))
+    project.environ.feed_cli({key.upper(): value for key, value in kwargs.items()})
+
+    project.environ.feed_osenviron(
+        {
+            key[len(OS_ENVIRON_PREFIX) :]: value
+            for key, value in os.environ.items()
+            if key.startswith(OS_ENVIRON_PREFIX)
+        },
+        prompt=False,
+    )
+    project.environ.feed_osenviron(
+        {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith(OS_ENVIRON_PREFIX) and key in project.variables
+        },
+        prompt=True,
+    )
+
+    project.environ.feed_default(
+        {var.name: var.default for var in project.variables.values() if not var.prompt},
+        prompt=False,
+    )
+    project.environ.feed_default(
+        {
+            var.name: var.default
+            for var in project.variables.values()
+            if var.prompt and var.default
+        },
+        prompt=True,
+    )
 
 
 class ColoredFormatter(logging.Formatter):

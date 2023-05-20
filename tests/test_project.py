@@ -5,23 +5,38 @@ from datetime import date
 from pytest import fixture, mark, raises
 
 from incipyt import commands, project
+from incipyt.__main__ import feed_environ
 from incipyt._internal.dumpers import TextFile, Toml
 from incipyt._internal.templates import StringTemplate
+from incipyt.project.meta_variables import Variable
 from tests.utils import mock_stdin
 
 YEAR = date.today().year
 
 
 class TestEnviron:
-    @fixture
-    def empty_environ(self, fake_process):
-        fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        project.environ.clear()
+    @fixture(scope="function")
+    def patch_variables(self):
+        try:
+            variables = project.variables.copy()
+
+            Variable("ONE")
+            Variable("TWO")
+
+            feed_environ()
+
+            yield
+
+        finally:
+            project.variables.update(variables)
 
     @fixture
-    def simple_environ(self, fake_process):
+    def empty_environ(self, fake_process, patch_variables):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        project.environ.clear()
+
+    @fixture
+    def simple_environ(self, fake_process, patch_variables):
+        fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
         project.environ["ONE"] = "1"
 
     @mark.parametrize("env, input_values", (("empty_environ", ["1"]), ("simple_environ", [""])))
@@ -67,7 +82,7 @@ class TestStructure:
     @fixture
     def reset_environ(self, fake_process):
         fake_process.register_subprocess(["cmd", "arg"], stdout=["lineA", "lineB"])
-        project.environ.clear()
+        feed_environ()
         project.environ["FOLDER_A"] = "folderA"
         project.environ["FOLDER_B"] = "folderB"
         project.environ["NAME_A"] = "testA"

@@ -61,6 +61,8 @@ def strtobool(val):
 
     Source: https://github.com/python/cpython/blob/v3.11.3/Lib/distutils/util.py#L308-L321
     """
+    if isinstance(val, (bool, int)):
+        return bool(val)
     val = val.lower()
     if val in ("y", "yes", "t", "true", "on", "1"):
         return 1

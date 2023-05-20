@@ -3,7 +3,6 @@ import os
 from incipyt import commands, project, signals, tools
 from incipyt._internal import sanitizers, templates
 from incipyt._internal.dumpers import Toml
-from incipyt.variables import metadata_setter
 
 
 class Poetry(tools.Tool):
@@ -14,8 +13,8 @@ class Poetry(tools.Tool):
         signals.classifier.connect(self._slot_classifier)
         signals.project_url.connect(self._slot_url)
 
-        metadata_setter.required("AUTHOR_NAME")
-        metadata_setter.required("AUTHOR_EMAIL")
+        project.variables["AUTHOR_NAME"].required = True
+        project.variables["AUTHOR_EMAIL"].required = True
 
     def add_to_structure(self):
         """Add poetry configuration to `project.structure`.

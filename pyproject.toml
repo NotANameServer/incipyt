@@ -66,6 +66,7 @@ ignore = [
   # Ease rules for pydocstyle (module/package/magic method/empty lines)
   "E501", "W505", # Disable rules about line-too-long, black does that
   "FBT002", #Disable "Boolean default value in function definition" rule
+  "PLC1901",  # Disable "(value == '') can be simplified to (not value)"
 ]
 select = [
   "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
