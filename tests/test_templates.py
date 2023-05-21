@@ -215,7 +215,7 @@ class TestTemplateCollection:
     )
     def test_ior(self, td, res, request):
         td = request.getfixturevalue(td)
-        td |= {"1": {"2": {"3": "x"}}}
+        td.update({"1": {"2": {"3": "x"}}})
         assert td == res
 
 
