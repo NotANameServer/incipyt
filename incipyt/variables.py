@@ -5,6 +5,8 @@ import sys
 from datetime import date
 from typing import Any
 
+from incipyt._internal.utils import strtobool
+
 # as of may 2022, the latest stable release of most bsd/linux
 # distributions ship a python whoose verion is at least 3.9
 LINUX_MIN_PYTHON_VERSION = (3, 9)
@@ -65,6 +67,25 @@ class _EnvMetadata:
         metadata[self.name] = self
 
 
+def _update_from_dict(**kwargs):
+    for var_name, var_value in os.environ.items():
+        var_name_sanitized = var_name.upper()
+        do_not_prompt = var_name_sanitized.startswith("INCIPYT_")
+        var_name_sanitized = (
+            var_name_sanitized.removeprefix("INCIPYT_")
+            if var_name_sanitized.startswith("INCIPYT_")
+            else var_name_sanitized
+        )
+        if var_name_sanitized not in metadata:
+            _EnvMetadata(var_name_sanitized, default=var_value, do_not_prompt=do_not_prompt)
+        else:
+            metadata[var_name_sanitized].default = var_value
+            metadata[var_name_sanitized].do_not_prompt |= do_not_prompt
+
+    if isinstance(metadata["CHECK_BUILD"].default, str):
+        metadata["CHECK_BUILD"].default = strtobool(metadata["CHECK_BUILD"].default)
+
+
 _EnvMetadata(
     "AUDIENCE_PYTHON_VERSION",
     default="{0[0]}.{0[1]}".format(min(sys.version_info, LINUX_MIN_PYTHON_VERSION)),
@@ -78,9 +99,7 @@ _EnvMetadata("PYTHON_CMD", default=sys.executable, do_not_prompt=True)
 _EnvMetadata("SUMMARY_DESCRIPTION", required=True)
 _EnvMetadata("YEAR", default=date.today().year, do_not_prompt=True)
 
+_EnvMetadata("CHECK_BUILD", default=False, do_not_prompt=True)
+
 # Populate metadata from system environment variables
-for var_name, var_value in os.environ.items():
-    if var_name not in metadata:
-        _EnvMetadata(var_name, default=var_value)
-    else:
-        metadata[var_name].default = var_value
+_update_from_dict(**os.environ)
