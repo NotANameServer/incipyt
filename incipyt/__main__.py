@@ -31,6 +31,14 @@ def choice_callback(_ctx, _param, _choice):
 @click.option("-s", "--silent", count=True)
 @click.version_option()
 @click.option(
+    "--license",
+    required=True,
+    default="Copyright",
+    type=click.Choice(tools.license.classifiers, case_sensitive=False),
+    help="Software license.",
+    prompt=True,
+)
+@click.option(
     "--vcs",
     required=True,
     show_default=True,
@@ -61,14 +69,6 @@ def choice_callback(_ctx, _param, _choice):
     "--check-build",
     is_flag=True,
     help="Build the package after initialization of all files and folders.",
-)
-@click.option(
-    "--license",
-    required=True,
-    default="Copyright",
-    type=click.Choice(tools.license.classifiers, case_sensitive=False),
-    help="Software license",
-    prompt=True,
 )
 def main(folder, verbose, silent, vcs, env, build, check_build, license):  # noqa: A002
     log_level = DEFAULT_LOGGING_LEVEL - verbose * 10 + silent * 10
