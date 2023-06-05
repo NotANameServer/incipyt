@@ -459,7 +459,7 @@ class FormatterEnviron(abc.Mapping):
         :rtype: :class:`str` or `None`
         """
 
-        self._keys = {item[1] for item in Formatter().parse(format_string) if item[1]}
+        self._keys = [item[1] for item in Formatter().parse(format_string) if item[1]]
         for key in self:
             if key in kwargs:
                 self.data[key] = kwargs[key]
