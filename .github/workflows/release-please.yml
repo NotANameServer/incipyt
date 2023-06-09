@@ -16,9 +16,9 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v3.7.9
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
           release-type: python
-          default-branch: main
       - name: Checkout
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v3.5.2
