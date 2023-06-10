@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.4.0](https://github.com/NotANameServer/incipyt/compare/v0.3.0...v0.4.0) (2023-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump python to 3.8
+
+### Features
+
+* config file ([83b36a2](https://github.com/NotANameServer/incipyt/commit/83b36a2416c2786d5734e2c1fa306e6c97265559))
+* metadata system ([14e761f](https://github.com/NotANameServer/incipyt/commit/14e761f6a5de8dc2710daf0947abec8dcedaee14))
+* **metadata:** implement a declarative metadata system for environment variables ([868e85a](https://github.com/NotANameServer/incipyt/commit/868e85af19ce6136a14f57b13894e7f2002e851f))
+* **metadata:** metadata field do_not_prompt to bypass prompting ([619c9b7](https://github.com/NotANameServer/incipyt/commit/619c9b776977471f24f9c52b247bf931bc679dea))
+* **metadata:** metadata field required and purging mechanism for template ([f7261ca](https://github.com/NotANameServer/incipyt/commit/f7261ca7a1b37dc1830870ffb3acd32fd7497d57))
+* **metadata:** stage control on metadata setter ([9b9b097](https://github.com/NotANameServer/incipyt/commit/9b9b097bfd18d099292caeff2db3364da0e900d7))
+* split project.py in multiple files ([03cf0e2](https://github.com/NotANameServer/incipyt/commit/03cf0e2d09997659ca9be28ccc34d6656260b577))
+* use project.environ to store additional options ([f8e8a6a](https://github.com/NotANameServer/incipyt/commit/f8e8a6a7e68f7a356a55b04b0202b3a3a91e6587))
+
+
+### Bug Fixes
+
+* **build:** add min_version for dependency slots ([e972377](https://github.com/NotANameServer/incipyt/commit/e972377aebcd661e9ac2f7dab6bcda92cd54e2ce))
+* **build:** add required metadata for mandatory fields for poetry builder ([b34cce2](https://github.com/NotANameServer/incipyt/commit/b34cce20a1c289440d061873b42960d2bbde6aa5))
+* **build:** remove unused **kwargs in __init__ and explicit check_build parameter ([1b91c65](https://github.com/NotANameServer/incipyt/commit/1b91c659e1470d83e0e9d46c3622447c6b3a3256))
+* bumps toml to tomli_w for dumpers.Toml ([9fe71ce](https://github.com/NotANameServer/incipyt/commit/9fe71cebf310703f92520f5ed619e232aa735fc2))
+* **main:** don't drop args[0] when importing ([665b5a4](https://github.com/NotANameServer/incipyt/commit/665b5a463ebeebd27d97e82cf7ca27cf568d6209))
+* **README:** mix tabs and spaces ([9c153c9](https://github.com/NotANameServer/incipyt/commit/9c153c987c885e6c4c4386e6f64f3c9166fbcb79))
+* replace |= operator by update function for UserDict based class ([7aa6ab7](https://github.com/NotANameServer/incipyt/commit/7aa6ab70fedee3e5120d2aefd95bf36d2f5cd0da))
+* use a list instead of a set when parsing string patterns ([e688458](https://github.com/NotANameServer/incipyt/commit/e68845872b21afc69485054372abd5adeb3921ec))
+* **venv:** use an hidden option as virtual env folder name ([5cbfd3f](https://github.com/NotANameServer/incipyt/commit/5cbfd3f00084b73d8e36b34b48e53aa31e33e3c2))
+
+
+### Miscellaneous Chores
+
+* bump python to 3.8 ([2120661](https://github.com/NotANameServer/incipyt/commit/21206618a1c319e3a08706c52c7c60e0134946a8))
+
 ## [0.3.0](https://github.com/NotANameServer/incipyt/compare/v0.2.0...v0.3.0) (2023-04-09)
 
 
