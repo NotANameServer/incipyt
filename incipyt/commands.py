@@ -21,7 +21,7 @@ def run(args, check=True, **kwargs):
     """
     formatted = [arg.format() if isinstance(arg, Formattable) else arg for arg in args]
     logger.info(" ".join(formatted))
-    result = subprocess.run(formatted, capture_output=True, check=False, **kwargs)
+    result = subprocess.run(formatted, capture_output=True, check=False, **kwargs)  # noqa: S603
     logger.info(result.stdout.decode())
     if check and result.returncode:
         logger.error(result.stderr.decode())
