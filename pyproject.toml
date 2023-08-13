@@ -37,7 +37,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "flit==3.9.0",
   "pre-commit==3.3.3",
 ]
 doc = [
@@ -68,6 +67,7 @@ ignore = [
   "E501", "W505", # Disable rules about line-too-long, black does that
   "FBT002", #Disable "Boolean default value in function definition" rule
   "PLC1901",  # Disable "(value == '') can be simplified to (not value)"
+  "RUF012",  # Disable "should be annotated with typing.ClassVar"
 ]
 select = [
   "B", "C4", "D", "E", "ERA", "F", "G", "I", "PIE", "PLC", "Q", "RUF", "SIM", "W",
