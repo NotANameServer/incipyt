@@ -13,6 +13,11 @@ class PDM(pep517.BuildSystem):
 
         .. code-block::
 
+            [project.optional-dependencies]
+            dev = [
+                "pdm>=2.0.0",
+            ]
+
             [build-system]
             build-backend: "pdm.pep517.api"
             requires: ["pdm-pep517>=1.0.0"]

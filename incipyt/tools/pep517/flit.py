@@ -13,6 +13,11 @@ class Flit(pep517.BuildSystem):
 
         .. code-block::
 
+            [project.optional-dependencies]
+            dev = [
+                "flit>=3.4.0",
+            ]
+
             [build-system]
             build-backend: "flit_core.buildapi"
             requires: ["flit_core>=3.4.0"]

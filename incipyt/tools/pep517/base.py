@@ -19,21 +19,25 @@ class BuildSystem(tools.Tool):
         :file:`pyptoject.toml`
 
         .. code-block::
+
             [project]
+            name = "{PROJECT_NAME}"
+            version = "{PACKAGE_VERSION}"
+            description = "{SUMMARY_DESCRIPTION}"
+            readme = "README.md"
+            requires-python = ">={PYTHON_VERSION}"
             authors = [
+                {name = "{AUTHOR_NAME}", email = "{AUTHOR_EMAIL}"}
+            ]
+            maintainers = [
                 {name = "{AUTHOR_NAME}", email = "{AUTHOR_EMAIL}"}
             ]
             classifiers = [
                 "Programming Language :: Python :: 3 :: Only"
             ]
-            description = "{SUMMARY_DESCRIPTION}"
-            maintainers = [
-                {name = "{AUTHOR_NAME}", email = "{AUTHOR_EMAIL}"}
-            ]
-            name = "{PROJECT_NAME}"
-            readme = "README.md"
-            requires-python = ">={PYTHON_VERSION}"
-            version = "{PACKAGE_VERSION}"
+
+            [project.license]
+            file = "LICENSE"
 
             [project.optional-dependencies]
             dev = [
@@ -49,29 +53,29 @@ class BuildSystem(tools.Tool):
         pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
 
         pyproject["project"] = {
-            "authors": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
-            "description": "{SUMMARY_DESCRIPTION}",
-            "license": {"file": "LICENSE"},
-            "maintainers": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
             "name": templates.StringTemplate(
                 "{PROJECT_NAME}",
                 sanitizer=sanitizers.project,
             ),
+            "version": templates.StringTemplate(
+                "{PACKAGE_VERSION}", sanitizer=sanitizers.version
+            ),
+            "description": "{SUMMARY_DESCRIPTION}",
             "readme": "README.md",
             "requires-python": templates.StringTemplate(
                 ">={AUDIENCE_PYTHON_VERSION}", sanitizer=sanitizers.version
             ),
-            "version": templates.StringTemplate(
-                "{PACKAGE_VERSION}", sanitizer=sanitizers.version
-            ),
+            "license": {"file": "LICENSE"},
+            "authors": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
+            "maintainers": [{"name": "{AUTHOR_NAME}", "email": "{AUTHOR_EMAIL}"}],
         }
 
-        project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
-        project.structure.use_template("README.md")
+        signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
 
         signals.build_dependency.emit(dep_name="build", min_version="0.2.0")
 
-        signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
+        project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
+        project.structure.use_template("README.md")
 
         signals.vcs_ignore.emit(pattern="dist/")
         signals.vcs_ignore.emit(pattern="*.egg-info")

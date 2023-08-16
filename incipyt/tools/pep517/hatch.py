@@ -13,6 +13,11 @@ class Hatch(pep517.BuildSystem):
 
         .. code-block::
 
+            [project.optional-dependencies]
+            dev = [
+                "hatch>=1.2.0",
+            ]
+
             [build-system]
             build-backend = "hatchling.build"
             requires = ["hatchling>=1.3.0"]
