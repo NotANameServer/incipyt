@@ -23,24 +23,20 @@ class Poetry(tools.Tool):
 
         .. code-block::
 
-            [build-system]
-            build-backend: "poetry.core.masonry.api"
-            requires: ["poetry_core"]
-
             [tool.poetry]
+            name = "{PROJECT_NAME}"
+            version = "{PACKAGE_VERSION}"
+            description = "{SUMMARY_DESCRIPTION}"
+            readme = "README.md"
             authors = [
+                "{AUTHOR_NAME} <{AUTHOR_EMAIL}>"
+            ]
+            maintainers = [
                 "{AUTHOR_NAME} <{AUTHOR_EMAIL}>"
             ]
             classifiers = [
                 "Programming Language :: Python :: 3 :: Only"
             ]
-            description = "{SUMMARY_DESCRIPTION}"
-            maintainers = [
-                "{AUTHOR_NAME} <{AUTHOR_EMAIL}>"
-            ]
-            name = "{PROJECT_NAME}"
-            readme = "README.md"
-            version = "{PACKAGE_VERSION}"
 
             [tool.poetry.dependencies]
             python = ">={PYTHON_VERSION}"
@@ -48,6 +44,10 @@ class Poetry(tools.Tool):
             [tool.poetry.dev-dependencies]
             build = ">=0.2.0"
             poetry = "*"
+
+            [build-system]
+            build-backend: "poetry.core.masonry.api"
+            requires: ["poetry_core"]
 
         If this configuration cannot be populate like that, an error is raised.
 
@@ -58,14 +58,6 @@ class Poetry(tools.Tool):
         :raises RuntimeError: If a build-system is already setup im pyproject.toml.
         """
         pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
-
-        if "build-system" in pyproject:
-            raise RuntimeError("Build system already registered.")
-
-        pyproject["build-system"] = {
-            "build-backend": "poetry.core.masonry.api",
-            "requires": ["poetry_core"],
-        }
 
         pyproject["tool", "poetry"] = {
             "authors": ["{AUTHOR_NAME} <{AUTHOR_EMAIL}>"],
@@ -88,15 +80,23 @@ class Poetry(tools.Tool):
             )
         }
 
-        project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
-        project.structure.use_template("README.md")
+        signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
 
         signals.build_dependency.emit(dep_name="build", min_version="0.2.0")
         signals.build_dependency.emit(dep_name="poetry")
 
-        signals.classifier.emit(classifier="Programming Language :: Python :: 3 :: Only")
+        project.structure.use_template("{PROJECT_NAME}/__init__.py", sanitizer=sanitizers.package)
+        project.structure.use_template("README.md")
 
         signals.vcs_ignore.emit(pattern="dist")
+
+        if "build-system" in pyproject:
+            raise RuntimeError("Build system already registered.")
+
+        pyproject["build-system"] = {
+            "build-backend": "poetry.core.masonry.api",
+            "requires": ["poetry_core"],
+        }
 
     def _slot_classifier(self, classifier, **kwargs):
         pyproject = project.structure.get_config_dict(Toml("pyproject.toml"))
@@ -110,9 +110,15 @@ class Poetry(tools.Tool):
         ] = {dep_name: "*" if min_version is None else f">={min_version}"}
 
     def _slot_url(self, url_kind, url_value, **kwargs):
-        project.structure.get_config_dict(Toml("pyproject.toml"))["tool", "poetry"] = {
-            url_kind: url_value
-        }
+        url_kind_sanitized = url_kind.lower().strip()
+        if url_kind_sanitized in ("documentation", "homepage", "repository"):
+            project.structure.get_config_dict(Toml("pyproject.toml"))[
+                "tool", "poetry", url_kind_sanitized
+            ] = url_value
+        else:
+            project.structure.get_config_dict(Toml("pyproject.toml"))["tool", "poetry"] = {
+                url_kind: url_value
+            }
 
     def post(self, workon):
         """Editable install and build for test.
