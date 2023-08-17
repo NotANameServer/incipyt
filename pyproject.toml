@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "flit_core.buildapi"
-requires = ["flit_core"]
+requires = ["flit_core>=3.4.0"]
 
 [project.urls]
 documentation = "https://github.com/NotANameServer/incipyt/wiki"
@@ -37,6 +37,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "flit==3.9.0",
   "pre-commit==3.3.3",
 ]
 doc = [
