@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import pathlib
 import sys
 from datetime import date
 from typing import Any
@@ -110,6 +111,13 @@ Variable(
     prompt=False,
     help="The path to the python executable to run commands with.",
 )
+Variable(
+    "PYENV_ROOT",
+    type=pathlib.Path,
+    prompt=False,
+    help="The root directory where versions and shims are kept.",
+)
+Variable("PYENV_VERSION", help="The python version used by pyenv for venv creation.")
 Variable("REPOSITORY", help="The HTTP URL to the online repository")
 Variable("SUMMARY_DESCRIPTION", required=True, help="The project short description.")
 Variable(
