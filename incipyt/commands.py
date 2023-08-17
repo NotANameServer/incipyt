@@ -39,7 +39,8 @@ def setenv_python_cmd(python_path):
     """
     if not python_path.is_absolute():
         raise AssertionError(f"{python_path} is not absolute.")
-    del project.environ["PYTHON_CMD"]
+    if "PYTHON_CMD" in project.environ:
+        del project.environ["PYTHON_CMD"]
     project.environ.inject("PYTHON_CMD", os.fspath(python_path))
 
 
