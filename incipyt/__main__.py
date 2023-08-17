@@ -88,7 +88,7 @@ def choice_tool(_ctx, _param, _choice):
     required=True,
     show_default=True,
     default="Venv",
-    type=click.Choice(["", "Venv"], case_sensitive=False),
+    type=click.Choice(["", "Venv", "PyEnv"], case_sensitive=False),
     callback=choice_tool,
     help="Wether to use a virtual environment and which one.",
 )
