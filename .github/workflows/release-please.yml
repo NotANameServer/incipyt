@@ -21,7 +21,7 @@ jobs:
           release-type: python
       - name: Checkout
         if: ${{ steps.release.outputs.release_created }}
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.0.0
       - name: Set up Python
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/setup-python@v4.7.0
