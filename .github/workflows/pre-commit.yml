@@ -30,7 +30,7 @@ jobs:
         run: pre-commit autoupdate
       - name: Pre-commit cache
         id: cache-pre-commit
-        uses: actions/cache@v3.3.1
+        uses: actions/cache@v3.3.2
         with:
           key: ${{ hashFiles('.pre-commit-config.yaml') }}
           path: ~/.cache/pre-commit
