@@ -41,7 +41,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "flit==3.9.0",
-  "pre-commit==3.3.3",
+  "pre-commit==4.0.1",
 ]
 doc = [
   "m2r2==0.3.2",
