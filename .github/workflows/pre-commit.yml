@@ -38,7 +38,7 @@ jobs:
         if: ${{ ! steps.cache-pre-commit.outputs.cache-hit }}
         run: pre-commit install-hooks
       - name: Open dependabot-like PR
-        uses: peter-evans/create-pull-request@v5.0.2
+        uses: peter-evans/create-pull-request@v7.0.5
         with:
           author: "GitHub <noreply@github.com>"
           base: ${{ github.ref_name }}
