@@ -36,7 +36,7 @@ jobs:
         PIP_UPGRADE_STRATEGY: eager
       run: python -m pip install -e ".[dev]"
     - name: Pre-commit cache
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v4.1.2
       with:
         key: ${{ hashFiles('.pre-commit-config.yaml') }}
         path: ~/.cache/pre-commit
