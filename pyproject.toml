@@ -40,7 +40,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "flit==3.9.0",
+  "flit==3.10.1",
   "pre-commit==3.3.3",
 ]
 doc = [
