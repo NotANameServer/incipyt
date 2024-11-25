@@ -4,10 +4,6 @@ concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.ref_name }}
 
-on:
-  schedule:
-    - cron: 13 2 * * 0 # weekly
-
 jobs:
   update:
     runs-on: ubuntu-latest
